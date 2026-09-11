@@ -1,0 +1,865 @@
+OpenTrip Dash
+
+Product Requirements Document
+
+Sistem Manajemen Operasional & Keuangan Open Trip
+
+Versi: 1.1 — Draft untuk tinjauan produk dan engineering
+
+Tanggal: 11 September 2026
+
+Pemilik kebutuhan: Muhammad Kahfi Bachtiar
+
+Pembaca: Product Owner, UI/UX, Developer, QA, dan pengguna aplikasi
+
+Ringkasan produk
+
+OpenTrip Dash adalah dashboard web SaaS untuk membantu UMKM open trip mengolah pendaftaran, memverifikasi pembayaran, menyiapkan absensi, dan memantau keuangan. Pelanggan tetap mendaftar melalui Google Form. Respons masuk ke Google Spreadsheet, kemudian disinkronkan ke aplikasi untuk diolah oleh pengguna.
+
+MVP memusatkan pekerjaan setelah pendaftaran: pemetaan kolom, pemisahan peserta, perhitungan tagihan, pencatatan pembayaran, persetujuan grup, PDF absensi, dan laporan kas. Data pendaftaran berasal dari Google; keputusan operasional dan transaksi tersimpan di database aplikasi.
+
+Hasil yang ingin dicapai
+
+Pengguna mengetahui jumlah orang yang berangkat, tagihan, nominal terbayar, dan kekurangan setiap peserta.
+
+Guide menerima daftar hadir seluruh peserta, termasuk yang belum lunas, dengan nama dan MEPO terisi.
+
+Pengguna dapat menelusuri setiap pemasukan/pengeluaran menurut trip dan tanggal transaksi tanpa pencatatan ganda.
+
+Keputusan penting dalam draft
+
+Verifikasi pembayaran. Sistem menghitung dan mendeteksi kesamaan bukti; pengguna memastikan nominal, tanggal, penerima, serta keberhasilan transfer. Integrasi bank dan OCR tidak termasuk MVP.
+
+DP dan tanggal kas. Pemasukan peserta lunas tetap tercatat otomatis. Draft mengusulkan DP terverifikasi juga dicatat saat diterima agar kas lengkap. Timestamp pendaftaran hanya menjadi tanggal pengganti berlabel jika tanggal transfer belum tersedia. Kedua penajaman ini perlu disepakati pada review produk.
+
+Asumsi kerja. Indonesia, IDR dalam rupiah bulat, zona waktu Asia/Jakarta, satu koneksi spreadsheet/tab per trip pada MVP. PRD ini adalah spesifikasi usulan; target performa dan keputusan terbuka belum merupakan hasil pengujian aplikasi.
+
+Navigasi: bukti & scope (2–3), kebutuhan MVP (4–12), model data & kualitas (13–14), UAT (15–16), pelaksanaan (17), WhatsApp (18), catatan sumber (19).
+
+Dasar kebutuhan dari lampiran
+
+Temuan yang terverifikasi
+
+Workbook Puncak Besar Malabar Vol 12 (Responses).xlsx, tab Form Responses 1, berisi 11 kolom dan 19 respons pada baris 2–20. PDF ABSENSI Puncak Besar Malabar. Vol 12.pdf berisi satu halaman A4 dengan 21 nomor absen. Kedua lampiran dibaca langsung; gambar bukti transfer yang ditautkan belum diperiksa.
+
+Temuan sumber
+
+Nilai teramati
+
+Implikasi produk
+
+Respons vs orang
+
+19 respons; 21 orang setelah split
+
+Booking dan peserta harus menjadi entitas berbeda.
+
+Nama majemuk, baris 15
+
+Adi Nugroho + Antares + Zanki
+
+Satu booking menghasilkan tiga peserta.
+
+Fasilitas
+
+17 respons Full; 2 respons Non
+
+Setelah split: 17 peserta Full dan 4 Non, jika fasilitas diwariskan.
+
+Jas hujan
+
+2 “Mau”; 16 “Ngga, Udah punya”; 1 kosong
+
+Kosong harus ditinjau, bukan dianggap “tidak”.
+
+Harga pada header registrasi
+
+Full Rp175.000; Non Rp110.000; jas hujan Rp15.000
+
+Tarif dapat disarankan, lalu dikonfirmasi pengguna.
+
+Bukti transfer
+
+19 referensi file Drive unik
+
+Tidak ada contoh URL/file-ID berulang; gambar sama belum dapat dipastikan.
+
+Data pembayaran
+
+Tidak ada kolom nominal, tanggal transfer, atau status pelunasan
+
+Nilai tersebut perlu diisi atau diverifikasi pengguna.
+
+Perbedaan dengan absensi contoh
+
+PDF sudah memisahkan tiga nama dari satu respons dan memakai kolom NO | NAMA | MEPO | BASECAMP | MAKAN | PULANG. MEPO pada sebagian besar baris PDF masih kosong. Sesuai brief, aplikasi baru wajib mengisi MEPO seluruh peserta dari spreadsheet, termasuk “St Bandung”. Hanya NO, NAMA, dan MEPO yang otomatis; BASECAMP, MAKAN, dan PULANG tetap kosong.
+
+Batas penggunaan data contoh
+
+Timestamp respons berada pada 9–14 Agustus 2026. Rentang ini bukan bukti waktu uang masuk. Total pembayaran aktual, total kas, status lunas, dan kesamaan isi gambar tidak dapat disimpulkan dari workbook. Contoh nominal pada bagian berikut merupakan skenario uji, bukan hasil audit pembayaran peserta.
+
+Sumber lokal: workbook, baris 1–20; PDF, halaman 1. Nomor telepon, alamat, rekening, dan riwayat kesehatan tidak disalin ke PRD karena tidak diperlukan untuk menjelaskan kebutuhan produk.
+
+Cakupan dan pengguna
+
+Prioritas 1 — MVP
+
+Login, ruang kerja bisnis, dan isolasi data antar bisnis; seluruh pengguna memiliki akses fitur yang sama dalam ruang kerjanya.
+
+Trip, harga, koneksi Google, mapping, serta sinkronisasi manual dan terjadwal.
+
+Tabel peserta, split nama, koreksi, pembayaran/DP, kekurangan, dan persetujuan grup.
+
+PDF absensi lengkap; usulan lampiran sisa tagihan untuk guide.
+
+Kas otomatis, kategori/pengeluaran kustom, filter trip/minggu/bulan/tahun, dan audit koreksi.
+
+Di luar MVP
+
+Pembuatan Form, portal pelanggan, perubahan pendaftaran, penulisan balik spreadsheet, payment gateway, rekonsiliasi bank, OCR, aplikasi mobile native, pembukuan pajak, dan penagihan langganan SaaS. WhatsApp masuk Prioritas 2. Impor Excel bukan fitur MVP; lampiran Excel hanya referensi analisis.
+
+Pengguna aplikasi
+
+Aplikasi digunakan oleh penyelenggara bisnis open trip untuk mengelola operasional dan keuangan. Dalam PRD dan antarmuka, orang yang mengoperasikan aplikasi cukup disebut pengguna. Setiap pengguna dapat mengelola trip, koneksi Google, peserta, pembayaran, absensi, kategori, pengeluaran, refund, laporan, dan pengaturan dalam ruang kerja bisnisnya.
+
+Login langsung membuka dashboard dengan menu yang sama bagi seluruh pengguna. Tidak ada pemilihan jenis pengguna, tingkatan kewenangan, atau pembatasan menu berdasarkan jabatan. Akses tetap dibatasi pada ruang kerja bisnis terkait. Pelanggan mendaftar melalui Google Form; guide menerima dokumen dan tautan yang disiapkan pengguna. Keduanya tidak memerlukan akun aplikasi pada MVP.
+
+Alur utama
+
+Pelanggan mengisi Form. Pengguna menghubungkan trip, meninjau mapping/harga, menyinkronkan data, memperbaiki anomali, memverifikasi transfer, mengekspor absensi, mencatat biaya, dan memeriksa kas. Menu: Ringkasan, Trip, Peserta & Pembayaran, Absensi, Keuangan, dan Pengaturan. Seluruh menu tersedia bagi pengguna dalam ruang kerja bisnisnya.
+
+Koneksi Google dan pemetaan kolom
+
+INT-01 — Hubungkan sumber privat
+
+Sebagai pengguna, saya dapat memasukkan URL spreadsheet agar respons tampil pada trip yang benar. Alurnya: hubungkan akun Google, tempel URL, otorisasi file bila diperlukan, pilih tab dan baris header, tinjau mapping, lalu jalankan impor. URL mengidentifikasi file; akses tetap memerlukan izin akun.
+
+Usulan koneksi awal menggunakan Google Picker dan scope drive.file untuk file yang dipilih, dengan aplikasi membatasi operasinya pada pembacaan. Scope ini sendiri juga memberi kemampuan tulis. Alternatif spreadsheets.readonly mengizinkan pembacaan spreadsheet yang lebih luas dan bersifat sensitive; scope tidak dapat dibatasi ke satu tab. Google: scope Sheets, Google: scope Drive.
+
+INT-02 — Pemetaan terkonfirmasi
+
+Field aplikasi
+
+Header sumber contoh
+
+Aturan
+
+registered_at
+
+Timestamp
+
+Wajib untuk urutan dan fallback tanggal.
+
+raw_name
+
+Nama Lengkap
+
+Wajib; sumber split peserta.
+
+facility
+
+Fasilitas
+
+Wajib dipetakan ke katalog harga.
+
+meeting_point
+
+Mepo
+
+Wajib untuk ekspor final.
+
+raincoat_option
+
+Jas Hujan (+15k)
+
+Opsional antar template; aktif pada contoh ini.
+
+proof_refs
+
+Registrasi [header multibaris]
+
+Petakan URL berkas, bukan teks tarif sebagai pembayaran.
+
+contact_phone
+
+No WhatsApp
+
+Opsional untuk MVP; simpan sebagai teks.
+
+amount / paid_at
+
+Tidak tersedia
+
+Input pengguna; dapat dipetakan jika template lain memilikinya.
+
+Mapping otomatis adalah saran berdasarkan alias header dan bentuk nilai. Pengguna mengonfirmasi mapping awal. Header “Registrasi” yang memuat tarif/rekening tidak harus bernama “Bukti Transfer”. Aplikasi menyimpan header lengkap, konfigurasi mapping, dan versi mapping tanpa menampilkan rekening pada layar yang tidak memerlukannya.
+
+INT-03 — Validasi koneksi
+
+URL salah, akun tanpa izin, tab hilang, header ganda, atau field wajib tidak ditemukan menghasilkan pesan spesifik dan tindakan perbaikan. Preview menampilkan jumlah respons, contoh nilai, dan anomali. Koneksi berhasil hanya setelah pembacaan nyata berhasil. Spreadsheet tidak perlu dibuat publik. Menghubungkan sumber yang sama ke trip lain dalam tenant yang sama ditolak pada MVP agar respons tidak tertagih dua kali.
+
+Sinkronisasi dan integritas sumber
+
+SYN-01 — Sinkronisasi yang terlihat statusnya
+
+Sistem menyediakan tombol Sinkronkan sekarang, waktu sukses terakhir, status proses, serta ringkasan baris baru/berubah/bermasalah. Usulan polling: setiap 5 menit untuk trip aktif; trip arsip disinkronkan manual. Antrean membatasi pekerjaan per sumber dan membagikan kapasitas antar tenant. Dashboard membaca database aplikasi, bukan memanggil Sheets pada setiap pembukaan tabel.
+
+Kuota standar baca Sheets adalah 300 permintaan/menit/proyek dan 60/menit/pengguna/proyek. Respons 429 perlu ditangani dengan exponential backoff. Interval polling di atas merupakan keputusan produk yang harus diuji pada jumlah koneksi nyata. Google: usage limits.
+
+SYN-02 — ID internal dan rekonsiliasi
+
+Setiap respons mendapat booking_id internal. Simpan spreadsheet_id, sheet_id, lokasi baris terakhir, timestamp asli, fingerprint nilai, dan snapshot sumber. Nomor baris bukan identitas permanen. Respons yang sama dan belum berubah harus dipetakan ke booking yang sama saat sinkron ulang.
+
+Untuk sumber tanpa ID respons stabil, pencocokan menggunakan kombinasi nilai sumber dan riwayat snapshot. Baris yang identik, berubah sekaligus, terurut ulang, atau bertabrakan masuk antrean Perlu rekonsiliasi jika identitas tidak pasti. Pengguna memilih “respons baru”, “perbarui booking”, atau “duplikat”; keputusan dicatat. Tidak ada jaminan pencocokan sempurna hanya dari nomor baris/fingerprint.
+
+Google menyediakan developer metadata yang dapat mengikuti baris, tetapi pembuatannya memerlukan operasi tulis. Karena MVP tidak menulis sumber, opsi ini bukan prasyarat MVP. Google: developer metadata.
+
+SYN-03 — Lindungi perubahan lokal
+
+Perubahan nama/MEPO di sumber dapat menjadi usulan pembaruan; koreksi lokal yang sudah dibuat tidak ditimpa diam-diam.
+
+Perubahan fasilitas, jumlah orang, atau harga setelah verifikasi memerlukan review dampak tagihan sebelum diterapkan.
+
+Baris hilang ditandai “Tidak ditemukan di sumber”. Peserta, pembayaran, dan ledger tidak dihapus otomatis.
+
+Mapping hilang atau ambigu menghentikan impor yang terdampak. Data baik dari snapshot terakhir tetap tersedia dengan label belum mutakhir.
+
+Token dicabut atau Google gagal: tampilkan penyebab, waktu terakhir berhasil, dan tombol hubungkan ulang. Ekspor dari snapshot lama meminta konfirmasi pengguna dan mencantumkan waktu snapshot.
+
+Kriteria: menjalankan sinkronisasi berulang pada sumber yang sama tidak menambah booking, peserta, atau transaksi. Perubahan data dan hasil rekonsiliasi dapat ditelusuri ke snapshot asal.
+
+Normalisasi booking dan peserta
+
+PAR-01 — Satu respons dapat berisi banyak orang
+
+Booking merepresentasikan satu pendaftaran; peserta merepresentasikan satu orang yang perlu nomor absensi. Split nama terjadi pada lapisan peserta. Bukti transfer, timestamp, dan kontak pemesan tetap terhubung pada booking, sehingga tiga nama tidak otomatis menjadi tiga transfer.
+
+PAR-02 — Split dengan preview
+
+Pemisah awal yang didukung: tanda +, koma, dan baris baru. Sistem memangkas spasi tepi serta token kosong, mempertahankan urutan dan ejaan nama, lalu menampilkan hasil split. Karakter titik, tanda hubung, dan apostrof tidak menjadi pemisah. Koma pada nama/gelar, misalnya “Raka, S.T.”, ditandai untuk review dan bisa digabung kembali.
+
+Input/skenario
+
+Hasil yang diharapkan
+
+Adi Nugroho + Antares + Zanki
+
+Tiga peserta terkait satu booking.
+
+“  Adi  + + Antares ”
+
+Dua kandidat; peringatan token kosong.
+
+“Raka, S.T.”
+
+Preview ambigu; pengguna dapat menetapkan satu nama.
+
+Dua respons dengan nama sama
+
+Tetap dua booking sampai pengguna memastikan duplikasi.
+
+PAR-03 — Pewarisan dan koreksi
+
+Fasilitas dan MEPO diwariskan sebagai nilai awal ke seluruh peserta pada booking, lalu ditampilkan untuk konfirmasi jika booking berisi lebih dari satu orang. Pengguna dapat memperbaiki per peserta dengan alasan. Riwayat usia, penyakit, dan nomor darurat pada satu respons tidak otomatis diatribusikan ke semua orang sebagai fakta individual.
+
+Add-on pada booking majemuk harus memiliki kuantitas yang disepakati. Satu nilai “Mau” tidak membuktikan setiap anggota memesan jas hujan. Pengguna memilih jumlah dan peserta penerima. Pilihan eksplisit “tidak” menghasilkan kuantitas nol; nilai kosong tetap belum diketahui.
+
+PAR-04 — Status keikutsertaan
+
+Status peserta dipisahkan dari pembayaran: Aktif atau Dibatalkan. Semua peserta aktif masuk absensi apa pun status bayarnya. Pembatalan memerlukan alasan dan waktu; tidak otomatis menghapus pembayaran atau menghasilkan refund. Perubahan split setelah pembayaran dialokasikan wajib melalui review: alokasi lama direkonsiliasi, bukan diduplikasi ke peserta baru.
+
+Kriteria lampiran: 19 booking menghasilkan 21 peserta aktif setelah hasil split dikonfirmasi. Nomor absensi berurutan 1–21; nama dan urutannya dapat dicocokkan dengan PDF contoh. MEPO dan fasilitas tetap ditelusuri ke respons asal.
+
+Harga dinamis dan sisa tagihan
+
+PRC-01 — Katalog harga per trip
+
+Pengguna mengonfigurasi fasilitas, harga dasar, add-on, satuan kuantitas, dan opsi yang dikenali. Pada contoh, sistem boleh menyarankan Full Transport Rp175.000, Non Transport Rp110.000, dan Jas Hujan Rp15.000 dari teks header. Harga baru aktif setelah dikonfirmasi pengguna. Kata “Non Transport” tidak boleh salah cocok dengan “Full Transport” melalui pencarian substring yang longgar.
+
+Tarif contoh berlaku per orang sebagai usulan default. Harga anak, diskon, dan fasilitas campuran belum ditetapkan oleh sumber; gunakan koreksi harga individual beralasan sampai aturan bisnis disepakati. Nominal disimpan sebagai bilangan rupiah bulat, bukan float.
+
+PRC-02 — Formula
+
+Tagihan peserta = harga dasar + jumlah (harga add-on × kuantitas) + penyesuaian disetujui.
+
+Terbayar peserta = jumlah alokasi pembayaran terverifikasi aktif − alokasi yang dibalik/refund.
+
+Sisa tagihan = maks(tagihan peserta − terbayar peserta, 0). Tagihan negatif ditolak. Kelebihan dana dicatat terpisah dan tidak ditampilkan sebagai sisa negatif atau otomatis menjadi pendapatan tambahan.
+
+Skenario uji
+
+Tagihan
+
+Terbayar
+
+Sisa
+
+Full + 1 jas hujan
+
+Rp190.000
+
+Rp100.000
+
+Rp90.000
+
+Non, tanpa add-on
+
+Rp110.000
+
+Rp110.000
+
+Rp0
+
+Tiga peserta Non, tanpa add-on
+
+Rp330.000
+
+Rp300.000
+
+Rp30.000 grup
+
+PRC-03 — Ketidakpastian harus terlihat
+
+Fasilitas tidak dikenal, add-on kosong, jumlah add-on grup belum jelas, atau tarif belum dikonfirmasi membuat status Tagihan perlu ditinjau. Nominal sementara boleh ditampilkan dengan label, tetapi tidak boleh digunakan untuk menyatakan lunas atau sisa “pasti”. Setelah input lengkap, setiap peserta yang belum lunas wajib menampilkan kekurangan dalam rupiah.
+
+PRC-04 — Harga memiliki versi
+
+Simpan snapshot rincian harga pada tagihan. Mengubah harga trip hanya berlaku otomatis untuk tagihan baru. Untuk peserta lama, pengguna memilih penerapan, melihat selisih, dan memasukkan alasan. Tagihan yang sudah dibayar tidak berubah diam-diam; penyesuaian dapat membuka sisa tagihan baru tanpa membuat penerimaan kas baru.
+
+Kriteria: hasil perhitungan selalu dapat dijelaskan per komponen. Total tagihan booking sama dengan penjumlahan tagihan peserta, tanpa mengalikan lagi total booking setelah split.
+
+Verifikasi pembayaran dan tabel kerja
+
+PAY-01 — Tabel interaktif
+
+Tampilkan nama/anggota booking, fasilitas, MEPO, add-on, total tagihan, terbayar terverifikasi, sisa, status, bukti transfer, dan aksi. Sediakan pencarian nama, filter MEPO/fasilitas/status/grup, pengurutan, pagination, serta jumlah respons dan jumlah orang yang terpisah. Ringkasan terfilter harus menjelaskan cakupannya.
+
+PAY-02 — Periksa dan simpan transfer
+
+Pengguna membuka bukti, memeriksa kecocokan penerima dan transaksi, memasukkan nominal aktual, tanggal transfer, metode, serta catatan bila perlu. Tindakan Simpan DP/Belum Lunas atau Tandai Lunas menyimpan pembayaran dan alokasinya secara atomik. Tandai Lunas hanya berhasil jika sisa nol; tidak boleh sekadar mengganti label sambil menciptakan nominal pembayaran yang tidak diperiksa.
+
+Pratinjau bukti memerlukan akses berkas Drive tersendiri. Jika aplikasi tidak berhak membaca gambar, tampilkan “Akses bukti diperlukan” dan tombol membuka viewer Google. Persetujuan tetap dapat dilakukan setelah pengguna memeriksa bukti melalui viewer dan mencatat hasilnya. Keberhasilan membaca spreadsheet tidak menjamin preview bukti tersedia. Google: Drive files.
+
+PAY-03 — Status terpisah
+
+Dimensi
+
+Status
+
+Makna
+
+Bukti/pembayaran
+
+Menunggu verifikasi
+
+Nilai belum dihitung sebagai kas atau terbayar.
+
+Bukti/pembayaran
+
+Terverifikasi / Ditolak
+
+Keputusan pengguna, dengan waktu dan pelaku.
+
+Tagihan
+
+Belum Lunas — Belum bayar
+
+Terbayar terverifikasi nol; bukti pending tetap terlihat.
+
+Tagihan
+
+Belum Lunas — DP
+
+Terbayar lebih dari nol dan masih kurang.
+
+Tagihan
+
+Lunas
+
+Sisa nol setelah pembayaran sah dialokasikan.
+
+Status lunas peserta diturunkan dari nilai tagihan dan alokasi, bukan diedit tanpa transaksi. Kelebihan transfer ditandai Dana belum dialokasikan dan menunggu keputusan pengguna. Tombol penolakan wajib alasan; bukti ditolak tidak menjadi pemasukan.
+
+PAY-04 — Koreksi dan pembayaran berikutnya
+
+Satu booking dapat memiliki beberapa pembayaran dengan tanggal berbeda. Pembayaran tunai di MEPO dicatat pengguna dengan metode tunai dan tanda terima/catatan. Koreksi setelah posting dilakukan dengan pembalikan dan entri pengganti yang saling terhubung; histori tidak dihapus. Klik ganda atau dua pengguna menyetujui bersamaan tidak boleh membuat transaksi ganda.
+
+Group booking dan persetujuan massal
+
+GRP-01 — Deteksi calon grup
+
+Kelompokkan kandidat dalam trip/tenant yang sama berdasarkan URL kanonis atau Drive file ID. Jika konten dapat dibaca, hash berkas/piksel identik dapat menemukan gambar sama pada file berbeda. Simpan metode kecocokan dan status akses. Pengenalan gambar mirip setelah crop/kompresi berbeda ditunda.
+
+Kecocokan hanya memberi label Calon pembayaran bersama. Pengguna mengonfirmasi anggota dan transfer; penggunaan ulang berkas belum membuktikan pelunasan. Jika konten tidak terbaca, nyatakan bahwa pemeriksaan hanya berdasarkan URL/file ID.
+
+GRP-02 — Satu transfer, banyak alokasi
+
+Satu Payment menyimpan nominal dan tanggal transfer sekali. PaymentAllocation membagikan uang ke peserta. Jumlah alokasi maksimal sebesar payment; alokasi peserta maksimal sebesar sisa tagihannya. Tampilkan alokasi sebelumnya dan dana tersisa; kelebihan masuk kredit terpisah.
+
+Contoh uji grup
+
+Hasil
+
+A, B, C masing-masing ditagih Rp110.000; transfer Rp330.000
+
+Alokasi Rp110.000 per orang; ketiganya lunas; kas bertambah Rp330.000 sekali.
+
+Transfer Rp300.000; pengguna membagi Rp100.000 per orang
+
+Sisa Rp10.000 per orang; grup belum lunas, kekurangan Rp30.000.
+
+Transfer Rp350.000; kebutuhan Rp330.000
+
+Peserta lunas; Rp20.000 dana belum dialokasikan untuk keputusan pengguna.
+
+GRP-03 — Konfirmasi massal
+
+Dialog menampilkan anggota terpilih, tagihan masing-masing, pembayaran sebelumnya, nominal transfer, rencana alokasi, sisa sesudah alokasi, dan kelebihan dana. Tindakan Setujui & lunaskan terpilih hanya aktif jika seluruh peserta terpilih dapat dilunasi. Alokasi sebagian tetap tersedia melalui Simpan pembayaran sebagian.
+
+Komit pembayaran, alokasi, ledger, dan jejak persetujuan dilakukan dalam satu transaksi database. Jika versi data berubah sebelum simpan, tindakan ditolak dengan instruksi muat ulang. Sistem tidak melanjutkan sebagian anggota tanpa memberitahu pengguna.
+
+GRP-04 — Hindari grup semu
+
+Jangan mengelompokkan lintas trip secara otomatis. Duplikasi referensi lintas trip dalam tenant memunculkan peringatan review, bukan kas kedua. Pembayaran lintas trip dan pembagian satu transfer ke beberapa trip berada di luar MVP. Kas grup harus mengikuti satu tanggal transfer; timestamp masing-masing respons tidak membuat tanggal transfer baru.
+
+Generator PDF absensi
+
+ATT-01 — Seluruh peserta masuk daftar
+
+Ekspor Absensi lengkap memuat seluruh peserta aktif setelah split, termasuk lunas, DP, belum bayar, dan belum diverifikasi. Filter pembayaran dashboard tidak memengaruhi ekspor. Peserta dibatalkan dikecualikan dengan jumlah pengecualian ditampilkan sebelum ekspor.
+
+ATT-02 — Format baku
+
+Judul diisi pengguna, misalnya PUNCAK BESAR MALABAR VOL 12; nama penyelenggara opsional. Gunakan A4 portrait, margin memadai, tabel bergaris, header kolom berulang, dan baris tidak terbelah. Judul/nama panjang membungkus tanpa terpotong.
+
+NO
+
+NAMA
+
+MEPO
+
+BASECAMP
+
+MAKAN
+
+PULANG
+
+1
+
+Peserta A
+
+St Bandung
+
+2
+
+Peserta B
+
+Tugu Perintis Cimaung
+
+NO berurutan; NAMA dan MEPO berasal dari peserta yang dinormalisasi. BASECAMP, MAKAN, dan PULANG kosong untuk guide. Tidak ada kolom pembayaran dalam tabel baku. Nama di atas adalah ilustrasi.
+
+ATT-03 — Preview dan kelengkapan
+
+Urutan mengikuti respons lalu urutan nama. Preview menampilkan judul, jumlah peserta/belum lunas/data tidak lengkap, dan waktu snapshot. Nama kosong/ambigu serta MEPO kosong wajib diperbaiki sebelum ekspor final. Peserta bermasalah tidak dihilangkan. Draft untuk pengecekan diberi penanda data belum lengkap.
+
+Simpan trip_id, versi, waktu, pembuat, dan snapshot peserta. Perubahan menghasilkan versi baru tanpa menimpa file lama. Footer memuat versi dan waktu snapshot.
+
+ATT-04 — Mendukung penagihan di MEPO
+
+Format baku tidak menampung sisa tagihan. Karena itu draft mengusulkan Daftar sisa tagihan sebagai lampiran opsional terpisah di PDF: nama/pemesan, MEPO, tagihan, terbayar, sisa, dan kontak pemesan bila diizinkan. Grup yang belum dialokasikan jelas ditandai “Tagihan bersama” agar kekurangan tidak ditagih berulang kepada semua anggota.
+
+Kriteria lampiran: 21 baris peserta, termasuk tiga nama dari satu respons; seluruh MEPO terisi. Tidak ada peserta yang hilang karena belum lunas. Riwayat penyakit, alamat, dan gambar bukti tidak dimasukkan dalam absensi baku.
+
+Keuangan dan pencatatan penerimaan kas
+
+FIN-01 — Satu sumber transaksi
+
+Ledger kas berasal dari pembayaran yang terverifikasi, pengeluaran, dan refund. Upload bukti atau perubahan label status saja tidak menciptakan pemasukan. Saat pengguna memverifikasi pembayaran pelunasan, sistem otomatis membuat penerimaan kas dan alokasi terkait. Setiap payment memiliki paling banyak satu posting penerimaan aktif; koreksi mempertahankan tautan pembalikan.
+
+Penajaman usulan D-01: DP terverifikasi juga masuk kas ketika diterima. Saat pelunasan, hanya pembayaran tambahan yang masuk lagi; DP lama tidak diposting ulang. Laporan menyediakan filter Peserta lunas terpisah dari Semua penerimaan, sehingga kebutuhan memantau pembayaran lunas tetap terpenuhi. Jika bisnis memilih hanya memposting setelah lunas, laporan tersebut harus diberi label cakupan terbatas dan menyediakan register DP; itu bukan default usulan dokumen ini.
+
+FIN-02 — Bedakan empat waktu
+
+Field waktu
+
+Pengertian
+
+Pemakaian
+
+registered_at
+
+Timestamp pendaftaran sumber
+
+Urutan respons; kandidat tanggal pengganti.
+
+paid_at / occurred_at
+
+Tanggal uang diterima/transfer
+
+Dasar periode laporan kas.
+
+verified_at
+
+Waktu pengguna menyetujui
+
+Audit pekerjaan verifikasi.
+
+posted_at
+
+Waktu entri disimpan aplikasi
+
+Audit sistem, bukan tanggal laporan kas.
+
+Pengguna mengisi tanggal aktual dari bukti/konfirmasi transaksi. Nilai pada kolom tanggal transfer, jika ada, hanya prefill dan tetap diverifikasi. Jika tidak tersedia, aplikasi menawarkan tanggal pendaftaran dengan label Perkiraan dari pendaftaran dan membutuhkan konfirmasi pengguna. Jangan menyatakan perkiraan itu sebagai tanggal transfer terverifikasi.
+
+Untuk satu transfer grup, pilih satu tanggal aktual. Jika menggunakan fallback, pengguna memilih satu timestamp pendaftaran yang mewakili dan alasannya; aplikasi tidak memecah tanggal menurut anggota. Pembayaran susulan wajib memiliki tanggalnya sendiri. Nilai waktu tanpa zona dari spreadsheet diinterpretasikan memakai zona sumber yang dikonfirmasi, default Asia/Jakarta.
+
+FIN-03 — Contoh lintas bulan
+
+Peserta ditagih Rp190.000, DP Rp100.000 diterima 31 Agustus, sisa Rp90.000 diterima 2 September, keduanya diverifikasi 3 September. Kas Agustus Rp100.000 dan September Rp90.000. Status peserta lunas setelah alokasi kedua; total pemasukan tetap Rp190.000, bukan Rp290.000. Ini skenario uji, bukan transaksi lampiran.
+
+Perbaikan tanggal mengubah periode terkait dengan jejak perubahan dan peringatan bahwa laporan historis diperbarui. Dana lebih tetap bagian kas diterima, tetapi ditampilkan sebagai dana belum dialokasikan, bukan penjualan tambahan otomatis.
+
+Keuangan dan laporan pengeluaran
+
+FIN-04 — Pengeluaran bebas kategori
+
+Pengguna membuat kategori seperti transportasi, tiket/basecamp, konsumsi, guide, dokumentasi, dan lain-lain. Kategori adalah contoh awal yang dapat diganti. Catatan pengeluaran memuat tanggal transaksi, nominal positif, kategori, trip atau “Umum bisnis”, metode, deskripsi, pembuat, dan bukti opsional. Pengeluaran belum dibayar tidak masuk arus kas; pencatatan utang/tagihan pemasok bukan MVP.
+
+Kategori yang pernah digunakan dapat dinonaktifkan, tetapi riwayatnya tetap tersedia. Koreksi nominal atau tanggal dicatat; entri yang sudah terposting tidak dihapus tanpa jejak. Refund adalah kas keluar yang terhubung ke payment, bukan pengeluaran operasional biasa. Pembatalan peserta tidak otomatis berarti seluruh uang dikembalikan; pengguna menetapkan nominal dan alasan.
+
+FIN-05 — Filter dapat digabung
+
+Filter
+
+Definisi MVP
+
+Per trip
+
+Pilih satu trip atau Semua trip; gunakan trip_id transaksi.
+
+Per minggu
+
+Senin 00.00 sampai Senin berikutnya, Asia/Jakarta.
+
+Per bulan
+
+Awal bulan sampai awal bulan berikutnya.
+
+Per tahun
+
+1 Januari sampai 1 Januari tahun berikutnya.
+
+Rentang khusus
+
+Usulan pelengkap; tanggal mulai–akhir dengan zona terlihat.
+
+Filter trip dan periode bekerja bersama. Secara internal gunakan batas awal inklusif dan batas akhir eksklusif agar transaksi tengah malam tidak dihitung dua kali. Transaksi “Umum bisnis” muncul pada laporan bisnis, tidak dibagi otomatis ke trip. Tanggal keberangkatan tidak menggantikan tanggal kas.
+
+FIN-06 — Ringkasan dan rincian yang konsisten
+
+Tampilkan pemasukan terverifikasi, pengeluaran dibayar, refund, arus kas bersih, saldo awal tercatat, dan saldo akhir tercatat. Arus kas bersih = pemasukan − pengeluaran − refund. Saldo akhir = saldo awal + arus kas bersih. Saldo awal berasal dari saldo awal yang disetujui dan mutasi sebelum periode; tampilkan “saldo awal belum ditetapkan” jika belum ada.
+
+Total tagihan, sisa piutang peserta, dan dana belum dialokasikan ditampilkan terpisah; ketiganya bukan tambahan kas. Surplus kas trip tidak diberi label laba bersih akuntansi. Kartu ringkasan dan tabel rincian memakai filter serta basis tanggal yang sama. Ekspor CSV laporan merupakan usulan pelengkap MVP; filter aktif dan transaksi bertanggal perkiraan harus ikut ditandai.
+
+Kriteria: total rincian sama dengan kartu ringkasan; periode bersebelahan tidak tumpang tindih. Refund parsial mengurangi kas sebesar nominal refund sekali dan memperbarui alokasi/status peserta sesuai keputusan pembatalan atau koreksi.
+
+Model data dan rancangan sistem
+
+Struktur konseptual usulan
+
+Entitas
+
+Field/relasi penting
+
+Tenant, User, UserMembership
+
+tenant_id, user_id, status akun/keanggotaan; akses setara dalam tenant.
+
+Trip
+
+tenant_id, judul, tanggal, zona, status, versi katalog harga.
+
+SourceConnection, SyncRun
+
+spreadsheet_id, sheet_id, mapping_version, last_success_at, hasil sinkron.
+
+Booking, SourceSnapshot
+
+trip_id, source locator, raw_name, registered_at, fingerprint, versi sumber.
+
+Participant
+
+booking_id, nama, MEPO, fasilitas, status aktif/batal, versi koreksi.
+
+Charge, ChargeLine
+
+participant_id, harga snapshot, kuantitas, penyesuaian, total.
+
+Evidence, Payment
+
+file_id/URL/hash, nominal, metode, paid_at, date_source, verified_at, status.
+
+PaymentAllocation
+
+payment_id, participant_id, nominal; banyak alokasi untuk satu transfer.
+
+Expense, Category, Refund
+
+nominal, tanggal, trip/umum, bukti, refund terkait payment.
+
+CashEntry, AuditEvent
+
+sumber transaksi, arah, nominal, occurred_at, pembalikan, pelaku, alasan.
+
+AttendanceExport
+
+trip_id, snapshot/version, pembuat, waktu, lokasi berkas, cakupan.
+
+Relasi dan batas integritas
+
+UserMembership menghubungkan akun pengguna aktif dengan ruang kerja bisnis tanpa atribut tingkat akses. Tenant memiliki banyak trip, booking, dan peserta secara berjenjang. Payment memiliki banyak alokasi peserta dalam satu trip; peserta dapat menerima beberapa payment. Evidence mendukung payment. Satu payment dapat memiliki beberapa bukti; penggunaan ulang file memerlukan review.
+
+Ledger memakai kunci unik Payment/Expense/Refund. Alokasi, sisa, dan dana belum dialokasikan harus cocok dengan payment. Semua penulisan memeriksa tenant_id dan versi. Uang memakai rupiah bulat; waktu menyimpan zona asal dan ditampilkan dalam zona trip.
+
+Komponen aplikasi
+
+Frontend mengakses API backend untuk otorisasi, tagihan, pembayaran, dan laporan. Worker menyinkronkan Google dan membuat PDF melalui antrean. Database relasional menyimpan operasional/ledger; penyimpanan privat menampung ekspor dan cache bukti yang diizinkan.
+
+Sumber kebenaran: Google menyimpan respons asli. Aplikasi menyimpan normalisasi, harga, pembayaran, pengeluaran, dan audit; tanpa penulisan balik pada MVP. Stack/hosting ditentukan setelah spike; sistem belum dibangun.
+
+Kebutuhan kualitas dan keamanan
+
+NFR-01 — Target performa usulan
+
+Target berikut adalah kriteria uji awal, bukan kemampuan API yang dijamin atau hasil benchmark. Dataset uji: sampai 5.000 peserta/trip, 10 pengguna bersamaan per tenant, dan jaringan normal. Target perlu dikalibrasi sebelum komitmen layanan.
+
+Operasi
+
+Target penerimaan awal
+
+Tabel/search/filter dari database
+
+p95 ≤3 detik untuk halaman 50 baris.
+
+Simpan verifikasi satu pembayaran
+
+p95 ≤2 detik setelah permintaan sampai backend.
+
+Sinkronisasi ≤5.000 respons
+
+≤60 detik setelah job mulai, jika Google tersedia.
+
+Pembaruan otomatis trip aktif
+
+Target terlihat ≤10 menit; tampilkan keterlambatan nyata.
+
+PDF absensi 500 peserta
+
+≤60 detik; proses berjalan sebagai job.
+
+Integritas ledger
+
+Nol duplikasi pada retry dan persetujuan bersamaan.
+
+NFR-02 — Perlindungan data
+
+Backend memeriksa autentikasi dan keanggotaan tenant untuk setiap baca, tulis, ekspor, dan unduh. Akses fitur setara; ID/URL internal tidak memberikan akses ke tenant lain.
+
+Simpan token Google terenkripsi di server; jangan taruh token pada URL, log, atau browser storage. Putuskan koneksi ketika izin dicabut.
+
+File PDF/cache bukti bersifat privat; unduh melalui pemeriksaan akses atau tautan berumur pendek. Jangan menjadikan sumber publik untuk mengatasi kegagalan izin.
+
+Riwayat penyakit, alamat, usia, dan nomor darurat yang ada pada sumber tidak diperlukan untuk MVP pembayaran. Jangan impor ke tabel operasional secara default. Batasi raw snapshot ke field yang dibutuhkan; jangan memasukkan nilai sensitif ke log/debug.
+
+Validasi host dan file ID saat membaca tautan bukti; jangan membuat backend mengambil URL arbitrer. Batasi ukuran/tipe file dan tampilkan format tak didukung secara aman.
+
+NFR-03 — Keandalan dan operabilitas
+
+Audit menyimpan pelaku, waktu, nilai sebelum/sesudah yang relevan, dan alasan untuk tindakan finansial penting. Gunakan idempotency key, unique constraint, transaksi database, retry terbatas, dan pesan kegagalan yang dapat ditindaklanjuti. Proses gagal tidak boleh menampilkan status sukses.
+
+Usulan operasional awal: backup harian, target pemulihan data maksimal 24 jam dan pemulihan layanan maksimal 8 jam, dibuktikan lewat satu simulasi restore sebelum pilot. Penyelenggara menetapkan retensi/penghapusan data sebelum peluncuran publik. Tabel harus dapat dipakai dengan keyboard, label status tidak hanya warna, dan pesan kesalahan menyebut field serta tindakan perbaikannya.
+
+UAT: impor, peserta, dan pembayaran
+
+Uji memakai fixture Google Sheets berdasarkan workbook. Nominal dan grup duplikat memakai data sintetis. Seluruh kasus wajib lulus sebelum pilot.
+
+UAT-01 — Pemetaan header tidak seragam
+
+Diberikan header “Registrasi” multibaris. Ketika mapping disetujui. Maka 19 booking diimpor dengan bukti terpetakan benar; tarif hanya saran, tanpa payment dari teks header.
+
+UAT-02 — Akses sumber
+
+URL privat tanpa izin meminta otorisasi. Setelah akun yang tepat terhubung, preview data nyata tampil. Bukti tanpa akses menampilkan status tersendiri.
+
+UAT-03 — Split dan hitungan
+
+Data contoh menjadi 21 peserta setelah nama majemuk dipecah tiga. Split ulang tidak menduplikasi peserta. Nama sama tidak digabung otomatis.
+
+UAT-04 — Add-on belum diketahui
+
+Jas hujan kosong meminta review dan menghalangi pelunasan sebelum nilainya jelas. Pada booking tiga orang dengan “Mau”, kuantitas add-on wajib dikonfirmasi.
+
+UAT-05 — Harga dan DP
+
+Full Rp175.000 + jas hujan Rp15.000 menghasilkan Rp190.000. Pembayaran terverifikasi Rp100.000 menampilkan Belum Lunas — DP, terbayar Rp100.000, sisa Rp90.000. Transfer pending/ditolak tidak mengurangi sisa.
+
+UAT-06 — Pelunasan valid
+
+Pembayaran tambahan Rp90.000 melunasi contoh di atas. Memilih Lunas tanpa nilai transfer terverifikasi yang cukup ditolak. Nominal negatif dan alokasi melebihi sisa tidak diterima.
+
+UAT-07 — Grup satu bukti
+
+Tiga tagihan Rp110.000 dan satu transfer Rp330.000 menghasilkan tiga alokasi, tiga peserta lunas, satu payment, dan satu penerimaan kas Rp330.000. Dua bentuk URL untuk Drive file yang sama masuk kandidat yang sama.
+
+UAT-08 — Grup kurang atau lebih
+
+Transfer Rp300.000 dengan alokasi Rp100.000 per orang menyisakan Rp30.000 grup dan tidak dapat memakai aksi lunaskan semua. Transfer Rp350.000 melunasi Rp330.000 dan menampilkan dana belum dialokasikan Rp20.000.
+
+UAT-09 — Bukti sama, transaksi belum pasti
+
+Kesamaan URL/gambar hanya membuat kandidat. Tidak ada status atau kas berubah sebelum pengguna mengonfirmasi anggota, nominal, tanggal, dan alokasi. Hash yang tidak dapat dihitung ditandai belum diperiksa, bukan dianggap gambar berbeda.
+
+UAT absensi keuangan dan kegagalan
+
+UAT-10 — Absensi lengkap
+
+Dengan campuran peserta lunas, DP, dan belum bayar, ekspor utama tetap berisi semua 21 peserta aktif. Filter “Lunas” pada dashboard tidak mengurangi isi. Kolom baku tetap enam; NO/NAMA/MEPO terisi, tiga kolom pengecekan lapangan kosong.
+
+UAT-11 — PDF multipage dan data kurang
+
+Pada 500 peserta dan nama/MEPO panjang, teks tidak terpotong, baris tidak terbelah, header tabel berulang, dan nomor tetap berurutan. Peserta dengan data belum lengkap tetap terlihat di preview; ekspor final meminta perbaikan, bukan menghilangkan orang tersebut.
+
+UAT-12 — Tanggal dan DP lintas bulan
+
+DP Rp100.000 tanggal 31 Agustus dan pelunasan Rp90.000 tanggal 2 September yang diverifikasi 3 September menghasilkan kas masing-masing bulan sesuai tanggal transaksi. Penggantian tanggal dari Timestamp ditandai perkiraan dan tercatat di audit.
+
+UAT-13 — Filter dan batas periode
+
+Transaksi Minggu 23.59 dan Senin 00.00 WIB masuk minggu berbeda. Filter trip + bulan tidak memasukkan trip lain atau pengeluaran umum. Jumlah rincian sama dengan ringkasan; saldo awal belum ditetapkan tidak diklaim sebagai saldo rekening aktual.
+
+UAT-14 — Pengeluaran dan refund
+
+Pengeluaran Rp50.000 dan refund Rp20.000 dari kas masuk Rp190.000 menghasilkan arus kas bersih Rp120.000. Refund berulang dengan request ID sama tidak mengurangi kas dua kali. Kategori dinonaktifkan tetap terbaca di laporan lama.
+
+UAT-15 — Retry dan dua pengguna
+
+Klik approve berulang, retry setelah timeout, dan dua pengguna menyimpan pada versi yang sama hanya menghasilkan satu hasil pembayaran. Pengguna kedua mendapat hasil transaksi yang sama atau konflik versi; ledger dan alokasi tidak terpecah.
+
+UAT-16 — Sumber berubah
+
+Sinkron ulang, pengurutan baris, penghapusan respons, perubahan header, dan perubahan fasilitas diuji. Identitas ambigu masuk review; pembayaran dan koreksi lokal bertahan. Perubahan harga peserta lama tidak diterapkan tanpa peninjauan selisih.
+
+UAT-17 — Google gagal dan ekspor versi lama
+
+429, token dicabut, dan jaringan gagal menampilkan status serta last successful sync. Tidak ada data dianggap kosong atau sukses baru. Ekspor snapshot lama memiliki waktu/versi dan konfirmasi jelas.
+
+UAT-18 — Isolasi dan pemulihan
+
+Seluruh pengguna dapat mengakses menu dan fitur yang sama setelah login tanpa pemilihan jenis pengguna. Akses ke data/PDF tenant lain melalui ID langsung ditolak. Backup dipulihkan ke lingkungan uji; saldo/payment/absensi tetap konsisten.
+
+Pelaksanaan, metrik, dan keputusan
+
+Urutan rilis berbasis gerbang
+
+Tahap A — Validasi integrasi. Uji akun pemilik Form: spreadsheet privat, akses bukti lama/baru, mapping, serta sinkron saat kolom/baris berubah. Konfirmasikan katalog harga dan aturan DP/tanggal. Keluaran: keputusan akses dan fixture uji yang disepakati.
+
+Tahap B — MVP operasional. Bangun login/ruang kerja, trip, impor, split, harga, pembayaran/grup, lalu PDF. Jalankan UAT-01 sampai UAT-11 dan kasus integritas terkait. Keluaran: pengguna menyelesaikan satu siklus pendaftaran sampai absensi.
+
+Tahap C — Keuangan dan pilot. Lengkapi kas, pengeluaran, refund, filter, audit, dan pemulihan. Jalankan seluruh UAT serta rekonsiliasi dengan catatan manual pada satu trip, kemudian dua trip dengan periode berbeda. Durasi dan biaya disusun setelah spike; jadwal belum ditetapkan.
+
+Ukuran keberhasilan usulan
+
+Metrik
+
+Target pilot
+
+Cara mengukur
+
+Kelengkapan absensi
+
+100% peserta aktif
+
+Bandingkan snapshot peserta dan PDF.
+
+Duplikasi kas
+
+0 kejadian
+
+Rekonsiliasi payment, alokasi, ledger.
+
+Sisa tagihan valid
+
+100% kasus UAT
+
+Bandingkan perhitungan manual dan aplikasi.
+
+Waktu menyiapkan absensi
+
+Turun ≥70%
+
+Bandingkan median tugas manual vs aplikasi.
+
+Keberhasilan tugas
+
+≥90% tanpa bantuan developer
+
+Skenario impor, approve, ekspor pada pilot.
+
+Baseline waktu dan beban pengguna belum diukur. Event minimum: sync_completed/failed, mapping_confirmed, split_corrected, payment_verified, group_approved, attendance_exported, expense_created, report_filtered. Event tidak memuat bukti, telepon, atau riwayat penyakit.
+
+Keputusan terbuka sebelum implementasi
+
+D-01 / Penyelenggara: setujui kas mencakup DP terverifikasi dan tanggal transfer aktual; fallback Timestamp berlabel. D-02 / Penyelenggara: harga per orang, aturan anak, add-on pada booking majemuk, dan penyesuaian harga. D-03 / Engineering: hasil uji izin preview bukti; akses file baru belum boleh diasumsikan. D-04 / Penyelenggara: setujui lampiran sisa tagihan agar guide dapat menagih tanpa mengubah tabel baku. D-05 / Penyelenggara: aturan refund, retensi data, serta akun Google untuk koneksi.
+
+Risiko utama adalah atribusi respons setelah edit, bukti grup yang keliru, tanggal kas perkiraan, dan izin bukti privat. Masing-masing ditangani lewat antrean review, alokasi eksplisit, provenance tanggal, serta fallback viewer. Pilot tidak diluluskan jika ada kas ganda, peserta hilang, atau akses lintas tenant.
+
+Prioritas 2: WhatsApp dan paket guide
+
+WA-01 — Validasi peserta yang realistis
+
+Pisahkan Format nomor valid, Undangan dikirim, dan Bergabung terkonfirmasi. Normalisasi nomor Indonesia menjadi format internasional sebagai pemeriksaan lokal; nomor dengan format benar belum membuktikan akun WhatsApp aktif atau keanggotaan grup. Satu nomor pemesan dapat mewakili beberapa peserta.
+
+Otomatisasi pengecekan sudah diundang/bergabung tetap menjadi tujuan pengembangan, dengan gerbang kelayakan API. Cuplikan dokumentasi resmi Meta menunjukkan Groups API tersedia, mensyaratkan Official Business Account, dan membatasi grup hingga 8 peserta. Akses untuk memeriksa grup biasa yang sudah ada belum terverifikasi dalam riset ini. Untuk trip contoh berisi 21 orang, jangan mengasumsikan API grup tersebut langsung sesuai. Meta: Groups API, Meta: group management.
+
+Fallback produk adalah pelacakan undangan dan konfirmasi masuk grup oleh pengguna. Pengecekan otomatis baru dijanjikan setelah uji akun, jenis grup, batas peserta, dan event keanggotaan berhasil. Jangan menafsirkan kegagalan kirim sebagai bukti pasti nomor tidak terdaftar.
+
+WA-02 — Kirim paket ke guide
+
+Pengguna memilih guide, memeriksa nomor dan izin menerima pesan, lalu meninjau paket: PDF absensi versi terbaru, tautan spreadsheet peserta view-only, dan tautan folder dokumentasi. Pengiriman awal dirancang sebagai pesan individual ke guide. Meta mendokumentasikan document messages; dukungan PDF terlihat pada hasil pencarian resmi dan perlu diuji dengan akun bisnis. Meta: document messages.
+
+Kebijakan WhatsApp meminta nomor penerima dan opt-in, menghormati opt-out, serta template disetujui untuk pesan di luar jendela 24 jam sejak pesan pengguna terakhir. Rancang template paket guide dan status pengiriman sesuai kebijakan ini. WhatsApp: Business Messaging Policy.
+
+WA-03 — Izin Google tetap terpisah
+
+Keberhasilan pengiriman pesan tidak menjamin guide dapat membuka file. Verifikasi izin baca spreadsheet dan kemampuan unggah folder secara terpisah. Jika spreadsheet sumber memuat data yang tidak diperlukan guide, usulan default adalah salinan/view peserta terbatas yang dibagikan view-only kepada guide. Jangan mengubah sumber menjadi publik. Simpan penerima, versi PDF, waktu, provider message ID, serta hasil kirim; retry tidak boleh membroadcast ulang tanpa kendali.
+
+Batas riset: halaman developer Meta tidak terbuka penuh pada sesi ini; beberapa temuan memakai cuplikan resmi terindeks. Kebijakan pesan dapat dibaca langsung. Verifikasi ulang dokumentasi dan kelayakan akun sebelum masuk komitmen Prioritas 2.
+
+Catatan sumber dan batas dokumen
+
+Lampiran pengguna
+
+Puncak Besar Malabar Vol 12 (Responses).xlsx. Tab Form Responses 1, baris 1–20, 11 kolom. Dibaca 8 September 2026. Digunakan untuk pemetaan, jumlah respons/peserta, opsi fasilitas/add-on, dan gap pembayaran.
+
+ABSENSI Puncak Besar Malabar. Vol 12.pdf. Halaman 1, A4 portrait. Dibaca dan ditinjau visual 8 September 2026. Digunakan untuk format kolom, judul, urutan, dan 21 nomor absen. Lampiran sumber tidak disisipkan ke dalam PRD.
+
+Dokumentasi primer
+
+Google for Developers — Choose Google Sheets API scopes. Diperbarui 22 Juli 2026; diakses 8 September 2026. Dasar batas scope dan otorisasi.
+
+Google for Developers — Choose Google Drive API scopes. Diperbarui 22 Juli 2026; diakses 8 September 2026. Dasar akses per file dan Google Picker.
+
+Google for Developers — Usage limits, Google Sheets. Diperbarui 31 Juli 2026; diakses 8 September 2026. Dasar kuota pembacaan dan penanganan 429.
+
+Google for Developers — Read, write, and search metadata. Diperbarui 22 Juli 2026; diakses 8 September 2026. Dasar opsi identitas metadata yang membutuhkan penulisan.
+
+Google for Developers — REST Resource: files. Diperbarui 14 Juli 2026; diakses 8 September 2026. Dasar akses thumbnail privat dan viewer berkas.
+
+Meta for Developers — Groups API, Group management, dan Document messages. Tanggal pembaruan tidak terlihat; diakses 8 September 2026 melalui cuplikan pencarian resmi. Temuan teknis bersifat indikatif sampai halaman lengkap dan akun nyata diuji.
+
+WhatsApp — Business Messaging Policy. Tanggal pembaruan tidak terlihat; diakses 8 September 2026. Dasar opt-in, opt-out, dan jendela/template pesan.
+
+Cara membaca spesifikasi
+
+Fakta lampiran dan batas API diberi sumber. Formula, rancangan data, polling, performa, metrik, dan urutan rilis adalah usulan desain untuk review, bukan klaim bahwa produk telah diuji. Riset tidak mencakup validasi transaksi bank, biaya implementasi, pemeriksaan hukum, atau benchmark kompetitor karena tidak diperlukan untuk merumuskan MVP yang diminta. Gap yang tersisa dicatat sebagai keputusan dan spike implementasi.
