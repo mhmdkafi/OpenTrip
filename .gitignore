@@ -11,6 +11,7 @@
 
 # Test and build artifacts
 /coverage/
+/artifacts/
 *.tsbuildinfo
 *.log
 

@@ -66,6 +66,7 @@ export function parseGoogleSheetsUrl(input: string): GoogleSheetUrl {
     throw new GoogleApiError("URL spreadsheet tidak valid.", 400, "invalid_sheet_url");
   }
 
+  if (url.protocol !== "https:" || url.hostname !== "docs.google.com") throw new GoogleApiError("Gunakan URL Google Sheets resmi (https://docs.google.com).", 400, "invalid_host");
   const spreadsheetId = url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1];
   if (!spreadsheetId) throw new GoogleApiError("URL spreadsheet tidak berisi spreadsheet ID.", 400, "missing_spreadsheet_id");
 
@@ -84,7 +85,9 @@ export function parseGoogleDriveUrl(input: string): GoogleDriveUrl {
     throw new GoogleApiError("URL Drive tidak valid.", 400, "invalid_drive_url");
   }
 
+  if (url.protocol !== "https:" || !["drive.google.com", "docs.google.com"].includes(url.hostname)) throw new GoogleApiError("Gunakan URL Google Drive resmi.", 400, "invalid_host");
   const fileId = url.pathname.match(/\/file\/d\/([a-zA-Z0-9-_]+)/)?.[1] ?? url.searchParams.get("id");
+  if (fileId && !/^[a-zA-Z0-9_-]+$/.test(fileId)) throw new GoogleApiError("File ID tidak valid.", 400, "invalid_file_id");
   if (!fileId) throw new GoogleApiError("URL Drive tidak berisi file ID.", 400, "missing_file_id");
   return { fileId };
 }
@@ -98,7 +101,7 @@ export function suggestHeaderMappings(headers: string[], sampleRows: string[][] 
     let reason = index >= 0 ? "alias header cocok" : "tidak ditemukan";
 
     if (index < 0) {
-      const partial = normalizedHeaders.findIndex((header) => aliases.some((alias) => header.includes(alias) || alias.includes(header)));
+      const partial = normalizedHeaders.findIndex((header) => header.length > 0 && aliases.some((alias) => header.includes(alias) || alias.includes(header)));
       if (partial >= 0) {
         index = partial;
         confidence = 0.7;
@@ -148,14 +151,13 @@ export async function verifyDriveEvidence(input: string, accessToken: string) {
 
 async function googleFetch<T>(url: string, accessToken: string, attempt = 0): Promise<T> {
   await throttle();
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (response.status === 429 && attempt < 4) {
     await sleep(2 ** attempt * 500);
     return googleFetch<T>(url, accessToken, attempt + 1);
   }
   if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new GoogleApiError(resolveGoogleErrorMessage(response.status), response.status, body || "google_request_failed");
+    throw new GoogleApiError(resolveGoogleErrorMessage(response.status), response.status, "google_request_failed");
   }
   return response.json() as Promise<T>;
 }

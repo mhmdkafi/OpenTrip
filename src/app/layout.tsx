@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import TenantProvider from "@/lib/auth/tenant-provider";
 
 export const metadata: Metadata = {
-  title: "OpenTrip Dash",
+  title: "TripDash",
   description: "Dashboard manajemen operasional dan keuangan open trip",
 };
 

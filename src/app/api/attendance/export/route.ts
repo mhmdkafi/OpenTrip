@@ -1,32 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { renderAttendanceTemplate } from "@/lib/pdf/attendance-template";
 import { generatePdf } from "@/lib/pdf/generator";
-import { renderUnpaidAttachment } from "@/lib/pdf/unpaid-attachment";
-import { activeParticipants, AttendanceDocument, AttendanceParticipant } from "@/lib/pdf/types";
-
-export async function POST(req: NextRequest) {
+import { apiError, loadWorkspace, requireWorkspace } from "@/lib/workspace/server";
+import { DomainError } from "@/lib/workspace/commands";
+export const runtime = "nodejs";
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json() as { tripId?: string; includeUnpaidAttachment?: boolean; document?: AttendanceDocument; participants?: AttendanceParticipant[] };
-    const document = body.document ?? {
-      tripId: body.tripId ?? "export",
-      title: "Absensi OpenTrip",
-      organizer: "OpenTrip Dash",
-      version: 1,
-      snapshotAt: new Date(),
-    };
-    const participants = activeParticipants(body.participants ?? []);
-    const attendanceHtml = renderAttendanceTemplate({ ...document, snapshotAt: new Date(document.snapshotAt) }, participants);
-    const html = body.includeUnpaidAttachment ? `${attendanceHtml}<div style="break-before:page"></div>${renderUnpaidAttachment(document, participants)}` : attendanceHtml;
-    const pdfBuffer = await generatePdf(html);
-
-    return new NextResponse(new Uint8Array(pdfBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": pdfBuffer.subarray(0, 4).toString() === "%PDF" ? "application/pdf" : "text/html; charset=utf-8",
-        "Content-Disposition": `attachment; filename="attendance-${document.tripId}.pdf"`,
-      },
-    });
-  } catch {
-    return NextResponse.json({ error: "Failed to export PDF" }, { status: 500 });
-  }
+    const auth = await requireWorkspace();
+    const { tripId } = z.object({ tripId: z.string().uuid() }).parse(await request.json());
+    const { state, revision } = await loadWorkspace(auth.tenantId);
+    const trip = state.trips.find(t=>t.id===tripId);
+    if (!trip) throw new DomainError("Trip tidak ditemukan.",404);
+    const people = state.participants.filter(p=>p.tripId===tripId&&p.status==="active");
+    if (!people.length) throw new DomainError("Belum ada peserta aktif.");
+    if (people.some(p=>!p.name.trim()||!p.meetingPoint.trim())) throw new DomainError("Lengkapi nama dan MEPO seluruh peserta sebelum ekspor.");
+    const document = { tripId, title: `Absensi ${trip.title}`, organizer: "TripDash", version: revision, snapshotAt: new Date() };
+    const html = renderAttendanceTemplate(document,people.map(p=>({id:p.id,bookingId:p.bookingId,name:p.name,meetingPoint:p.meetingPoint,status:p.status})));
+    const pdf = await generatePdf(html);
+    return new NextResponse(new Uint8Array(pdf),{headers:{"Content-Type":"application/pdf","Content-Disposition":`attachment; filename="absensi-${tripId}.pdf"`,"Cache-Control":"private, no-store"}});
+  } catch(e) { return apiError(e); }
 }

@@ -4,6 +4,7 @@ import React, { createContext, useContext, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthSession } from "@/types/auth";
+import { login as loginAction, logout as logoutAction } from "@/actions/auth";
 
 interface AuthContextType {
   session: AuthSession | null;
@@ -26,12 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const { data: { session: authSession } } = await supabase.auth.getSession();
-      
+
       if (!authSession) {
         setSession(null);
         return;
       }
-      
+
       const response = await fetch("/api/auth/session");
       if (response.ok) {
         const data = await response.json();
@@ -74,14 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
+      const result = await loginAction({ email, password });
+      if (!result.success) return result;
 
       await loadSession();
       return { success: true };
@@ -93,9 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
+      const result = await logoutAction();
+      if (!result.success) throw new Error(result.error);
+
       setSession(null);
       router.push("/login");
     } catch (error) {
@@ -117,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await loadSession();
       router.refresh();
-      
+
       return { success: true };
     } catch (error) {
       console.error("Switch tenant error:", error);

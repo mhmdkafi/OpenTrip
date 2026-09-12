@@ -7,8 +7,6 @@ export async function generatePdf(html: string): Promise<Buffer> {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle", timeout: 30_000 });
     return Buffer.from(await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true }));
-  } catch {
-    return Buffer.from(html, "utf8");
   } finally {
     await browser?.close();
   }

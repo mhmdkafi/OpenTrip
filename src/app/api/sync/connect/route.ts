@@ -1,38 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseGoogleSheetsUrl, suggestHeaderMappings, fetchSheetMetadata, fetchSheetRows, GoogleApiError } from "@/lib/google";
-
-const connections = new Map<string, unknown>();
-
+import { z } from "zod";
+import { fetchSheetMetadata, fetchSheetRows, parseGoogleSheetsUrl, suggestHeaderMappings } from "@/lib/google";
+import { apiError, loadWorkspace, requireWorkspace } from "@/lib/workspace/server";
+import { googleAccessToken } from "@/lib/workspace/google-auth";
+import { DomainError } from "@/lib/workspace/commands";
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { tripId?: string; spreadsheetUrl?: string; accessToken?: string; sheetId?: number; headerRow?: number };
-    if (!body.tripId) return NextResponse.json({ error: "tripId wajib diisi." }, { status: 400 });
-    if (!body.spreadsheetUrl) return NextResponse.json({ error: "spreadsheetUrl wajib diisi." }, { status: 400 });
-
+    const auth = await requireWorkspace();
+    const body = z.object({ tripId: z.string().uuid(), spreadsheetUrl: z.string().max(1000), sheetId: z.number().int().nonnegative().optional(), headerRow: z.number().int().min(1).max(100).default(1) }).parse(await request.json());
+    const { state } = await loadWorkspace(auth.tenantId);
+    if (!state.trips.some(t => t.id === body.tripId)) throw new DomainError("Trip tidak ditemukan.", 404);
     const parsed = parseGoogleSheetsUrl(body.spreadsheetUrl);
-    const accessToken = body.accessToken ?? process.env.GOOGLE_ACCESS_TOKEN;
-    if (!accessToken) return NextResponse.json({ error: "Token Google wajib dikirim atau diset di GOOGLE_ACCESS_TOKEN." }, { status: 400 });
-
-    const metadata = await fetchSheetMetadata(parsed.spreadsheetId, accessToken);
-    const targetSheetId = body.sheetId ?? parsed.sheetId ?? metadata.sheets[0]?.sheetId;
-    const sheet = metadata.sheets.find((item) => item.sheetId === targetSheetId);
-    if (!sheet) return NextResponse.json({ error: "Tab spreadsheet tidak ditemukan." }, { status: 404 });
-
-    const rows = await fetchSheetRows(parsed.spreadsheetId, sheet.title, accessToken, body.headerRow ?? 1, 25);
+    const token = await googleAccessToken(auth.tenantId);
+    const metadata = await fetchSheetMetadata(parsed.spreadsheetId, token);
+    const sheet = metadata.sheets.find(s => s.sheetId === (body.sheetId ?? parsed.sheetId ?? metadata.sheets[0]?.sheetId));
+    if (!sheet) throw new DomainError("Tab tidak ditemukan.");
+    const rows = await fetchSheetRows(parsed.spreadsheetId, sheet.title, token, body.headerRow, 25);
     const mapping = suggestHeaderMappings(rows.headers, rows.rows);
-    const missing = mapping.filter((item) => item.required && item.index === null);
-    const connectionId = `${body.tripId}:${parsed.spreadsheetId}:${sheet.sheetId}`;
-    if ([...connections.keys()].some((key) => key !== connectionId && key.endsWith(`:${parsed.spreadsheetId}:${sheet.sheetId}`))) {
-      return NextResponse.json({ error: "Sumber yang sama sudah terhubung ke trip lain." }, { status: 409 });
-    }
-
-    const payload = { connectionId, tripId: body.tripId, spreadsheetId: parsed.spreadsheetId, sheetId: sheet.sheetId, sheetTitle: sheet.title, headerRow: body.headerRow ?? 1, mapping, preview: rows.rows.slice(0, 5), anomalies: missing.map((item) => `Field wajib ${item.field} belum terpetakan.`) };
-    connections.set(connectionId, payload);
-    return NextResponse.json(payload, { status: missing.length ? 422 : 200 });
-  } catch (error) {
-    if (error instanceof GoogleApiError) return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
-    return NextResponse.json({ error: "Koneksi gagal divalidasi." }, { status: 500 });
-  }
+    return NextResponse.json({ spreadsheetId: parsed.spreadsheetId, sheetId: sheet.sheetId, sheetTitle: sheet.title, sheets: metadata.sheets, headerRow: body.headerRow, headers: rows.headers, mapping, preview: rows.rows.slice(0, 3).map(r => Object.fromEntries(mapping.filter(m => m.index !== null).map(m => [m.field, r[m.index!] ?? ""]))) });
+  } catch (e) { return apiError(e); }
 }
-
-export { connections };

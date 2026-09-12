@@ -1,67 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { generateCashFlowReport, filterByTrip, calculatePeriodBoundaries, createCustomPeriod } from "@/lib/report";
 import { z } from "zod";
-import type { FilterType } from "@/lib/report";
-
-const reportQuerySchema = z.object({
-  tripId: z.string().optional(),
-  filterType: z.enum(["week", "month", "year", "custom"]),
-  referenceDate: z.string().datetime().optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-});
-
+import { apiError, requireWorkspace, loadWorkspace } from "@/lib/workspace/server";
+import { periodBounds } from "@/lib/workspace/period";
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      tripId: searchParams.get("tripId") || undefined,
-      filterType: searchParams.get("filterType") || "month",
-      referenceDate: searchParams.get("referenceDate") || undefined,
-      startDate: searchParams.get("startDate") || undefined,
-      endDate: searchParams.get("endDate") || undefined,
-    };
-
-    const validated = reportQuerySchema.parse(queryParams);
-
-    const tripId = filterByTrip(validated.tripId || "all");
-
-    let period;
-    if (validated.filterType === "custom") {
-      if (!validated.startDate || !validated.endDate) {
-        return NextResponse.json(
-          { error: "startDate and endDate required for custom period" },
-          { status: 400 }
-        );
-      }
-      period = createCustomPeriod(new Date(validated.startDate), new Date(validated.endDate));
-    } else {
-      const refDate = validated.referenceDate ? new Date(validated.referenceDate) : new Date();
-      period = calculatePeriodBoundaries(validated.filterType as FilterType, refDate);
-    }
-
-    const report = await generateCashFlowReport(tripId, period);
-
-    return NextResponse.json(report, { status: 200 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation failed", details: error.flatten().fieldErrors }, { status: 400 });
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    const auth=await requireWorkspace(); const {state}=await loadWorkspace(auth.tenantId);
+    const query=z.object({tripId:z.string().default(""),filterType:z.enum(["all","week","month","year"]).default("month"),referenceDate:z.iso.date().default(new Date().toISOString().slice(0,10))}).parse(Object.fromEntries(request.nextUrl.searchParams));
+    const [start,end]=periodBounds(query.filterType,query.referenceDate);
+    const entries=state.cash.filter(e=>(!query.tripId||query.tripId==="all"||e.tripId===query.tripId)&&Date.parse(e.occurredAt)>=start&&Date.parse(e.occurredAt)<end);
+    const income=entries.filter(e=>e.direction==="in").reduce((s,e)=>s+e.amount,0); const expenses=entries.filter(e=>e.direction==="out").reduce((s,e)=>s+e.amount,0);
+    return NextResponse.json({entries,summary:{income,expenses,net:income-expenses},timezone:"Asia/Jakarta",dateBasis:"registration"});
+  } catch(e){return apiError(e);}
 }

@@ -1,0 +1,12 @@
+export type Trip = { id: string; title: string; departureDate: string; status: "active" | "archived"; fullPrice: number; nonPrice: number; raincoatPrice: number };
+export type Booking = { id: string; tripId: string; sourceId: string; fingerprint: string; registeredAt: string; rawName: string; proof: string; phone: string };
+export type Person = { id: string; bookingId: string; tripId: string; name: string; meetingPoint: string; facility: string; raincoats: number | null; charge: number; reviewed: boolean; status: "active" | "cancelled" };
+export type Payment = { id: string; tripId: string; amount: number; method: string; notes: string; verifiedAt: string; allocations: { participantId: string; amount: number }[]; proof: string };
+export type Cash = { id: string; tripId: string; direction: "in" | "out"; amount: number; occurredAt: string; description: string; category: string; sourceId: string; dateSource: "registration" | "manual" };
+export type Inventory = { id: string; name: string; kind: "operational" | "rental"; total: number; damaged: number; loans: { id: string; tripId: string; quantity: number; returned: boolean }[] };
+export type Source = { id: string; tripId: string; spreadsheetId: string; sheetId: number; sheetTitle: string; headerRow: number; headers: string[]; mapping: Record<string, number>; lastSuccessAt: string; lastError?: string; review: string[] };
+export type Audit = { id: string; userId: string; at: string; action: string; detail: string };
+export type Workspace = { trips: Trip[]; bookings: Booking[]; participants: Person[]; payments: Payment[]; cash: Cash[]; inventory: Inventory[]; sources: Source[]; audit: Audit[]; requests: string[] };
+export const emptyWorkspace = (): Workspace => ({ trips: [], bookings: [], participants: [], payments: [], cash: [], inventory: [], sources: [], audit: [], requests: [] });
+export const paidFor = (state: Workspace, personId: string) => state.payments.reduce((sum, p) => sum + p.allocations.filter(a => a.participantId === personId).reduce((s, a) => s + a.amount, 0), 0);
+export const availableStock = (item: Inventory) => item.total - item.damaged - item.loans.filter(l => !l.returned).reduce((sum, l) => sum + l.quantity, 0);

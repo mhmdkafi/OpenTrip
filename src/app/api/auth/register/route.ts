@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
     const admin = createAdminClient();
-    
+
     const { data: { user, session }, error: signUpError } = await supabase.auth.signUp({
       email: validated.email,
       password: validated.password,
@@ -39,26 +39,30 @@ export async function POST(request: NextRequest) {
         }
       }
     });
-    
+
     if (signUpError) {
       const isEmailRateLimited =
         signUpError.status === 429 ||
         signUpError.code === "over_email_send_rate_limit" ||
         signUpError.message.toLowerCase().includes("email rate limit");
 
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         error: isEmailRateLimited
           ? "Batas pengiriman email Supabase tercapai. Periksa email konfirmasi yang sudah terkirim atau coba lagi setelah satu jam."
           : signUpError.message
       }, { status: isEmailRateLimited ? 429 : 400 });
     }
-    
+
     if (!user) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Gagal membuat user" 
+      return NextResponse.json({
+        success: false,
+        error: "Gagal membuat user"
       }, { status: 400 });
+    }
+
+    if (user.identities && user.identities.length === 0) {
+      return NextResponse.json({ success: false, error: "Email sudah terdaftar. Silakan login atau pulihkan password." }, { status: 409 });
     }
 
     const { error: profileError } = await admin
@@ -79,42 +83,42 @@ export async function POST(request: NextRequest) {
       .insert({ name: validated.tenantName })
       .select()
       .single();
-    
+
     if (tenantError) {
       console.error("Create tenant error:", tenantError);
       await admin.auth.admin.deleteUser(user.id);
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         error: "Gagal membuat tenant. Pastikan migrasi database sudah dijalankan."
       }, { status: 500 });
     }
-    
+
     const { error: membershipError } = await admin
       .from("user_memberships")
       .insert({
         user_id: user.id,
         tenant_id: tenant.id,
       });
-    
+
     if (membershipError) {
       console.error("Create membership error:", membershipError);
       await admin.from("tenants").delete().eq("id", tenant.id);
       await admin.auth.admin.deleteUser(user.id);
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         error: "Gagal menghubungkan user dengan tenant. Periksa tabel user_memberships."
       }, { status: 500 });
     }
-    
-    const response = NextResponse.json({ 
-      success: true, 
+
+    const response = NextResponse.json({
+      success: true,
       message: session
         ? "Registrasi berhasil."
         : "Registrasi berhasil. Periksa email untuk mengaktifkan akun, lalu login.",
       tenantId: tenant.id,
       requiresEmailConfirmation: !session,
     });
-    
+
     if (session) {
       response.cookies.set("tenant-id", tenant.id, {
         httpOnly: true,
@@ -124,21 +128,21 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
     }
-    
+
     return response;
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ 
-        success: false, 
-        error: error.issues[0].message 
+      return NextResponse.json({
+        success: false,
+        error: error.issues[0].message
       }, { status: 400 });
     }
-    
+
     console.error("Register error:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: "Terjadi kesalahan internal" 
+    return NextResponse.json({
+      success: false,
+      error: "Terjadi kesalahan internal"
     }, { status: 500 });
   }
 }
