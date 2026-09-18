@@ -85,7 +85,8 @@ export async function login(formData: LoginFormData) {
 export async function logout() {
   try {
     const supabase = await createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) return { success: false, error: "Gagal logout. Silakan coba lagi." };
 
     const cookieStore = await cookies();
     cookieStore.delete("tenant-id");

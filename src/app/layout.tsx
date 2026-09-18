@@ -1,4 +1,7 @@
 import "@/styles/globals.css";
+import "@/styles/workspace.css";
+import "@/styles/cashflow.css";
+import "@/styles/inventory.css";
 import type { Metadata } from "next";
 import TenantProvider from "@/lib/auth/tenant-provider";
 

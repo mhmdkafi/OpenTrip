@@ -5,10 +5,10 @@ import { DomainError } from "./commands";
 import type { Workspace, Source } from "./types";
 
 export const importFields = ["registered_at", "raw_name", "facility", "meeting_point", "raincoat_option", "proof_refs", "contact_phone"] as const;
-export function registrationDate(value: string) {
+export function registrationDate(value: string, dateOrder: "dmy" | "mdy" = "dmy") {
   const match = value.trim().match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ ,]+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?$/);
   let input = value.trim();
-  if (match) { const [, d, m, y, h = "0", min = "0", s = "0"] = match; input = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${min}:${s.padStart(2,"0")}+07:00`; }
+  if (match) { const [, first, second, y, h = "0", min = "0", s = "0"] = match; const [d,m] = dateOrder === "mdy" ? [second,first] : [first,second]; input = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${min}:${s.padStart(2,"0")}+07:00`; }
   else if (/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/.test(input)) input = input.length === 10 ? `${input}T00:00:00+07:00` : `${input.replace(" ", "T")}+07:00`;
   else if (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input)) throw new DomainError("Format timestamp tidak dikenali. Gunakan DD/MM/YYYY HH:mm:ss atau ISO.");
   const date = new Date(input);
@@ -37,7 +37,7 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
     seen.add(fingerprint);
     if (state.bookings.some(b => b.sourceId === source.id && b.fingerprint === fingerprint)) { unchanged++; continue; }
     try {
-      const registeredAt = registrationDate(values.registered_at ?? "");
+      const registeredAt = registrationDate(values.registered_at ?? "", source.dateOrder);
       const names = splitName(values.raw_name ?? "").names.map(n => n.name);
       if (!names.length) throw new DomainError("Nama peserta kosong.");
       if (state.bookings.some(b => b.sourceId === source.id && (b.registeredAt === registeredAt || b.rawName === values.raw_name))) { review.push(`${rowLabel}: sumber berubah/identitas mirip. Data lama dipertahankan; periksa peserta sebelum mengimpor sebagai respons baru.`); continue; }

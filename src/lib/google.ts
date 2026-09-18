@@ -8,6 +8,7 @@ export type GoogleDriveUrl = {
 };
 
 export type SheetMetadata = {
+  locale?: string;
   spreadsheetId: string;
   title: string;
   sheets: Array<{ sheetId: number; title: string; rowCount?: number; columnCount?: number }>;
@@ -123,10 +124,11 @@ export function suggestHeaderMappings(headers: string[], sampleRows: string[][] 
 }
 
 export async function fetchSheetMetadata(spreadsheetId: string, accessToken: string): Promise<SheetMetadata> {
-  const data = await googleFetch<{ properties?: { title?: string }; sheets?: Array<{ properties?: { sheetId?: number; title?: string; gridProperties?: { rowCount?: number; columnCount?: number } } }> }>(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=spreadsheetId,properties.title,sheets.properties`, accessToken);
+  const data = await googleFetch<{ properties?: { title?: string; locale?: string }; sheets?: Array<{ properties?: { sheetId?: number; title?: string; gridProperties?: { rowCount?: number; columnCount?: number } } }> }>(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=spreadsheetId,properties.title,properties.locale,sheets.properties`, accessToken);
   return {
     spreadsheetId,
     title: data.properties?.title ?? spreadsheetId,
+    locale: data.properties?.locale,
     sheets: (data.sheets ?? []).map((sheet) => ({
       sheetId: sheet.properties?.sheetId ?? 0,
       title: sheet.properties?.title ?? "Sheet",

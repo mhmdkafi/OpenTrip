@@ -1,21 +1,99 @@
 "use client";
-import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Plus, Wallet, TrendingUp, CalendarDays, Receipt, Download } from "lucide-react";
+
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
+import { cashDate, cashTotals, filterPeriod, previousReference } from "@/lib/workspace/finance-view";
+import { dateLabel, demoToday, todayWib, weekKey } from "@/lib/workspace/presentation";
 import { periodBounds } from "@/lib/workspace/period";
+import type { Cash } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
-import { Field, Form, number, Select, Submit, text, TripSelect, Modal } from "./ui";
-const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-export function Finance(){
- const {state,mutate,prototype}=useWorkspace();const [tripId,setTripId]=useState("");const [expenseTrip,setExpenseTrip]=useState("");const [period,setPeriod]=useState("month");const [reference,setReference]=useState(prototype?"2026-09-11":today);const [creating,setCreating]=useState(false);const [direction,setDirection]=useState("");
- const [start,end]=periodBounds(period,reference);const entries=state.cash.filter(c=>(!tripId||c.tripId===tripId)&&Date.parse(c.occurredAt)>=start&&Date.parse(c.occurredAt)<end).sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
- const income=entries.filter(e=>e.direction==="in").reduce((s,e)=>s+e.amount,0);const expense=entries.filter(e=>e.direction==="out").reduce((s,e)=>s+e.amount,0);const visible=entries.filter(e=>!direction||e.direction===direction);
- const categories=[...new Set(entries.filter(e=>e.direction==="out").map(e=>e.category))].map(category=>({category,amount:entries.filter(e=>e.direction==="out"&&e.category===category).reduce((s,e)=>s+e.amount,0)}));
- function exportCsv(){const escape=(s:string)=>'"'+(/^[=+@-]/.test(s)?"'":"")+s.replace(/"/g,'""')+'"';const csv="\ufeffTanggal WIB,Trip,Kategori,Keterangan,Masuk,Keluar\n"+visible.map(e=>[new Date(e.occurredAt).toLocaleString("id-ID",{timeZone:"Asia/Jakarta"}),state.trips.find(t=>t.id===e.tripId)?.title??"Umum bisnis",e.category,e.description,e.direction==="in"?String(e.amount):"0",e.direction==="out"?String(e.amount):"0"].map(escape).join(",")).join("\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download=prototype?"keuangan-simulasi.csv":"keuangan-trip.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
- return <div className="section-stack"><div className="finance-filters"><TripSelect value={tripId} onChange={setTripId}/><Select label="Periode" value={period} onChange={setPeriod}><option value="all">Semua waktu</option><option value="week">Mingguan</option><option value="month">Bulanan</option><option value="year">Tahunan</option></Select><Field label="Tanggal acuan (WIB)" type="date" value={reference} required onChange={e=>e.target.value&&setReference(e.target.value)}/><button className="td-button" onClick={()=>setCreating(true)}><Plus size={15}/> Catat pengeluaran</button></div>
- <div className="finance-summary">{[{label:"Pemasukan terverifikasi",value:income,icon:ArrowDownLeft,note:"Pembayaran peserta & DP",type:"income"},{label:"Total pengeluaran",value:expense,icon:ArrowUpRight,note:"Biaya operasional tercatat",type:"expense"},{label:"Arus kas bersih",value:income-expense,icon:Wallet,note:"Pemasukan dikurangi pengeluaran",type:"net"}].map(s=><article className={`finance-stat ${s.type}`} key={s.label}><span className="finance-stat-icon"><s.icon size={20}/></span><span>{s.label}</span><strong>{formatRupiah(s.value)}</strong><small>{s.note}</small></article>)}</div>
- <div className="finance-detail-grid"><section className="td-panel"><div className="panel-heading"><h2>Komposisi arus kas</h2><span className="badge gray">Sesuai filter</span></div><div className="cash-composition"><div><span>Uang masuk</span><strong>{formatRupiah(income)}</strong></div><div className="composition-track"><span style={{width:`${income+expense?income/(income+expense)*100:0}%`}}/></div><div><span>Uang keluar</span><strong>{formatRupiah(expense)}</strong></div></div><p className="empty-note">Kas masuk dicatat sesuai timestamp pendaftaran setelah transfer diverifikasi. Saldo awal rekening belum ditetapkan.</p></section><section className="td-panel"><div className="panel-heading"><h2>Pengeluaran per kategori</h2><Receipt size={16}/></div>{categories.map((c,i)=><div className="category-breakdown" key={c.category}><i style={{background:["#6b8a61","#a5b18b","#d0c29a"][i%3]}}/><span>{c.category}</span><strong>{formatRupiah(c.amount)}</strong></div>)}{!categories.length&&<p className="empty-note">Belum ada pengeluaran pada periode ini.</p>}</section></div>
- <section className="td-panel"><div className="panel-heading"><div><h2>Riwayat transaksi</h2><p className="panel-subtitle">Setiap pemasukan dan pengeluaran, tercatat dengan jelas.</p></div><button className="td-secondary" disabled={!visible.length} onClick={exportCsv}><Download size={13}/> Ekspor CSV</button></div><div className="status-tabs" role="group" aria-label="Jenis transaksi">{[["","Semua transaksi"],["in","Pemasukan"],["out","Pengeluaran"]].map(([v,l])=><button key={v} className={direction===v?"active":""} aria-pressed={direction===v} onClick={()=>setDirection(v)}>{l}<span>{entries.filter(e=>!v||e.direction===v).length}</span></button>)}</div><div className="table-wrap mt-5"><table className="td-table"><thead><tr><th>Transaksi</th><th>Trip</th><th>Tanggal WIB</th><th>Kategori</th><th>Nominal</th></tr></thead><tbody>{visible.map(e=><tr key={e.id}><td><div className="transaction-name"><span className={`transaction-icon ${e.direction}`}>{e.direction==="in"?<ArrowDownLeft size={16}/>:<ArrowUpRight size={16}/>}</span><div><strong>{e.description}</strong><small>{e.direction==="in"?"Pemasukan terverifikasi":"Pengeluaran operasional"}</small></div></div></td><td>{state.trips.find(t=>t.id===e.tripId)?.title??"Umum bisnis"}</td><td>{new Date(e.occurredAt).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Jakarta"})}<small className="block mt-1">{e.dateSource==="registration"?"Timestamp pendaftaran":"Tanggal pengeluaran"}</small></td><td><span className="category-tag">{e.category}</span></td><td className={`money-cell ${e.direction==="in"?"cash-in":"cash-out"}`}>{e.direction==="in"?"+":"−"} {formatRupiah(e.amount)}</td></tr>)}</tbody></table>{!visible.length&&<div className="empty-state"><Receipt size={27}/><h3>Belum ada transaksi</h3><p>Ubah filter atau tambahkan pengeluaran pertama Anda.</p></div>}</div><div className="table-foot"><span>{visible.length} transaksi pada filter ini</span><span>Zona waktu Asia/Jakarta</span></div></section>
- {creating&&<Modal title="Catat pengeluaran" onClose={()=>setCreating(false)}><TripSelect value={expenseTrip} onChange={setExpenseTrip} all="Umum bisnis"/><Form onSave={async d=>{await mutate({action:"expense.create",tripId:expenseTrip,amount:number(d,"amount"),date:text(d,"date"),category:text(d,"category"),description:text(d,"description")});setCreating(false);}}><Field label="Nominal pengeluaran (Rp)" name="amount" type="number" min={1} required placeholder="0"/><Field label="Tanggal pengeluaran (WIB)" name="date" type="date" defaultValue={prototype?"2026-09-11":today()} required/><Field label="Kategori" name="category" list="expense-categories" required placeholder="Pilih atau tulis kategori baru"/><datalist id="expense-categories">{[...new Set(["Transportasi","Konsumsi","Tiket","Sewa alat",...state.cash.filter(e=>e.direction==="out").map(e=>e.category)])].map(c=><option key={c}>{c}</option>)}</datalist><Field label="Keterangan" name="description" required placeholder="Contoh: DP sewa kendaraan"/><Submit><Plus size={14}/> Simpan pengeluaran</Submit></Form></Modal>}
- </div>;
+import { Field, Form, Modal, Submit, text } from "./ui";
+import { ExpenseBreakdown, TripReceivables } from "./finance-breakdown";
+import { CashGraph } from "./cash-graph";
+import { ExpenseForm } from "./expense-form";
+import { FinancePeriod, FinanceSummary } from "./finance-summary";
+import { FinanceRecap } from "./finance-recap";
+import { FinanceLedger } from "./finance-ledger";
+
+export function Finance() {
+  return <Suspense fallback={<p>Memuat cashflow…</p>}><FinanceView/></Suspense>;
+}
+
+function FinanceView() {
+  const { state, prototype, mutate } = useWorkspace();
+  const params = useSearchParams();
+  const [period,setPeriod] = useState("month");
+  const [reference,setReference] = useState(prototype ? demoToday : todayWib);
+  const [tripId,setTripId] = useState<string|null>(params.get("trip"));
+  const [detailWeek,setDetailWeek] = useState<string|null>(null);
+  const [tab,setTab] = useState("transactions");
+  const [editing,setEditing] = useState<Cash|"new"|null>(null);
+  const [deleting,setDeleting] = useState<Cash|null>(null);
+
+  const entries = filterPeriod(state.cash,period,reference);
+  const previous = filterPeriod(state.cash,period,previousReference(period,reference));
+  const [start,end] = periodBounds(period,reference);
+  const opening = cashTotals(state.cash.filter(c=>Date.parse(c.occurredAt)<start)).net;
+  const closing = cashTotals(state.cash.filter(c=>Date.parse(c.occurredAt)<end)).net;
+  const selectedTrip = state.trips.find(t=>t.id===tripId);
+  const detailEntries = entries
+    .filter(c=>c.tripId===tripId&&(!detailWeek||weekKey(cashDate(c))===detailWeek))
+    .sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
+
+  function openTrip(id: string, week?: string) {
+    setTripId(id); setDetailWeek(week??null); setTab("transactions");
+  }
+  function changePeriod(value: string, date: string) {
+    setPeriod(value); setReference(date); setDetailWeek(null);
+  }
+  const expenseDate = detailWeek
+    ? (period==="month"&&detailWeek<reference.slice(0,7)+"-01" ? reference.slice(0,7)+"-01" : detailWeek)
+    : reference;
+  const tabs = [
+    { id:"transactions", label:"Transaksi", count:detailEntries.length },
+    ...(selectedTrip ? [{ id:"participants", label:"Pembayaran peserta", count:state.participants.filter(p=>p.tripId===tripId&&p.status==="active").length }] : []),
+    { id:"categories", label:"Kategori pengeluaran", count:undefined },
+  ];
+
+  return <div className="cashflow-workspace">
+    <FinancePeriod period={period} reference={reference} onChange={changePeriod}/>
+    {tripId===null ? <>
+      <FinanceSummary entries={entries} previous={previous} period={period}/>
+      <div className={`cf-analysis ${period==="week" ? "is-weekly" : ""}`}>
+        <div className="cf-panel cf-chart-panel">
+          {(period==="month"||period==="year")&&<CashGraph key={period+reference} entries={state.cash} period={period} reference={reference}/>}
+          <div className="cash-balance" aria-label="Saldo kas tercatat"><div><span>Saldo awal tercatat</span><strong>{formatRupiah(opening)}</strong></div><ArrowRight size={16}/><div><span>Saldo akhir tercatat</span><strong>{formatRupiah(closing)}</strong></div><small>Berdasarkan transaksi di aplikasi</small></div>
+        </div>
+        <ExpenseBreakdown entries={entries}/>
+      </div>
+      <FinanceRecap entries={entries} trips={state.trips} period={period} reference={reference} onOpen={openTrip}/>
+    </> : <>
+      <section className="cf-detail-heading detail-finance-heading">
+        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Kembali ke rekap cashflow</button><h2>{selectedTrip?.title??(tripId===""?"Umum bisnis":"Trip tidak ditemukan")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transaksi minggu "+dateLabel(detailWeek) : "Transaksi pada periode terpilih"}</p></div>
+        {(selectedTrip||tripId==="")&&<button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Catat pengeluaran</button>}
+      </section>
+      <FinanceSummary entries={detailEntries} period={period}/>
+      <section className="cf-panel finance-trip-detail">
+        <div className="cf-detail-tabs" role="tablist" aria-label="Detail keuangan trip">
+          {tabs.map((item,index)=><button key={item.id} role="tab" id={"cf-tab-"+item.id} aria-controls={"cf-panel-"+item.id} aria-selected={tab===item.id} tabIndex={tab===item.id?0:-1} onClick={()=>setTab(item.id)} onKeyDown={e=>{
+            if (!["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return;
+            e.preventDefault();
+            const next=e.key==="Home"?0:e.key==="End"?tabs.length-1:(index+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;
+            setTab(tabs[next].id); document.getElementById("cf-tab-"+tabs[next].id)?.focus();
+          }}>{item.label}{item.count!==undefined&&<span>{item.count}</span>}</button>)}
+        </div>
+        <div role="tabpanel" id={"cf-panel-"+tab} aria-labelledby={"cf-tab-"+tab} tabIndex={0}>
+          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={state.cash} trips={state.trips} tripId={tripId} prototype={prototype} onEdit={setEditing} onDelete={setDeleting}/>}
+          {tab==="participants"&&selectedTrip&&<TripReceivables state={state} tripId={tripId}/>}
+          {tab==="categories"&&<ExpenseBreakdown entries={detailEntries}/>}
+        </div>
+      </section>
+    </>}
+    {editing&&tripId!==null&&<ExpenseForm tripId={tripId} expense={editing==="new"?undefined:editing} date={expenseDate} onClose={()=>setEditing(null)}/>}
+    {deleting&&<Modal title="Hapus pengeluaran" onClose={()=>setDeleting(null)}><p className="empty-note">{deleting.description} · {formatRupiah(deleting.amount)}</p><Form onSave={async data=>{
+      await mutate({action:"expense.delete",expenseId:deleting.id,reason:text(data,"reason")}); setDeleting(null);
+    }}><Field label="Alasan penghapusan" name="reason" required/><Submit>Hapus pengeluaran</Submit></Form></Modal>}
+  </div>;
 }

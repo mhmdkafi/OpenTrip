@@ -1,53 +1,23 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowUpRight, ArrowRight, Plus, RefreshCw, Mountain, Users, Wallet, CircleCheck, CalendarDays, MapPin, CloudSun, FileSpreadsheet, FileDown, Package, Check, Leaf, ShieldCheck, Link2 } from "lucide-react";
+import { FileSpreadsheet, ShieldCheck, Link2 } from "lucide-react";
 import { useWorkspace, requestJson } from "./context";
-import { paidFor } from "@/lib/workspace/types";
-import { formatRupiah } from "@/lib/money";
 import { Panel } from "./ui";
 import { Trips } from "./trips";
 import { Participants } from "./participants";
 import { Finance } from "./finance";
 import { Inventory } from "./inventory";
 import { Attendance } from "./attendance";
-import { Landscape } from "./landscape";
-const titles: Record<string,string>={overview:"Ringkasan",trips:"Kelola Trip",participants:"Peserta & Pembayaran",finance:"Keuangan",inventory:"Inventaris",attendance:"Absensi",settings:"Pengaturan"};
-const descriptions: Record<string,string>={overview:"Semua perjalanan, dalam satu genggaman.",trips:"Rencanakan perjalanan berikutnya. Kelola setiap detailnya.",participants:"Kenali pesertanya. Pastikan setiap pembayaran tercatat.",finance:"Pantau pemasukan dan pengeluaran setiap perjalanan.",inventory:"Perlengkapan siap, perjalanan lebih tenang.",attendance:"Satu daftar lengkap untuk perjalanan yang tertata.",settings:"Atur ruang kerja dan koneksi bisnis Anda."};
-export function Dashboard({section}:{section:string}) {
- const {loading,error,notice,busy,reload,basePath,prototype}=useWorkspace();
- return <><div className="page-heading"><div><h1>{titles[section]}</h1><p>{descriptions[section]}</p></div><div className="heading-actions">{section==="overview"&&<span className="date-chip"><CalendarDays size={14}/>{prototype?"11 September 2026":new Date().toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}</span>}<button className="td-secondary" disabled={busy} onClick={()=>void reload()} aria-label="Muat ulang data"><RefreshCw size={13}/> Muat ulang</button>{section==="overview"&&<Link className="td-button" href={`${basePath}/trips#buat-trip`}><Plus size={15}/> Buat Trip</Link>}</div></div>
+import { Overview } from "./overview";
+import { TripDetail } from "./trip-detail";
+const titles: Record<string,string>={overview:"Overview",trips:"Trip Schedule",participants:"Peserta & Pembayaran",finance:"Cashflow",inventory:"Inventory",attendance:"Absensi",settings:"Pengaturan"};
+const descriptions: Record<string,string>={overview:"Jadwal dan status operasional Rimbaloka Trip.",trips:"Jadwal keberangkatan, peserta, dan sumber pendaftaran.",participants:"Daftar peserta dan verifikasi pembayaran.",finance:"Pemasukan, pengeluaran, dan hasil per trip.",inventory:"",attendance:"Daftar hadir peserta per titik mepo.",settings:"Akun dan koneksi data."};
+export function Dashboard({section,tripId}:{section:string;tripId?:string}) {
+ const {loading,error,notice,prototype}=useWorkspace();
+ const [viewDate]=useState(()=>prototype?new Date("2026-09-13T12:00:00"):new Date());
+ return <>{!tripId&&<div className="page-heading"><div><h1>{titles[section]}</h1>{descriptions[section]&&<p>{descriptions[section]}</p>}</div>{section==="overview"&&<span className="view-date">{viewDate.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Jakarta"})}</span>}</div>}
  {error&&<p role="alert" className="notice error">{error}</p>}{notice&&<p role="status" className="notice">{notice}</p>}
- {loading?<p role="status">Memuat data ruang kerja…</p>:<>{section==="overview"&&<Overview/>}{section==="trips"&&<Trips/>}{section==="participants"&&<Participants/>}{section==="finance"&&<Finance/>}{section==="inventory"&&<Inventory/>}{section==="attendance"&&<Attendance/>}{section==="settings"&&<Settings/>}</>}</>;
-}
-function Overview(){
- const {state,basePath,prototype}=useWorkspace();
- const people=state.participants.filter(p=>p.status==="active");
- const income=state.cash.filter(c=>c.direction==="in").reduce((s,c)=>s+c.amount,0);
- const out=state.cash.filter(c=>c.direction==="out").reduce((s,c)=>s+c.amount,0);
- const paid=people.filter(p=>p.reviewed&&paidFor(state,p.id)>=p.charge).length;
- const recent=[...state.audit].reverse().slice(0,3);
- return <>
- <section className="hero-banner"><div className="hero-contours"/><div className="hero-copy"><span className="eyebrow">YOUR NEXT ADVENTURE STARTS HERE</span><h2>Siap untuk cerita<br/>perjalanan berikutnya?</h2><p>Dari peserta sampai perlengkapan, kelola semuanya.<br/>Sisakan lebih banyak waktu untuk menikmati alam.</p><Link href={`${basePath}/trips`}>Lihat perjalanan Anda <ArrowRight size={14}/></Link></div><div className="hero-art"><Landscape/></div><span className="hero-caption"><Mountain size={13}/> EXPLORE MORE. WORRY LESS.</span></section>
- <div className="stats-grid">{[
-  {label:"Trip aktif",value:String(state.trips.filter(t=>t.status==="active").length).padStart(2,"0"),icon:Mountain,note:"Perjalanan sedang dipersiapkan",tone:""},
-  {label:"Total peserta",value:people.length,icon:Users,note:`Dari ${state.bookings.length} respons pendaftaran`,tone:""},
-  {label:"Pemasukan tercatat",value:formatRupiah(income),icon:Wallet,note:"Dari pembayaran terverifikasi",tone:"gold"},
-  {label:"Peserta lunas",value:`${paid}/${people.length}`,icon:CircleCheck,note:`${people.length-paid} peserta perlu ditindaklanjuti`,tone:""},
- ].map(s=><div className="stat-card" key={s.label}><div className="stat-top"><span>{s.label}</span><span className={`stat-icon ${s.tone}`}><s.icon size={17}/></span></div><div className={`stat-value ${s.label==="Pemasukan tercatat"?"money-stat":""}`}>{s.value}</div><p>{s.note}</p></div>)}</div>
- <div className="dashboard-grid"><section className="td-panel"><div className="panel-heading"><h2>Perjalanan mendatang</h2><Link className="text-link" href={`${basePath}/trips`}>Semua trip <ArrowUpRight size={13}/></Link></div><div className="upcoming-list">{state.trips.filter(t=>t.status==="active").slice(0,3).map((t,i)=>{const count=people.filter(p=>p.tripId===t.id).length;return <div className="trip-row" key={t.id}><div className="trip-thumb"><Landscape variant={i}/></div><div className="trip-row-main"><span className={`badge ${i===2?"amber":""}`}>{count?"Pendaftaran dibuka":"Dalam persiapan"}</span><h3>{t.title}</h3><div className="trip-meta"><span><CalendarDays size={10}/>{new Date(`${t.departureDate}T12:00:00`).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})}</span><span><Users size={10}/>{count} peserta</span></div></div><Link href={`${basePath}/trips`} aria-label={`Kelola ${t.title}`}><ArrowUpRight size={18}/></Link></div>;})}{!state.trips.length&&<p className="empty-note">Belum ada perjalanan. Buat trip pertama Anda.</p>}</div></section>
- <section className="td-panel"><div className="panel-heading"><h2>Arus kas</h2><Link className="text-link" href={`${basePath}/finance`}>Detail <ArrowUpRight size={13}/></Link></div><div className="mini-finance"><div><span>Pemasukan</span><strong>{formatRupiah(income)}</strong><em><span className="status-dot"/> Terverifikasi</em></div><div><span>Pengeluaran</span><strong>{formatRupiah(out)}</strong><em>Seluruh trip</em></div></div><CashChart/><div className="chart-legend"><span><i/>Pemasukan</span><span><i/>Pengeluaran</span></div></section></div>
- <div className="dashboard-grid"><section className="td-panel"><div className="panel-heading"><h2>Peserta terbaru</h2><Link className="text-link" href={`${basePath}/participants`}>Lihat semua <ArrowUpRight size={13}/></Link></div><div className="table-wrap"><table className="td-table"><thead><tr><th>Peserta</th><th>Fasilitas</th><th>Tagihan</th><th>Status</th></tr></thead><tbody>{people.slice(-4).reverse().map(p=>{const paid=paidFor(state,p.id);return <tr key={p.id}><td><div className="overview-table-avatar"><span className="person-avatar">{p.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</span><div><strong>{p.name}</strong><small>{state.trips.find(t=>t.id===p.tripId)?.title}</small></div></div></td><td>{p.facility.replace(" Transport","")}</td><td>{formatRupiah(p.charge)}</td><td><span className={`badge ${!p.reviewed?"amber":paid>=p.charge?"":paid?"amber":"gray"}`}>{!p.reviewed?"Perlu tinjau":paid>=p.charge?"Lunas":paid?"DP":"Belum bayar"}</span></td></tr>;})}</tbody></table></div><div className="table-foot"><span>{people.length} peserta terdaftar</span><span>{prototype?"Data simulasi untuk review UI":"Data ruang kerja Anda"}</span></div></section>
- <section className="td-panel"><div className="panel-heading"><h2>Aktivitas terbaru</h2><span className="badge gray">{recent.length} aktivitas</span></div>{recent.map(a=><div className="activity-item" key={a.id}><span className="activity-dot">{a.action.startsWith("payment")?<Check size={14}/>:a.action.startsWith("inventory")?<Package size={14}/>:<RefreshCw size={14}/>}</span><div><p>{a.detail}</p><time>{new Date(a.at).toLocaleString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Jakarta"})} WIB</time></div></div>)}{!recent.length&&<p className="empty-note">Aktivitas operasional akan muncul di sini.</p>}<div className="nature-note"><Leaf size={18}/><p>Perjalanan hebat dimulai<br/>dari persiapan yang baik.</p></div></section></div>
- <div className="quick-actions">{[{slug:"trips#impor",icon:FileSpreadsheet,title:"Sinkronkan peserta",text:"Hubungkan Google Spreadsheet"},{slug:"attendance",icon:FileDown,title:"Siapkan absensi",text:"Cetak daftar hadir untuk guide"},{slug:"inventory",icon:Package,title:"Cek perlengkapan",text:"Pastikan stok siap berangkat"}].map(a=><Link key={a.slug} href={`${basePath}/${a.slug}`} className="quick-action"><a.icon size={23}/><div><strong>{a.title}</strong><small>{a.text}</small></div><ArrowUpRight size={15}/></Link>)}</div>
- </>;
-}
-export function CashChart(){
- const {state,prototype}=useWorkspace();
- const now=prototype?new Date("2026-09-11T12:00:00+07:00"):new Date();
- const days=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-6+i);const date=d.toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"});const entries=state.cash.filter(c=>new Date(c.occurredAt).toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"})===date);return {label:d.toLocaleDateString("id-ID",{weekday:"short",timeZone:"Asia/Jakarta"}),income:entries.filter(c=>c.direction==="in").reduce((s,c)=>s+c.amount,0),out:entries.filter(c=>c.direction==="out").reduce((s,c)=>s+c.amount,0)};});
- const max=Math.max(1,...days.flatMap(d=>[d.income,d.out]));
- return <div className="chart-bars" role="img" aria-label="Arus kas tujuh hari terakhir; rincian tersedia di halaman Keuangan">{days.map((d,i)=><div className="chart-column" key={i} title={`${d.label}: masuk ${formatRupiah(d.income)}, keluar ${formatRupiah(d.out)}`}><span style={{height:`${Math.max(2,d.income/max*100)}%`}}/><span style={{height:`${Math.max(2,d.out/max*100)}%`}}/><small>{d.label}</small></div>)}</div>;
+ {loading?<p role="status">Memuat data ruang kerja…</p>:<>{section==="overview"&&<Overview/>}{section==="trips"&&(tripId?<TripDetail tripId={tripId}/>:<Trips/>)}{section==="participants"&&<Participants/>}{section==="finance"&&<Finance/>}{section==="inventory"&&<Inventory/>}{section==="attendance"&&<Attendance/>}{section==="settings"&&<Settings/>}</>}</>;
 }
 function Settings(){
  const {run,busy,prototype,reset}=useWorkspace();const [google,setGoogle]=useState<{configured:boolean;connected:boolean}|null>(prototype?{configured:true,connected:true}:null);const [error,setError]=useState("");
