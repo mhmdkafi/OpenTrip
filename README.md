@@ -1,16 +1,16 @@
 # TripDash
 
-Dashboard operasional untuk PRD client **Product Requirements Document (PRD) TripDash.docx** (Rimbaloka Trip). Dokumen client menjadi acuan; `prd_extracted.txt` adalah draft lama yang berbeda. Ekstraksi DOCX client tersimpan di `prd_client.txt`.
+Dashboard operasional Rimbaloka Trip. Acuan UI terbaru adalah **Product Requirements Document (PRD) TripDash.pdf**, bagian **Revisi UI Design, halaman 16–18**. Pemetaan perubahan dan keputusan implementasi ada di `docs/prd-ui-alignment.md`.
 
 ## Mencoba prototipe UI Rimbaloka
 
 Jalankan `npm run dev`, lalu buka `http://localhost:3000/prototype`. Halaman `/` juga mengarah ke prototipe. Login untuk data bisnis tetap tersedia di `/login`, dan dashboard bisnis di `/dashboard` tetap dilindungi autentikasi.
 
-Prototipe tidak memerlukan Supabase atau OAuth Google. Tujuh halaman memakai frontend yang sama dengan dashboard bisnis: ringkasan, trip, peserta/pembayaran, absensi, keuangan, inventaris, pengaturan. Halaman login juga mengikuti identitas Rimbaloka. Logo asli tersimpan di `public/brand/rimbaloka-logo.jpeg`; palet dan panduan tampilan ada di `design-system/rimbaloka/MASTER.md`.
+Prototipe tidak memerlukan Supabase atau OAuth Google. Empat menu utama memakai komponen yang sama dengan dashboard bisnis: Overview, Trip Schedule, Cashflow, dan Inventory. Peserta dan cetak absensi ada di detail trip (`/prototype/trips/:tripId`). Navbar atas dihapus; identitas admin berada di bagian bawah navigasi kiri. Logo asli tersimpan di `public/brand/rimbaloka-logo.jpeg`; ikon browser berbentuk bulat.
 
 Data simulasi mengikuti struktur 19 respons/21 peserta dan tarif pada lampiran. Nama, transaksi, jadwal, dan stok bersifat fiktif; tidak menyertakan nomor telepon, kesehatan, alamat, atau bukti transfer pribadi. Perubahan prototipe tersimpan di localStorage browser dengan tombol reset. Pembayaran, pengeluaran, trip, dan stok dapat dicoba; koneksi dan sinkronisasi Google disimulasikan, tidak menghubungi API. Absensi prototipe menggunakan dialog cetak browser dengan pilihan Simpan sebagai PDF, dan diberi label SIMULASI.
 
-Smoke test browser: jalankan aplikasi, kemudian `node scripts/prototype-smoke.mjs`. Default test memakai port 3012; set `PROTOTYPE_URL` sesuai server yang berjalan. Tes memeriksa pembayaran grup, persistensi, pencarian, trip baru, mapping, inventaris keluar/kembali, pengeluaran, CSV, cetak 21 peserta, navigasi/reset, tujuh halaman mobile, dan tidak adanya panggilan API bisnis. Screenshot ada di `artifacts/`.
+Smoke test browser: jalankan aplikasi, kemudian `node scripts/prd-smoke.mjs`. Default test memakai port 3012; set `PROTOTYPE_URL` sesuai server yang berjalan. Tes memeriksa empat menu, detail trip, pagination peserta, pembayaran grup, absensi 21 peserta urut mepo, mapping spreadsheet, CRUD inventory, peminjaman/pengembalian/pemakaian, CRUD pengeluaran, grafik dan penelusuran Cashflow, CSV, persistensi, serta layar 375/768/1024/1440px dan landscape 812×375. Screenshot ada di `artifacts/prd-*.png`. Script smoke lama meneruskan ke pemeriksaan ini.
 
 ## Menjalankan
 
@@ -58,7 +58,7 @@ Sinkronisasi berjalan manual, maksimal 5.000 respons per impor. Identitas sumber
 
 `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
 
-Smoke test UI memakai `node scripts/prototype-smoke.mjs` seperti petunjuk prototipe di atas. Ini tidak menggantikan UAT integrasi live.
+Smoke test UI memakai `node scripts/prototype-smoke.mjs` seperti petunjuk prototipe di atas. Pemeriksaan revisi navigasi, kalender, filter stok, pencarian transaksi, dan layout desktop/tablet/mobile tersedia lewat `node scripts/ui-revision-smoke.mjs` dengan konfigurasi `PROTOTYPE_URL` yang sama. Ini tidak menggantikan UAT integrasi live.
 
 Uji domain baru di `src/lib/workspace/workspace.test.ts`: 19 respons/21 peserta, sinkron ulang dan reorder, DP/pelunasan, satu kas grup, kelebihan alokasi, penolakan tagihan belum pasti, batas minggu WIB, sumber berubah, stok keluar/kembali, dan validasi URL.
 

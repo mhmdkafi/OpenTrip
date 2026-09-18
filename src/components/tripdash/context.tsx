@@ -12,7 +12,8 @@ export async function requestJson(url: string, body?: unknown, method = "POST") 
 type Snapshot = { state: Workspace; revision: number };
 type Context = Snapshot & { prototype: boolean; basePath: string; busy: boolean; loading: boolean; error: string; notice: string; reload: () => Promise<void>; reset: () => void; run: (fn: () => Promise<void>) => Promise<void>; mutate: (command: Command) => Promise<void>; replace: (data: Snapshot) => void };
 const Store = createContext<Context | null>(null);
-const storageKey = "rimbaloka-prototype-v1";
+  const storageKey = "rimbaloka-prototype-v1-rev";
+
 export function WorkspaceProvider({ children, prototype = false }: { children: ReactNode; prototype?: boolean }) {
   const [data, setData] = useState<Snapshot>(() => ({ state: prototype ? prototypeWorkspace() : emptyWorkspace(), revision: 0 }));
   const [loading, setLoading] = useState(!prototype);

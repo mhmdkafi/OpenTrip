@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (data.rows.length > 5000) throw new DomainError("Impor melebihi batas 5.000 respons. Pisahkan sumber per trip.");
     if (JSON.stringify(body.headers) !== JSON.stringify(data.headers)) throw new DomainError("Header berubah. Buka preview dan konfirmasikan mapping kembali.");
     if (indexes.some(i => i === undefined || i >= data.headers.length)) throw new DomainError("Kolom mapping tidak tersedia.");
-    const result = importRows(current.state, { id: existing?.id ?? crypto.randomUUID(), tripId: body.tripId, spreadsheetId: body.spreadsheetId, sheetId: body.sheetId, sheetTitle: sheet.title, headerRow: body.headerRow, headers: data.headers, mapping: body.mapping as Record<string, number>, lastSuccessAt: "", review: [] }, data.rows, auth.userId);
+    const result = importRows(current.state, { id: existing?.id ?? crypto.randomUUID(), tripId: body.tripId, spreadsheetId: body.spreadsheetId, sheetId: body.sheetId, sheetTitle: sheet.title, headerRow: body.headerRow, dateOrder: existing?.dateOrder, headers: data.headers, mapping: body.mapping as Record<string, number>, lastSuccessAt: "", review: [] }, data.rows, auth.userId);
     const revision = await saveWorkspace(auth.tenantId, current.revision, result.state, current.exists);
     return NextResponse.json({ ...result, revision });
   } catch (e) { return apiError(e); }

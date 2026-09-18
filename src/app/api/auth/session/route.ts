@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.user_metadata?.name,
+          phone: user.user_metadata?.phone,
         },
         tenant: null,
       });
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.user_metadata?.name,
+          phone: user.user_metadata?.phone,
         },
         tenant: null,
       });
@@ -50,6 +52,7 @@ export async function GET(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.user_metadata?.name,
+          phone: user.user_metadata?.phone,
       },
       tenant: {
         id: tenant.id,

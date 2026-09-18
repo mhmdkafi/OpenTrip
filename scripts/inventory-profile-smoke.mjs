@@ -1,0 +1,56 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+const origin=process.env.PROTOTYPE_URL||'http://localhost:3012';
+const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1440,height:1080}});const errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+const goto=async path=>{await page.goto(origin+path,{waitUntil:'networkidle'});};
+const shot=async name=>{await page.screenshot({path:`artifacts/revision-${name}.png`,fullPage:true});};
+try {
+  await goto('/prototype');
+  assert.ok(await page.locator('.calendar-day.has-trips').first().evaluate(el=>getComputedStyle(el).backgroundColor!=='rgba(0, 0, 0, 0)'));
+  assert.equal(await page.locator('.calendar-status-legend>span').count(),4);
+  assert.ok(await page.getByRole('button',{name:'Ringkas navigasi'}).evaluate(el=>el.getBoundingClientRect().y<100));
+  await page.getByRole('button',{name:'Buka profil administrator'}).click();
+  await page.getByLabel('Nama lengkap',{exact:true}).fill('Admin Uji Profil');
+  await page.getByLabel('Nomor telepon').fill('081234567890');
+  await page.getByRole('button',{name:'Simpan profil'}).click();
+  await page.getByRole('dialog').waitFor({state:'detached'});
+  await page.reload({waitUntil:'networkidle'});
+  assert.match(await page.locator('.profile-trigger').innerText(),/Admin Uji Profil/);
+  await goto('/prototype/inventory');
+  await page.getByRole('button',{name:'Tambah barang',exact:true}).click();
+  await page.getByLabel('Nama barang',{exact:true}).fill('Tenda foto uji');
+  await page.getByLabel('Jumlah stok total').fill('4');
+  await page.getByLabel('Foto barang',{exact:true}).setInputFiles('public/brand/rimbaloka-logo.jpeg');
+  await page.getByAltText('Pratinjau barang').waitFor();
+  await shot('add-item-desktop');
+  await page.getByRole('dialog').getByRole('button',{name:'Tambah barang',exact:true}).click();
+  await page.getByRole('dialog').waitFor({state:'detached'});
+  await page.getByLabel('Cari barang').fill('Tenda foto uji');
+  assert.ok(await page.locator('.inventory-photo-button img').evaluate(el=>el.getBoundingClientRect().height>=180));
+  await page.getByRole('button',{name:'Perbesar foto Tenda foto uji'}).click();
+  assert.ok(await page.locator('.inventory-full-photo').evaluate(el=>el.getBoundingClientRect().width>400));
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Edit Tenda foto uji',exact:true}).click();
+  await page.getByLabel('Alasan perubahan').fill('Cek form edit');
+  await page.getByRole('button',{name:'Tambah stok total'}).click();
+  await page.getByRole('button',{name:'Simpan barang',exact:true}).click();
+  await page.getByRole('dialog').waitFor({state:'detached'});
+  assert.match(await page.locator('.inventory-stock').innerText(),/5/);
+  for(const width of [375,768,1024,1440]) {
+    await page.setViewportSize({width,height:900});await goto('/prototype/inventory');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`inventory ${width}`);
+    if(width===1440)await shot('inventory-desktop');
+    await page.getByRole('button',{name:'Tambah barang',exact:true}).click();
+    assert.ok(await page.getByRole('dialog').evaluate(el=>el.scrollWidth<=el.clientWidth),`editor ${width}`);
+    if(width===375)await shot('add-item-mobile');
+    await page.keyboard.press('Escape');
+  }
+  await page.setViewportSize({width:375,height:812});
+  await page.getByRole('button',{name:'Buka navigasi'}).click();
+  await page.getByRole('button',{name:'Buka profil administrator'}).click();
+  await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({state:'detached'});
+  assert.deepEqual(errors,[]);
+  console.log('PASS: colored calendar cells, edge collapse button, profile persistence, photo upload and zoom, inventory create/edit, responsive editor and mobile profile.');
+}finally{await browser.close();}

@@ -4,6 +4,8 @@ export type AuthSession = {
   user: {
     id: string;
     email: string;
+    name?: string;
+    phone?: string;
   };
   tenant: {
     id: string;

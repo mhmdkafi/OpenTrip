@@ -92,9 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!result.success) throw new Error(result.error);
 
       setSession(null);
-      router.push("/login");
+      router.replace("/login");
+      router.refresh();
     } catch (error) {
-      console.error("Logout error:", error);
+      throw error;
     }
   };
 
