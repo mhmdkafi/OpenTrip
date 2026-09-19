@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, FileSpreadsheet, Search } from "lucide-react";
 import { useWorkspace } from "./context";
-import { Field, Modal, Select } from "./ui";
+import { Modal, Select } from "./ui";
 
 import { SpreadsheetImport } from "./spreadsheet-import";
 import { dateLabel, demoToday, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
@@ -12,14 +12,18 @@ export function Trips() {
   const { state, basePath, prototype } = useWorkspace();
   const [importing, setImporting] = useState(false);
   const [period, setPeriod] = useState("month");
-  const [reference, setReference] = useState(prototype ? demoToday : todayWib);
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
   const [search, setSearch] = useState("");
   useEffect(() => { if (window.location.hash === "#impor") queueMicrotask(() => setImporting(true)); }, []);
   const today = prototype ? demoToday : todayWib();
-  const trips = state.trips.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) && (!t.departureDate || period === "all" || period === "year" && t.departureDate.startsWith(reference.slice(0,4)) || period === "month" && t.departureDate.startsWith(reference.slice(0,7)) || period === "week" && weekKey(t.departureDate) === weekKey(reference))).sort((a,b) => a.departureDate.localeCompare(b.departureDate));
+  const trips = state.trips.filter(t => t.title.toLowerCase().includes(search.toLowerCase())
+    && (!t.departureDate || period === "all" || period === "year" && t.departureDate.startsWith(today.slice(0,4)) || period === "month" && t.departureDate.startsWith(today.slice(0,7)) || period === "week" && weekKey(t.departureDate) === weekKey(today))
+    && (!t.departureDate || (!rangeFrom || t.departureDate >= rangeFrom) && (!rangeTo || t.departureDate <= rangeTo))
+  ).sort((a,b) => a.departureDate.localeCompare(b.departureDate));
   const months = [...new Set(trips.map(t => t.departureDate.slice(0,7)))];
   return <div className="section-stack">
-    <div className="schedule-toolbar"><div className="toolbar-actions"><button className="td-button" onClick={() => setImporting(true)}><FileSpreadsheet size={16}/> Impor spreadsheet</button></div><div className="period-controls"><Select label="Tampilan jadwal" value={period} onChange={setPeriod}><option value="month">Bulanan</option><option value="week">Mingguan</option><option value="year">Tahunan</option><option value="all">Semua waktu</option></Select>{period !== "all" && <Field label="Tanggal acuan" type="date" value={reference} onChange={e => e.target.value && setReference(e.target.value)}/>}<label className="search-field"><Search size={16}/><input aria-label="Cari trip" placeholder="Cari nama trip" value={search} onChange={e => setSearch(e.target.value)}/></label></div></div>
+    <div className="schedule-toolbar"><div className="toolbar-actions"><button className="td-button" onClick={() => setImporting(true)}><FileSpreadsheet size={16}/> Impor spreadsheet</button></div><div className="period-controls"><Select label="Tampilan jadwal" value={period} onChange={setPeriod}><option value="month">Bulanan</option><option value="week">Mingguan</option><option value="year">Tahunan</option><option value="all">Semua waktu</option></Select><div className="form-label date-range-field"><span>Rentang tanggal</span><div className="date-range-inputs"><input className="td-input" type="date" aria-label="Dari tanggal" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)}/><span>–</span><input className="td-input" type="date" aria-label="Sampai tanggal" value={rangeTo} onChange={e => setRangeTo(e.target.value)}/></div></div><label className="search-field"><Search size={16}/><input aria-label="Cari trip" placeholder="Cari nama trip" value={search} onChange={e => setSearch(e.target.value)}/></label></div></div>
     <div className="list-caption"><span>{trips.length} perjalanan</span><span>Diurutkan berdasarkan keberangkatan</span></div>
     {months.map(month => <section className="schedule-month" key={month}><div className="month-heading"><h2>{month ? monthLabel(month) : "Belum dijadwalkan"}</h2><span>{trips.filter(t => t.departureDate.slice(0,7) === month).length} trip</span></div>{[...new Set(trips.filter(t => t.departureDate.slice(0,7) === month).map(t => weekKey(t.departureDate)))].map(week => <div className="schedule-week" key={week}><div className="week-heading"><span>{week ? `Minggu ${dateLabel(week)}` : "Lengkapi tanggal melalui detail trip"}</span></div><div className="schedule-trips">{trips.filter(t => t.departureDate.slice(0,7) === month && weekKey(t.departureDate) === week).map(trip => {
       const count = state.participants.filter(p => p.tripId === trip.id && p.status === "active").length;

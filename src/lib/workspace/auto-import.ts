@@ -21,12 +21,15 @@ export function detectSheetHeader(values: string[][]) {
   throw new DomainError("Kolom pendaftaran belum dikenali. Spreadsheet perlu memiliki header Timestamp, Nama Lengkap, Fasilitas, dan Mepo yang tidak duplikat.");
 }
 
-export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetadata, "spreadsheetId" | "title"> & {locale?:string}, sheet: { sheetId: number; title: string }, values: string[][], userId: string, tripId?: string) {
+export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetadata, "spreadsheetId" | "title"> & {locale?:string}, sheet: { sheetId: number; title: string }, values: string[][], userId: string, tripId?: string, departureDate?: string) {
   const detected = detectSheetHeader(values);
   const rows = values.slice(detected.headerRow);
   if (rows.length > 5000) throw new DomainError("Impor melebihi batas 5.000 respons. Pisahkan sumber per trip.");
   const dateOrder = sheetDateOrder(rows.map(row=>[row[detected.mapping.registered_at]??""]),metadata.locale);
   const details = readTripDetails(metadata.title,values,detected.headerRow,dateOrder);
+  // Admin-provided departure date wins over anything guessed from the sheet,
+  // so the trip is fully filled in without a follow-up edit.
+  if (departureDate) details.departureDate = departureDate;
   const state = structuredClone(original);
   const linked = state.sources.find(s => s.spreadsheetId === metadata.spreadsheetId && s.sheetId === sheet.sheetId);
   if (tripId && linked && linked.tripId !== tripId) throw new DomainError("Spreadsheet ini sudah terhubung ke trip lain.", 409);

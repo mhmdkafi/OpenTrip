@@ -22,6 +22,11 @@ export function WorkspaceProvider({ children, prototype = false }: { children: R
   const [notice, setNotice] = useState("");
   const locked = useRef(false);
   const pending = useRef<{ payload: string; id: string } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   function replace(next: Snapshot) {
     if (prototype) { try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* Demo remains usable without storage. */ } }
     setData({ state: next.state, revision: next.revision });

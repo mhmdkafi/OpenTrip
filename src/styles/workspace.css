@@ -122,6 +122,9 @@
 .period-controls { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
 .period-controls .search-field { margin-left:auto; }
 .period-controls .form-label { min-width:145px; }
+.date-range-inputs { display:flex; align-items:center; gap:6px; }
+.date-range-inputs input { min-width:0; }
+.date-range-inputs>span { color:var(--muted); }
 .list-caption { display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); }
 .schedule-month { border:1px solid var(--line); background:#fff; border-radius:10px; overflow:hidden; }
 .month-heading { padding:18px 22px; display:flex; align-items:center; justify-content:space-between; background:#edf1e7; }
