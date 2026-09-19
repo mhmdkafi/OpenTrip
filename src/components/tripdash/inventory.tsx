@@ -1,36 +1,458 @@
 ﻿"use client";
 import { useState } from "react";
 import Image from "next/image";
-import { Plus, Search, Package, Pencil, Trash2, RotateCcw, ArrowUpRight } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Package,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  ArrowUpRight,
+} from "lucide-react";
 import { availableStock, type Inventory as Item } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
-import { Field, Form, number, Submit, text, TripSelect, Modal, Select } from "./ui";
+import {
+  Field,
+  Form,
+  number,
+  Submit,
+  text,
+  TripSelect,
+  Modal,
+  Select,
+} from "./ui";
 import { InventoryEditor } from "./inventory-editor";
 
 export function Inventory() {
   const { state, mutate, run, busy } = useWorkspace();
-  const [search,setSearch] = useState(""), [kind,setKind] = useState(""), [page,setPage] = useState(0);
-  const [editing,setEditing] = useState<Item | "new" | null>(null), [deleting,setDeleting] = useState<Item | null>(null), [moving,setMoving] = useState<Item | null>(null);
-  const [incident,setIncident] = useState<Item|null>(null), [incidentKind,setIncidentKind] = useState("note"), [incidentLoan,setIncidentLoan] = useState("");
-  const [viewing,setViewing] = useState<Item|null>(null);
-  const [tripId,setTripId] = useState(state.trips.find(t=>t.status==="active")?.id ?? "");
-  const items = state.inventory.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) && (!kind || (kind === "consumable" ? i.consumable : i.kind === kind)));
-  const current = Math.min(page,Math.max(0,Math.ceil(items.length/8)-1));
-  const low = state.inventory.filter(i => i.consumable && i.stockTracked !== false && availableStock(i) <= (i.reorderLevel ?? 5)).sort((a,b) => availableStock(a)-availableStock(b));
-  return <div className="inventory-layout inventory-v2"><section className="inventory-list-panel">
-    <div className="inventory-list-toolbar"><label className="search-field"><Search size={16}/><input aria-label="Cari barang" placeholder="Cari barang" value={search} onChange={e=>{setSearch(e.target.value);setPage(0);}}/></label><Select label="Jenis barang" value={kind} onChange={value=>{setKind(value);setPage(0);}}><option value="">Semua jenis</option><option value="operational">Operasional</option><option value="rental">Sewaan</option><option value="consumable">Habis pakai</option></Select><button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Tambah barang</button></div>
-    <div className="inventory-list-head" aria-hidden="true"><span>Barang</span><span>Stok tersedia / total</span><span>Tindakan</span></div>
-    <div className="inventory-list">{items.slice(current*8,current*8+8).map(item=>{
-      const available=availableStock(item), used=item.total-item.damaged-available;
-      return <article className="inventory-row" key={item.id}><div className="inventory-row-main"><div className="inventory-product">{item.imageUrl ? <button className="inventory-photo-button" aria-label={`Perbesar foto ${item.name}`} onClick={()=>setViewing(item)}><Image src={item.imageUrl} alt={item.name} width={420} height={280} unoptimized/><span>Perbesar foto</span></button> : <button className="product-placeholder" aria-label={`Tambahkan foto ${item.name}`} onClick={()=>setEditing(item)}><Package size={40} strokeWidth={1.4}/><span>Tambahkan foto</span></button>}<div><h2>{item.name}</h2><p>{item.consumable ? "Habis pakai" : item.kind==="rental" ? "Sewaan" : "Operasional"}</p></div></div><div className="inventory-stock">{item.stockTracked===false ? <span className="stock-untracked">Jumlah tidak dicatat</span> : <><strong>{available}<small> / {item.total}</small></strong><span>{used ? `${used} dipinjam` : "Tersedia"}{item.damaged ? ` · ${item.damaged} rusak` : ""}</span></>}</div><div className="inventory-row-actions"><button className="table-icon" aria-label={`Edit ${item.name}`} onClick={()=>setEditing(item)}><Pencil size={16}/><span>Edit</span></button><button className="table-icon danger-button" aria-label={`Hapus ${item.name}`} onClick={()=>setDeleting(item)}><Trash2 size={16}/></button></div></div><div className="inventory-row-bottom">{item.stockTracked!==false&&<button className="text-link" disabled={!available} onClick={()=>setMoving(item)}>{item.consumable ? "Catat pemakaian" : "Catat peminjaman"}<ArrowUpRight size={14}/></button>}{item.loans.filter(l=>!l.returned).map(loan=><div className="loan-line" key={loan.id}><span><strong>{loan.notes || `Dipinjam untuk ${state.trips.find(t=>t.id===loan.tripId)?.title ?? "trip"}`}</strong><small>{loan.quantity} unit · {state.trips.find(t=>t.id===loan.tripId)?.title}</small></span><button className="text-link" disabled={busy} aria-label={`Kembalikan ${item.name} dari ${state.trips.find(t=>t.id===loan.tripId)?.title}`} onClick={()=>void run(()=>mutate({action:"inventory.return",itemId:item.id,loanId:loan.id}))}><RotateCcw size={13}/> Kembalikan</button></div>)}<button className="text-link inventory-note-action" onClick={()=>{setIncident(item);setIncidentKind("note");setIncidentLoan("");}}>Tambah catatan</button>{item.incidents?.slice().reverse().map(note=><div className="inventory-incident" key={note.id}><strong>{note.description}</strong><small>{new Date(note.at).toLocaleDateString("id-ID")}{note.kind!=="note"&&` · ${note.quantity} barang ${note.kind==="lost"?"hilang":"rusak"}`}{note.tripId&&` · ${state.trips.find(t=>t.id===note.tripId)?.title}`}</small></div>)}</div></article>;
-    })}</div>
-    {!items.length&&<div className="empty-state"><h3>Tidak ada barang yang cocok</h3><p>Ubah pencarian atau tambahkan barang.</p></div>}
-    <div className="table-foot"><span>{items.length ? current*8+1 : 0}–{Math.min((current+1)*8,items.length)} dari {items.length} barang</span><div className="pagination"><button disabled={current===0} onClick={()=>setPage(current-1)}>Sebelumnya</button><span>{current+1}</span><button disabled={(current+1)*8>=items.length} onClick={()=>setPage(current+1)}>Berikutnya</button></div></div>
-    </section><aside className="stock-reminders"><h2>Stok menipis <span>{low.length}</span></h2><p>Barang habis pakai yang mencapai batas pengingat.</p>{low.map(item=><button key={item.id} className="stock-reminder" onClick={()=>setEditing(item)}><strong>{item.name}</strong><span>Tersisa {availableStock(item)} · batas {item.reorderLevel??5}</span><small>Perbarui stok <ArrowUpRight size={13}/></small></button>)}{!low.length&&<div className="stock-clear">Stok habis pakai masih di atas batas pengingat.</div>}</aside>
-    {viewing&&<Modal title={viewing.name} onClose={()=>setViewing(null)} wide><Image className="inventory-full-photo" src={viewing.imageUrl!} alt={viewing.name} width={1000} height={800} unoptimized/></Modal>}
-    {editing&&<InventoryEditor item={editing==="new"?undefined:editing} onClose={()=>setEditing(null)}/>}
-    {deleting&&<Modal title="Hapus barang" onClose={()=>setDeleting(null)}><p className="empty-note">Hapus {deleting.name} dari inventory? Barang yang masih dipinjam harus dikembalikan terlebih dahulu.</p><div className="confirm-actions"><button className="td-secondary" onClick={()=>setDeleting(null)}>Batal</button><button className="td-button danger-solid" disabled={busy} onClick={()=>void run(async()=>{await mutate({action:"inventory.delete",itemId:deleting.id});setDeleting(null);})}>Hapus barang</button></div></Modal>}
-    {incident&&<Modal title={`Catatan — ${incident.name}`} onClose={()=>setIncident(null)}><Form onSave={async data=>{await mutate({action:"inventory.incident",itemId:incident.id,kind:incidentKind as "lost"|"damaged"|"note",description:text(data,"description"),quantity:incidentKind==="note"?0:number(data,"quantity"),...(incidentLoan?{loanId:incidentLoan}:{})});setIncident(null);}}><Field label="Catatan kejadian" name="description" placeholder="Contoh: tenda hilang" maxLength={200} required/><Select label="Dampak pada stok" value={incidentKind} onChange={setIncidentKind}><option value="note">Catatan saja</option><option value="lost">Barang hilang</option><option value="damaged">Barang rusak</option></Select>{incidentKind!=="note"&&<><Select label="Lokasi barang" value={incidentLoan} onChange={setIncidentLoan}><option value="">Stok tersedia di gudang</option>{incident.loans.filter(l=>!l.returned).map(l=><option key={l.id} value={l.id}>{state.trips.find(t=>t.id===l.tripId)?.title} · {l.quantity} dipinjam</option>)}</Select><Field label="Jumlah barang terdampak" name="quantity" type="number" min={1} required/><p className="empty-note">Barang hilang mengurangi total stok. Barang rusak mengurangi stok tersedia.</p></>}<Submit>Simpan catatan</Submit></Form></Modal>}
-    {moving&&<Modal title={moving.consumable?"Catat pemakaian":"Catat peminjaman"} onClose={()=>setMoving(null)}><p className="empty-note">{moving.name} · {availableStock(moving)} unit tersedia</p>{!moving.consumable&&<TripSelect value={tripId} onChange={setTripId} all="Pilih trip aktif"/>}<Form onSave={async data=>{await mutate(moving.consumable ? {action:"inventory.consume",itemId:moving.id,quantity:number(data,"quantity"),reason:text(data,"reason")} : {action:"inventory.lend",itemId:moving.id,tripId,quantity:number(data,"quantity"),notes:text(data,"notes")});setMoving(null);}}><Field label="Jumlah unit" name="quantity" type="number" min={1} max={availableStock(moving)} required/>{moving.consumable ? <Field label="Keperluan" name="reason" required/> : <Field label="Catatan peminjaman" name="notes" placeholder="Contoh: dibawa tim logistik ke Malabar" maxLength={500}/>}<Submit>{moving.consumable?"Simpan pemakaian":"Simpan peminjaman"}</Submit></Form></Modal>}
-  </div>;
+  const [search, setSearch] = useState(""),
+    [kind, setKind] = useState(""),
+    [page, setPage] = useState(0);
+  const [editing, setEditing] = useState<Item | "new" | null>(null),
+    [deleting, setDeleting] = useState<Item | null>(null),
+    [moving, setMoving] = useState<Item | null>(null);
+  const [incident, setIncident] = useState<Item | null>(null),
+    [incidentKind, setIncidentKind] = useState("note"),
+    [incidentLoan, setIncidentLoan] = useState("");
+  const [viewing, setViewing] = useState<Item | null>(null);
+  const [detail, setDetail] = useState<Item | null>(null);
+  const [tripId, setTripId] = useState(
+    state.trips.find((t) => t.status === "active")?.id ?? "",
+  );
+  const items = state.inventory.filter(
+    (i) =>
+      i.name.toLowerCase().includes(search.toLowerCase()) &&
+      (!kind || (kind === "consumable" ? i.consumable : i.kind === kind)),
+  );
+  const current = Math.min(page, Math.max(0, Math.ceil(items.length / 8) - 1));
+  const low = state.inventory
+    .filter(
+      (i) =>
+        i.consumable &&
+        i.stockTracked !== false &&
+        availableStock(i) <= (i.reorderLevel ?? 5),
+    )
+    .sort((a, b) => availableStock(a) - availableStock(b));
+  return (
+    <div className="inventory-layout inventory-v2">
+      <section className="inventory-list-panel">
+        <div className="inventory-list-toolbar">
+          <label className="search-field">
+            <Search size={16} />
+            <input
+              aria-label="Cari barang"
+              placeholder="Cari barang"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+            />
+          </label>
+          <Select
+            label="Jenis barang"
+            value={kind}
+            onChange={(value) => {
+              setKind(value);
+              setPage(0);
+            }}
+          >
+            <option value="">Semua jenis</option>
+            <option value="operational">Operasional</option>
+            <option value="rental">Sewaan</option>
+            <option value="consumable">Habis pakai</option>
+          </Select>
+          <button className="td-button" onClick={() => setEditing("new")}>
+            <Plus size={16} /> Tambah barang
+          </button>
+        </div>
+        <div className="inventory-list-head" aria-hidden="true">
+          <span>Barang</span>
+          <span>Stok tersedia / total</span>
+          <span>Tindakan</span>
+        </div>
+        <div className="inventory-list">
+          {items.slice(current * 8, current * 8 + 8).map((item) => {
+            const available = availableStock(item),
+              used = item.total - item.damaged - available;
+            return (
+              <article className="inventory-row" key={item.id}>
+                <div className="inventory-row-main">
+                  <div className="inventory-product">
+                    {item.imageUrl ? (
+                      <button
+                        className="inventory-photo-button"
+                        aria-label={`Perbesar foto ${item.name}`}
+                        onClick={() => setViewing(item)}
+                      >
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.name}
+                          width={420}
+                          height={280}
+                          unoptimized
+                        />
+                        <span>Perbesar foto</span>
+                      </button>
+                    ) : (
+                      <button
+                        className="product-placeholder"
+                        aria-label={`Tambahkan foto ${item.name}`}
+                        onClick={() => setEditing(item)}
+                      >
+                        <Package size={40} strokeWidth={1.4} />
+                        <span>Tambahkan foto</span>
+                      </button>
+                    )}
+                    <div>
+                      <h2>
+                        <button
+                          className="item-name-link"
+                          onClick={() => setDetail(item)}
+                        >
+                          {item.name}
+                        </button>
+                      </h2>
+                      <p>
+                        {item.consumable
+                          ? "Habis pakai"
+                          : item.kind === "rental"
+                            ? "Sewaan"
+                            : "Operasional"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="inventory-stock">
+                    {item.stockTracked === false ? (
+                      <span className="stock-untracked">
+                        Jumlah tidak dicatat
+                      </span>
+                    ) : (
+                      <>
+                        <strong>
+                          {available}
+                          <small> / {item.total}</small>
+                        </strong>
+                        <span>
+                          {used ? `${used} dipinjam` : "Tersedia"}
+                          {item.damaged ? ` · ${item.damaged} rusak` : ""}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="inventory-row-actions">
+                    <button
+                      className="table-icon"
+                      aria-label={`Edit ${item.name}`}
+                      onClick={() => setEditing(item)}
+                    >
+                      <Pencil size={16} />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      className="table-icon danger-button"
+                      aria-label={`Hapus ${item.name}`}
+                      onClick={() => setDeleting(item)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        {!items.length && (
+          <div className="empty-state">
+            <h3>Tidak ada barang yang cocok</h3>
+            <p>Ubah pencarian atau tambahkan barang.</p>
+          </div>
+        )}
+        <div className="table-foot">
+          <span>
+            {items.length ? current * 8 + 1 : 0}–
+            {Math.min((current + 1) * 8, items.length)} dari {items.length}{" "}
+            barang
+          </span>
+          <div className="pagination">
+            <button
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+            >
+              Sebelumnya
+            </button>
+            <span>{current + 1}</span>
+            <button
+              disabled={(current + 1) * 8 >= items.length}
+              onClick={() => setPage(current + 1)}
+            >
+              Berikutnya
+            </button>
+          </div>
+        </div>
+      </section>
+      <aside className="stock-reminders">
+        <h2>
+          Stok menipis <span>{low.length}</span>
+        </h2>
+        <p>Barang habis pakai yang mencapai batas pengingat.</p>
+        {low.map((item) => (
+          <button
+            key={item.id}
+            className="stock-reminder"
+            onClick={() => setEditing(item)}
+          >
+            <strong>{item.name}</strong>
+            <span>
+              Tersisa {availableStock(item)} · batas {item.reorderLevel ?? 5}
+            </span>
+            <small>
+              Perbarui stok <ArrowUpRight size={13} />
+            </small>
+          </button>
+        ))}
+        {!low.length && (
+          <div className="stock-clear">
+            Stok habis pakai masih di atas batas pengingat.
+          </div>
+        )}
+      </aside>
+      {viewing && (
+        <Modal title={viewing.name} onClose={() => setViewing(null)} wide>
+          <Image
+            className="inventory-full-photo"
+            src={viewing.imageUrl!}
+            alt={viewing.name}
+            width={1000}
+            height={800}
+            unoptimized
+          />
+        </Modal>
+      )}
+      {detail && (
+        <Modal title={detail.name} onClose={() => setDetail(null)}>
+          <p className="empty-note">
+            {detail.consumable
+              ? "Habis pakai"
+              : detail.kind === "rental"
+                ? "Sewaan"
+                : "Operasional"}
+          </p>
+          {detail.stockTracked === false ? (
+            <p className="empty-note">Jumlah tidak dicatat</p>
+          ) : (
+            <div className="inventory-stock">
+              <strong>
+                {availableStock(detail)}
+                <small> / {detail.total}</small>
+              </strong>
+              <span>
+                {detail.total - detail.damaged - availableStock(detail)
+                  ? `${detail.total - detail.damaged - availableStock(detail)} dipinjam`
+                  : "Tersedia"}
+                {detail.damaged ? ` · ${detail.damaged} rusak` : ""}
+              </span>
+            </div>
+          )}
+          {detail.stockTracked !== false && (
+            <button
+              className="text-link"
+              disabled={!availableStock(detail)}
+              onClick={() => {
+                setMoving(detail);
+                setDetail(null);
+              }}
+            >
+              {detail.consumable ? "Catat pemakaian" : "Catat peminjaman"}
+              <ArrowUpRight size={14} />
+            </button>
+          )}
+        </Modal>
+      )}
+      {editing && (
+        <InventoryEditor
+          item={editing === "new" ? undefined : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {deleting && (
+        <Modal title="Hapus barang" onClose={() => setDeleting(null)}>
+          <p className="empty-note">
+            Hapus {deleting.name} dari inventory? Barang yang masih dipinjam
+            harus dikembalikan terlebih dahulu.
+          </p>
+          <div className="confirm-actions">
+            <button className="td-secondary" onClick={() => setDeleting(null)}>
+              Batal
+            </button>
+            <button
+              className="td-button danger-solid"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await mutate({
+                    action: "inventory.delete",
+                    itemId: deleting.id,
+                  });
+                  setDeleting(null);
+                })
+              }
+            >
+              Hapus barang
+            </button>
+          </div>
+        </Modal>
+      )}
+      {incident && (
+        <Modal
+          title={`Catatan — ${incident.name}`}
+          onClose={() => setIncident(null)}
+        >
+          <Form
+            onSave={async (data) => {
+              await mutate({
+                action: "inventory.incident",
+                itemId: incident.id,
+                kind: incidentKind as "lost" | "damaged" | "note",
+                description: text(data, "description"),
+                quantity:
+                  incidentKind === "note" ? 0 : number(data, "quantity"),
+                ...(incidentLoan ? { loanId: incidentLoan } : {}),
+              });
+              setIncident(null);
+            }}
+          >
+            <Field
+              label="Catatan kejadian"
+              name="description"
+              placeholder="Contoh: tenda hilang"
+              maxLength={200}
+              required
+            />
+            <Select
+              label="Dampak pada stok"
+              value={incidentKind}
+              onChange={setIncidentKind}
+            >
+              <option value="note">Catatan saja</option>
+              <option value="lost">Barang hilang</option>
+              <option value="damaged">Barang rusak</option>
+            </Select>
+            {incidentKind !== "note" && (
+              <>
+                <Select
+                  label="Lokasi barang"
+                  value={incidentLoan}
+                  onChange={setIncidentLoan}
+                >
+                  <option value="">Stok tersedia di gudang</option>
+                  {incident.loans
+                    .filter((l) => !l.returned)
+                    .map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {state.trips.find((t) => t.id === l.tripId)?.title} ·{" "}
+                        {l.quantity} dipinjam
+                      </option>
+                    ))}
+                </Select>
+                <Field
+                  label="Jumlah barang terdampak"
+                  name="quantity"
+                  type="number"
+                  min={1}
+                  required
+                />
+                <p className="empty-note">
+                  Barang hilang mengurangi total stok. Barang rusak mengurangi
+                  stok tersedia.
+                </p>
+              </>
+            )}
+            <Submit>Simpan catatan</Submit>
+          </Form>
+        </Modal>
+      )}
+      {moving && (
+        <Modal
+          title={moving.consumable ? "Catat pemakaian" : "Catat peminjaman"}
+          onClose={() => setMoving(null)}
+        >
+          <p className="empty-note">
+            {moving.name} · {availableStock(moving)} unit tersedia
+          </p>
+          {!moving.consumable && (
+            <TripSelect
+              value={tripId}
+              onChange={setTripId}
+              all="Pilih trip aktif"
+            />
+          )}
+          <Form
+            onSave={async (data) => {
+              await mutate(
+                moving.consumable
+                  ? {
+                      action: "inventory.consume",
+                      itemId: moving.id,
+                      quantity: number(data, "quantity"),
+                      reason: text(data, "reason"),
+                    }
+                  : {
+                      action: "inventory.lend",
+                      itemId: moving.id,
+                      tripId,
+                      quantity: number(data, "quantity"),
+                      notes: text(data, "notes"),
+                    },
+              );
+              setMoving(null);
+            }}
+          >
+            <Field
+              label="Jumlah unit"
+              name="quantity"
+              type="number"
+              min={1}
+              max={availableStock(moving)}
+              required
+            />
+            {moving.consumable ? (
+              <Field label="Keperluan" name="reason" required />
+            ) : (
+              <Field
+                label="Catatan peminjaman"
+                name="notes"
+                placeholder="Contoh: dibawa tim logistik ke Malabar"
+                maxLength={500}
+              />
+            )}
+            <Submit>
+              {moving.consumable ? "Simpan pemakaian" : "Simpan peminjaman"}
+            </Submit>
+          </Form>
+        </Modal>
+      )}
+    </div>
+  );
 }
