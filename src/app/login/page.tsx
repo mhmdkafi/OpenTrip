@@ -1,24 +1,59 @@
 "use client";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/auth/context";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
+
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Landscape } from "@/components/tripdash/landscape";
+import { useAuth } from "@/lib/auth/context";
 
 function LoginForm() {
-  const [email,setEmail]=useState(""), [password,setPassword]=useState(""), [error,setError]=useState("");
-  const [loading,setLoading]=useState(false), [showPassword,setShowPassword]=useState(false);
-  const params=useSearchParams(), router=useRouter(); const {login}=useAuth();
-  return <main className="auth-page"><section className="auth-card"><Link href="/login" className="auth-brand"><Image src="/brand/rimbaloka-logo.jpeg" alt="Rimbaloka Trip" width={56} height={56}/><div><strong>TripDash.</strong><span>Rimbaloka Trip</span></div></Link><h1>Login</h1><p className="auth-intro">Masuk ke akun untuk mengelola perjalanan dan keuangan.</p>
-    {params.get("registered")==="1"&&<p role="status" className="notice">Akun berhasil dibuat. Periksa email konfirmasi, lalu masuk.</p>}
-    {params.get("demo")==="ended"&&<p role="status" className="notice">Anda telah keluar dari demo. Data simulasi tetap tersimpan di browser ini.</p>}
-    {error&&<p className="notice error" role="alert">{error}</p>}
-    <form onSubmit={async e=>{e.preventDefault();setError("");setLoading(true);try{const result=await login(email,password);if(result.success){router.replace("/dashboard");router.refresh();}else setError(result.error??"Login gagal.");}catch{setError("Login gagal. Silakan coba kembali.");}finally{setLoading(false);}}}>
-      <label className="form-label">Alamat email<input type="email" className="td-input" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required disabled={loading}/></label>
-      <label className="form-label">Password<div className="password-input"><input className="td-input" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} required disabled={loading}/><button type="button" aria-label={showPassword?"Sembunyikan password":"Tampilkan password"} onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>
-      <button className="td-button" disabled={loading} type="submit">{loading?"Memproses…":"Login"}<ArrowRight size={16}/></button>
-    </form><p className="auth-register">Belum memiliki akun? <Link href="/register">Daftar akun</Link></p><div className="auth-demo"><span>Ingin mencoba tampilan terlebih dahulu?</span><Link href="/prototype" className="td-secondary">Buka demo</Link></div>
-  </section></main>;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { login, session, isLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  useEffect(() => {
+    if (!isLoading && session) router.replace("/dashboard");
+  }, [isLoading, session, router]);
+
+  async function signIn(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true); setError("");
+    try { const result = await login(email, password); if (!result.success) setError(result.error || "Login gagal."); else { router.replace("/dashboard"); router.refresh(); } }
+    finally { setBusy(false); }
+  }
+
+  if (isLoading || session) return <p role="status">Memeriksa sesi…</p>;
+  return <div className="login-layout">
+    <section className="login-story" aria-label="Tentang TripDash">
+      <Link href="/" className="brand-lockup"><Image src="/brand/rimbaloka-logo.jpeg" alt="Logo Rimbaloka Trip" width={46} height={46}/><div><strong>TripDash<span>.</span></strong><small>Rimbaloka Trip</small></div></Link>
+      <div className="login-story-copy"><span className="eyebrow">TripDash</span><h1>Satu ruang kerja untuk setiap perjalanan.</h1><p>Kelola perjalanan dan data bisnis dalam satu workspace.</p></div>
+      <div className="login-landscape"><Landscape variant={2}/></div>
+      <p className="login-story-foot"><ShieldCheck size={15} aria-hidden="true"/> Akses sesuai keanggotaan workspace</p>
+    </section>
+    <main className="login-form-side">
+      <div className="login-form-wrap">
+        <span className="account-badge">Akun workspace</span>
+        <h2>Selamat datang</h2>
+        <p>Masuk untuk mengelola perjalanan dan data workspace Anda.</p>
+        {error && <p role="alert" className="notice error">{error}</p>}
+        <form onSubmit={signIn}>
+          <label className="form-label" htmlFor="email">Alamat email<input id="email" type="email" className="td-input" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required/></label>
+          <label className="form-label" htmlFor="password">Password<div className="password-input"><input id="password" className="td-input" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={event => setPassword(event.target.value)} required/><button type="button" aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18} aria-hidden="true"/> : <Eye size={18} aria-hidden="true"/>}</button></div></label>
+          <button className="td-button" type="submit" disabled={busy}>{busy ? "Memproses…" : "Login"}<ArrowRight size={16} aria-hidden="true"/></button>
+        </form>
+        <p className="login-register">Belum memiliki akun? Hubungi owner workspace untuk mendapatkan akses.</p>
+        <p className="login-security"><ShieldCheck size={14} aria-hidden="true"/> Sesi dilindungi autentikasi</p>
+      </div>
+      <footer>© 2026 Rimbaloka Trip · TripDash</footer>
+    </main>
+  </div>;
 }
-export default function LoginPage(){return <Suspense fallback={<p>Memuat login…</p>}><LoginForm/></Suspense>;}
+
+export default function LoginPage() {
+  return <Suspense fallback={<p role="status">Memuat login…</p>}><LoginForm/></Suspense>;
+}

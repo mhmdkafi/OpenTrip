@@ -6,10 +6,10 @@ import { useWorkspace } from "./context";
 import { Modal, Select } from "./ui";
 
 import { SpreadsheetImport } from "./spreadsheet-import";
-import { dateLabel, demoToday, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
+import { dateLabel, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
 
 export function Trips() {
-  const { state, basePath, prototype } = useWorkspace();
+  const { state, basePath } = useWorkspace();
   const [importing, setImporting] = useState(false);
   const [period, setPeriod] = useState("month");
   const [rangeFrom, setRangeFrom] = useState("");

@@ -3,7 +3,6 @@ import { z } from "zod";
 import { fetchSheetMetadata, fetchSheetRows, parseGoogleSheetsUrl } from "@/lib/google";
 import { apiError, loadWorkspace, requireWorkspace, saveWorkspace } from "@/lib/workspace/server";
 import { googleAccessToken } from "@/lib/workspace/google-auth";
-import { readPublicSheet } from "@/lib/workspace/public-sheet";
 import { DomainError } from "@/lib/workspace/commands";
 import { detectSheetHeader, importSpreadsheet } from "@/lib/workspace/auto-import";
 

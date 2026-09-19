@@ -7,7 +7,7 @@ import { dateLabel } from "@/lib/workspace/presentation";
 import type { Cash, Trip } from "@/lib/workspace/types";
 import { Select } from "./ui";
 
-export function FinanceLedger({ entries, allEntries, trips, tripId, prototype, onEdit, onDelete }: { entries: Cash[]; allEntries: Cash[]; trips: Trip[]; tripId: string; prototype: boolean; onEdit: (cash: Cash) => void; onDelete: (cash: Cash) => void }) {
+export function FinanceLedger({ entries, allEntries, trips, tripId, onEdit, onDelete }: { entries: Cash[]; allEntries: Cash[]; trips: Trip[]; tripId: string; onEdit: (cash: Cash) => void; onDelete: (cash: Cash) => void }) {
   const [search,setSearch]=useState(""), [direction,setDirection]=useState(""), [page,setPage]=useState(0);
   const visible=entries.filter(c=>(!direction||c.direction===direction)&&`${c.description} ${c.category}`.toLowerCase().includes(search.toLowerCase()));
   const current=Math.min(page,Math.max(0,Math.ceil(visible.length/10)-1));
@@ -22,7 +22,7 @@ export function FinanceLedger({ entries, allEntries, trips, tripId, prototype, o
     const escape=(value:string)=>'"'+(/^[=+@-]/.test(value)?"'":"")+value.replace(/"/g,'""')+'"';
     const csv="\ufeffTanggal WIB,Trip,Kategori,Keterangan,Masuk,Keluar\n"+visible.map(e=>[new Date(e.occurredAt).toLocaleString("id-ID",{timeZone:"Asia/Jakarta"}),trips.find(t=>t.id===e.tripId)?.title??"Umum bisnis",e.category,e.description,e.direction==="in"?String(e.amount):"0",e.direction==="out"?String(e.amount):"0"].map(escape).join(",")).join("\n");
     const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-    const link=document.createElement("a"); link.href=url; link.download=prototype?"keuangan-simulasi.csv":"keuangan-trip.csv"; link.click();
+    const link=document.createElement("a"); link.href=url; link.download="keuangan-trip.csv"; link.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   return <div className="cf-ledger">

@@ -5,10 +5,10 @@ import { FileSpreadsheet, ArrowRight } from "lucide-react";
 import { useWorkspace, requestJson } from "./context";
 import { Field, Form, Submit, text } from "./ui";
 
-import { importSpreadsheet } from "@/lib/workspace/auto-import";
+
 
 export function SpreadsheetImport({ initialTripId = "" }: { initialTripId?: string }) {
-  const { state, revision, replace, prototype, basePath } = useWorkspace();
+  const { state, revision, replace, basePath } = useWorkspace();
   const source = state.sources.find(s => s.tripId === initialTripId);
   const [result, setResult] = useState<{ tripId: string; stats: { added: number; unchanged: number; review: number } } | null>(null);
   return <div className="link-import">
