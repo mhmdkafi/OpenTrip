@@ -16,7 +16,7 @@ export function Trips() {
   const [rangeTo, setRangeTo] = useState("");
   const [search, setSearch] = useState("");
   useEffect(() => { if (window.location.hash === "#impor") queueMicrotask(() => setImporting(true)); }, []);
-  const today = prototype ? demoToday : todayWib();
+  const today = todayWib();
   const trips = state.trips.filter(t => t.title.toLowerCase().includes(search.toLowerCase())
     && (!t.departureDate || period === "all" || period === "year" && t.departureDate.startsWith(today.slice(0,4)) || period === "month" && t.departureDate.startsWith(today.slice(0,7)) || period === "week" && weekKey(t.departureDate) === weekKey(today))
     && (!t.departureDate || (!rangeFrom || t.departureDate >= rangeFrom) && (!rangeTo || t.departureDate <= rangeTo))
