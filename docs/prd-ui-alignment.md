@@ -32,7 +32,6 @@ Acuan: PDF client 18 halaman yang dilampirkan pada 13 September 2026. Bagian “
 
 ## Verifikasi
 
-`npm test` mencakup batas periode WIB, konsistensi total grafik, risiko trip, perubahan harga, perlindungan pemasukan, dan siklus stok. `node scripts/prd-smoke.mjs` menguji alur UI dan responsive menggunakan browser lokal. Tidak ada klaim pengujian pada perangkat fisik.
 
 ## Revisi lanjutan dari pengguna
 
@@ -51,7 +50,7 @@ Instruksi percakapan setelah review prototype memperbarui acuan UI sebelumnya:
 - Sel kalender dengan perjalanan kini berwarna sesuai status, disertai legenda. Jika beberapa status berada pada tanggal yang sama, prioritas warna adalah At risk, On coming, Cancel, lalu Done; label masing-masing trip tetap tersedia.
 - Tombol ringkas/perluas sidebar dipindahkan ke tepi. Profil administrator dapat dibuka dari nama/avatar; nama dan nomor telepon bisa diedit. Profil prototype disimpan di browser, sedangkan akun bisnis menggunakan metadata pengguna Supabase melalui endpoint terautentikasi.
 - Inventory menampilkan kartu dengan foto 190–230 px dan dialog pembesaran. Form tambah/edit dibagi menjadi foto, identitas, cara pencatatan, dan stok. Upload JPG/PNG/WebP menerima hingga 8 MB lalu dioptimalkan di browser, dengan batas hasil sesuai penyimpanan gambar yang sudah ada.
-- Prototype kini benar-benar membaca spreadsheet publik melalui endpoint stateless, bukan menggunakan respons contoh. Endpoint tersebut tidak menyimpan data bisnis ke Supabase. Impor dashboard tetap membutuhkan autentikasi; spreadsheet publik dapat dibaca tanpa Google OAuth, sementara sumber privat menggunakan koneksi Google.
+- Prototype menggunakan respons spreadsheet contoh yang diproses langsung di browser. Tautan hanya menjadi identitas sumber simulasi dan tidak dikirim ke API. Integrasi spreadsheet nyata ditunda sampai tahap backend.
 - Nama, volume, tanggal keberangkatan, tarif, lokasi, rekening, dan mepo dibaca bila tersedia dalam judul, header/kolom, atau baris informasi sebelum header. Detail admin yang sudah terisi dipertahankan. Timestamp pendaftaran tidak pernah dijadikan tanggal keberangkatan.
 - Locale spreadsheet digunakan untuk urutan tanggal. Contoh client menggunakan en_US sehingga tanggal seperti 8/14/2026 dipahami sebagai 14 Agustus 2026.
 - Tautan contoh Malabar Vol 12 telah diuji langsung: 19 pendaftaran, 21 peserta, tarif jas hujan Rp15.000, dan impor ulang tidak menggandakan peserta. Tanggal keberangkatan serta tarif Full/Non tidak tersedia di sumber tersebut; admin perlu menambahkannya di sumber atau detail trip.

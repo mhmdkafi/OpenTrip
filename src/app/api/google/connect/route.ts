@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const auth = await requireWorkspace(); const config = googleConfig();
     const state = randomBytes(32).toString("hex");
-    (await cookies()).set("google-oauth-state", `${state}:${auth.tenantId}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 600, path: "/api/google" });
+    (await cookies()).set("google-oauth-state", `${state}:${auth.tenantId}:${auth.userId}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 600, path: "/api/google" });
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.search = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.redirectUri, response_type: "code", scope: "https://www.googleapis.com/auth/spreadsheets.readonly", access_type: "offline", prompt: "consent", state }).toString();
     return NextResponse.redirect(url);

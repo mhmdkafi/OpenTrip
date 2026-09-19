@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Wallet, Package, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Wallet, Package, Users, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "./tripdash/context";
 import { UserMenu } from "./user-menu";
@@ -11,10 +11,11 @@ export const navigation = [
   { slug: "/trips", label: "Trip Schedule", icon: CalendarDays },
   { slug: "/finance", label: "Cashflow", icon: Wallet },
   { slug: "/inventory", label: "Inventory", icon: Package },
+  { slug: "/users", label: "Pengguna", icon: Users },
 ];
 export function Sidebar() {
   const pathname = usePathname();
-  const { basePath, prototype } = useWorkspace();
+  const { basePath } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const aside = useRef<HTMLElement>(null);
@@ -45,7 +46,7 @@ export function Sidebar() {
         const active = item.slug ? pathname.startsWith(basePath + item.slug) : pathname === basePath;
         return <Link key={item.slug} href={basePath + item.slug} title={item.label} aria-label={item.label} onClick={() => setOpen(false)} className={`forest-nav-link ${active ? "active" : ""}`} aria-current={active ? "page" : undefined}><Icon size={19} aria-hidden="true"/><span>{item.label}</span></Link>;
       })}</nav>
-      <div className="sidebar-bottom"><button className="sidebar-collapse sidebar-edge-toggle" aria-label={collapsed ? "Perluas navigasi" : "Ringkas navigasi"} aria-expanded={!collapsed} title={collapsed ? "Perluas navigasi" : "Ringkas navigasi"} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}</button><div className="sidebar-admin"><UserMenu prototype={prototype}/></div></div>
+      <div className="sidebar-bottom"><button className="sidebar-collapse sidebar-edge-toggle" aria-label={collapsed ? "Perluas navigasi" : "Ringkas navigasi"} aria-expanded={!collapsed} title={collapsed ? "Perluas navigasi" : "Ringkas navigasi"} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}</button><div className="sidebar-admin"><UserMenu/></div></div>
     </aside>
     {open && <button aria-label="Tutup menu navigasi" className="sidebar-scrim" onClick={() => setOpen(false)}/>}
   </>;

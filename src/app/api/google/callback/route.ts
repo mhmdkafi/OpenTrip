@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     jar.delete("google-oauth-state");
     const state = request.nextUrl.searchParams.get("state");
     const code = request.nextUrl.searchParams.get("code");
-    if (!state || expected !== `${state}:${auth.tenantId}` || !code) throw new Error("Invalid callback");
+    if (!state || expected !== `${state}:${auth.tenantId}:${auth.userId}` || !code) throw new Error("Invalid callback");
     const token = await exchangeToken({ code, grant_type: "authorization_code", redirect_uri: googleConfig().redirectUri });
     if (!token.refresh_token) throw new Error("Missing refresh token");
-    const { error } = await createAdminClient().from("tripdash_google_connections").upsert({ tenant_id: auth.tenantId, encrypted_refresh_token: encryptToken(token.refresh_token), updated_at: new Date().toISOString() });
+    const { error } = await createAdminClient().from("tripdash_google_connections").upsert({ tenant_id: auth.tenantId, encrypted_refresh_token: encryptToken(token.refresh_token), encrypted_access_token:encryptToken(token.access_token), expires_at:new Date(Date.now()+(token.expires_in||3600)*1000).toISOString(), updated_at: new Date().toISOString() });
     if (error) throw error;
     destination.searchParams.set("google", "connected");
   } catch { destination.searchParams.set("google", "failed"); }

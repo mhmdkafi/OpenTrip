@@ -13,5 +13,3 @@ Revision: 15 September 2026, following the user's request to redesign and refact
 - CSS is scoped to `.cashflow-workspace` in `src/styles/cashflow.css`; other sections retain their layout.
 
 Components: `finance.tsx` manages selection and mutations; `finance-summary.tsx`, `cash-graph.tsx`, `finance-recap.tsx`, `finance-ledger.tsx`, and `finance-breakdown.tsx` own individual views. Existing domain period and cash calculations remain shared.
-
-Verification: `node scripts/cashflow-design-smoke.mjs` for chart interaction, keyboard tabs, period navigation, empty states, and 375/768/1024/1440px layouts. `node scripts/prd-smoke.mjs` covers expense CRUD/CSV and existing cross-section flows.

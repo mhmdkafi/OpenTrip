@@ -40,13 +40,43 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
       const registeredAt = registrationDate(values.registered_at ?? "", source.dateOrder);
       const names = splitName(values.raw_name ?? "").names.map(n => n.name);
       if (!names.length) throw new DomainError("Nama peserta kosong.");
-      if (state.bookings.some(b => b.sourceId === source.id && (b.registeredAt === registeredAt || b.rawName === values.raw_name))) { review.push(`${rowLabel}: sumber berubah/identitas mirip. Data lama dipertahankan; periksa peserta sebelum mengimpor sebagai respons baru.`); continue; }
+      const candidates = state.bookings.filter(b => b.sourceId === source.id && (b.registeredAt === registeredAt || b.rawName === values.raw_name));
+      if (candidates.length) {
+        const booking = candidates[0];
+        const previous = booking.sourceSnapshot;
+        // Only a stable timestamp AND name establish identity for automatic updates.
+        if (candidates.length !== 1 || !previous || booking.registeredAt !== registeredAt || booking.rawName !== values.raw_name) {
+          review.push(`${rowLabel}: identitas ambigu atau snapshot lama tidak tersedia; data database dipertahankan.`); continue;
+        }
+        const changed = [...new Set([...Object.keys(previous),...Object.keys(values)])].filter(key=>previous[key]!==values[key]);
+        const safe = new Set(["contact_phone","meeting_point","proof_refs"]);
+        if (changed.some(key=>!safe.has(key))) {
+          review.push(`${rowLabel}: perubahan identitas/tagihan (${changed.join(", ")}); database menang. Koreksi melalui detail trip.`); continue;
+        }
+        const people = state.participants.filter(p=>p.bookingId===booking.id);
+        for (const field of changed) {
+          let localConflict=false;
+          if (field === "contact_phone") {
+            localConflict=booking.phone!==(previous.contact_phone||"");
+            if (!localConflict) booking.phone=values.contact_phone||"";
+          } else if (field === "proof_refs") {
+            localConflict=booking.proof!==canonicalProof(previous.proof_refs||"");
+            if (!localConflict) booking.proof=canonicalProof(values.proof_refs||"");
+          } else {
+            localConflict=people.some(p=>p.meetingPoint!==(previous.meeting_point||""));
+            if (!localConflict) people.forEach(p=>{p.meetingPoint=values.meeting_point||"";});
+          }
+          if (localConflict) review.push(`${rowLabel}: ${field} sudah diedit lokal; nilai database dipertahankan.`);
+        }
+        booking.sourceSnapshot=values; booking.fingerprint=fingerprint;
+        continue;
+      }
       const rawFacility = (values.facility ?? "").toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
       const facility = ["full", "full transport"].includes(rawFacility) ? "Full Transport" : ["non", "non transport"].includes(rawFacility) ? "Non Transport" : values.facility ?? "";
       const rain = (values.raincoat_option ?? "").toLowerCase();
       const quantity = source.mapping.raincoat_option === undefined ? 0 : /^(tidak|ngga|nggak|no|tidak mau)(\b|,)/.test(rain) ? 0 : /^(mau|ya|yes)$/.test(rain) && names.length === 1 ? 1 : null;
       const bookingId = crypto.randomUUID();
-      state.bookings.push({ id: bookingId, tripId: trip.id, sourceId: source.id, fingerprint, registeredAt, rawName: values.raw_name, proof: canonicalProof(values.proof_refs ?? ""), phone: values.contact_phone ?? "" });
+      state.bookings.push({ id: bookingId, tripId: trip.id, sourceId: source.id, fingerprint, registeredAt, rawName: values.raw_name, proof: canonicalProof(values.proof_refs ?? ""), phone: values.contact_phone ?? "", sourceSnapshot: values });
       const base = facility === "Full Transport" ? trip.fullPrice : facility === "Non Transport" ? trip.nonPrice : 0;
       for (const name of names) state.participants.push({ id: crypto.randomUUID(), bookingId, tripId: trip.id, name, meetingPoint: values.meeting_point ?? "", facility, raincoats: quantity, charge: base + (quantity ?? 0) * trip.raincoatPrice, reviewed: Boolean(base && quantity !== null && names.length === 1), status: "active" });
       added++;

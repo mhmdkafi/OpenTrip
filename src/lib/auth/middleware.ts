@@ -1,134 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function authMiddleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  const isPublicPath = ["/login", "/register", "/api/auth"].some(path => pathname.startsWith(path));
-  const isApiPath = pathname.startsWith("/api");
-  
-  try {
-    const supabase = await createClient();
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error("Auth error:", error);
-      if (isPublicPath) return NextResponse.next();
-      return redirectToLogin(request);
-    }
-    
-    if (!session && !isPublicPath) {
-      return redirectToLogin(request);
-    }
-    
-    if (session && isPublicPath && !isApiPath) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    
-    if (session) {
-      const headers = new Headers(request.headers);
-      headers.set("x-user-id", session.user.id);
-      
-      const modifiedRequest = new NextRequest(request, {
-        headers
-      });
-      
-      return NextResponse.next();
-    }
-    
-    return NextResponse.next();
-  } catch (error) {
-    console.error("Middleware error:", error);
-    
-    if (isPublicPath) {
-      return NextResponse.next();
-    }
-    
-    return redirectToLogin(request);
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path === "/api/auth/register") return NextResponse.json({error:"Registrasi publik dinonaktifkan. Hubungi owner."},{status:410});
+  const headers = new Headers(request.headers);
+  headers.delete("x-workspace-id");
+  headers.delete("x-user-id");
+  let response = NextResponse.next({ request: { headers } });
+  if (!["GET", "HEAD"].includes(request.method)) {
+    const origin = request.headers.get("origin");
+    if (origin && origin !== request.nextUrl.origin) return NextResponse.json({error:"Origin ditolak."}, {status:403});
   }
-}
-
-export async function requireTenantMiddleware(request: NextRequest) {
-  try {
-    const cookieStore = await cookies();
-    const tenantId = cookieStore.get("tenant-id")?.value;
-    const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      return redirectToLogin(request);
-    }
-    
-    if (!tenantId) {
-      return redirectToTenantSelection(request);
-    }
-    
-    const { data: membership, error } = await supabase
-      .from("user_memberships")
-      .select("*, tenant:tenants(*)")
-      .eq("user_id", session.user.id)
-      .eq("tenant_id", tenantId)
-      .single();
-    
-    if (error || !membership) {
-      return redirectToTenantSelection(request);
-    }
-    
-    const headers = new Headers(request.headers);
-    headers.set("x-tenant-id", tenantId);
-    headers.set("x-tenant-name", membership.tenant.name);
-    
-    const modifiedRequest = new NextRequest(request, {
-      headers
-    });
-    
-    return NextResponse.next();
-  } catch (error) {
-    console.error("Tenant middleware error:", error);
-    return redirectToTenantSelection(request);
+  // Cron authenticates its service credential in the handler, never a browser cookie.
+  if (["/api/cron/sync", "/api/health"].includes(path)) return response;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return NextResponse.json({error:"Auth belum dikonfigurasi."}, {status:503});
+  const client = createServerClient(url, key, {cookies:{
+    getAll:()=>request.cookies.getAll(),
+    setAll(values) {
+      values.forEach(({name,value})=>request.cookies.set(name,value));
+      headers.set("cookie", request.cookies.toString());
+      response = NextResponse.next({request:{headers}});
+      values.forEach(({name,value,options})=>response.cookies.set(name,value,options));
+    },
+  }});
+  const {data:{user}} = await client.auth.getUser();
+  function deny(status:number) {
+    const result = path.startsWith("/dashboard") ? NextResponse.redirect(new URL("/login",request.url)) : NextResponse.json({error:"Akses workspace ditolak."},{status});
+    response.cookies.getAll().forEach(c=>result.cookies.set(c));
+    return result;
   }
-}
-
-export async function requireRoleMiddleware(request: NextRequest, allowedRoles: string[]) {
-  try {
-    const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const tenantId = request.headers.get("x-tenant-id");
-    
-    if (!session || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    
-    const { data: membership, error } = await supabase
-      .from("user_memberships")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("tenant_id", tenantId)
-      .single();
-    
-    if (error || !membership) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-    
-    if (!allowedRoles.includes(membership.role)) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
-    
-    return NextResponse.next();
-  } catch (error) {
-    console.error("Role middleware error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  if (!user) return deny(401);
+  const {data:activeProfile}=await client.from("users").select("status").eq("id",user.id).maybeSingle();
+  if (activeProfile?.status !== "active") return deny(403);
+  if (!path.startsWith("/api/auth/")) {
+    const tenant = request.cookies.get("tenant-id")?.value;
+    if (!tenant) return deny(403);
+    const [{data:member},{data:profile}] = await Promise.all([
+      client.from("user_memberships").select("tenant_id").eq("tenant_id",tenant).eq("user_id",user.id).maybeSingle(),
+      client.from("users").select("status").eq("id",user.id).maybeSingle(),
+    ]);
+    if (!member || profile?.status !== "active") return deny(403);
+    headers.set("x-workspace-id",tenant);
+    headers.set("x-user-id",user.id);
   }
-}
-
-function redirectToLogin(request: NextRequest) {
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-  return NextResponse.redirect(loginUrl);
-}
-
-function redirectToTenantSelection(request: NextRequest) {
-  const tenantUrl = new URL("/tenants", request.url);
-  tenantUrl.searchParams.set("redirect", request.nextUrl.pathname);
-  return NextResponse.redirect(tenantUrl);
+  const result = NextResponse.next({request:{headers}});
+  response.cookies.getAll().forEach(c=>result.cookies.set(c));
+  result.headers.set("Cache-Control","private, no-store");
+  return result;
 }

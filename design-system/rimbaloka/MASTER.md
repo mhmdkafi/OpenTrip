@@ -26,5 +26,3 @@ Inventory: two-column cards with large clickable photos, stock and edit/delete a
 ## Responsive and accessibility
 
 Desktop data tables scroll inside bounded containers on small screens. Inventory reflows into structured rows. Input labels, visible focus, native dialogs, number formatting and text status labels are required. Calendar day cells use their trip status color with a legend. Mobile events retain dots and full accessible date/trip labels. Graphs include expandable numeric tables.
-
-Verification entry point: `node scripts/prd-smoke.mjs` (375/768/1024/1440px and 812×375 landscape). Screenshots: `artifacts/prd-*.png`. Detailed requirement mapping: `docs/prd-ui-alignment.md`.

@@ -1,6 +1,8 @@
-export type UserRole = "owner" | "admin" | "user";
+export type UserRole = "owner" | "admin";
 
 export type AuthSession = {
+  workspace_id: string;
+  tenants: {id:string;name:string}[];
   user: {
     id: string;
     email: string;
@@ -21,15 +23,3 @@ export type LoginFormData = {
   tenantId?: string;
 };
 
-export type RegisterFormData = {
-  email: string;
-  password: string;
-  tenantName: string;
-  name: string;
-  phone?: string;
-};
-
-export type TenantInviteFormData = {
-  email: string;
-  role: UserRole;
-};

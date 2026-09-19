@@ -8,9 +8,8 @@ import { Modal, Select } from "./ui";
 import { TripForm } from "./trip-form";
 import { SpreadsheetImport } from "./spreadsheet-import";
 import { Participants } from "./participants";
-import { dateLabel, demoToday, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
+import { dateLabel, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
 import { formatRupiah } from "@/lib/money";
-import { renderAttendanceTemplate } from "@/lib/pdf/attendance-template";
 import type { Trip } from "@/lib/workspace/types";
 
 export function TripDetail({ tripId }: { tripId: string }) {
@@ -23,12 +22,7 @@ export function TripDetail({ tripId }: { tripId: string }) {
   if (!trip) return <section className="td-panel"><h1>Trip tidak ditemukan</h1><Link href={`${basePath}/trips`} className="text-link">Kembali ke jadwal</Link></section>;
   async function print() {
     await run(async () => {
-      if (prototype) {
-        const popup = window.open("", "_blank", "width=900,height=700");
-        if (!popup) throw new Error("Izinkan pop-up untuk mencetak absensi.");
-        popup.document.write(renderAttendanceTemplate({ tripId, title: `Absensi ${trip!.title} — SIMULASI`, organizer: "Rimbaloka Trip", version: revision, snapshotAt: new Date() }, people));
-        popup.document.close(); popup.focus(); setTimeout(() => popup.print(), 300);
-      } else {
+      {
         const response = await fetch("/api/attendance/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tripId }) });
         if (!response.ok) throw new Error((await response.json()).error ?? "PDF gagal dibuat.");
         const url = URL.createObjectURL(await response.blob()); const link = document.createElement("a"); link.href = url; link.download = `absensi-${tripId}.pdf`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
