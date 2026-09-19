@@ -398,7 +398,7 @@
 }
 
 /* Semantic trip states retain text labels in every view. */
-.rimbaloka-app { --upcoming-ink:#245580; --upcoming-bg:#e9f1fb; --done-ink:#236448; --done-bg:#e7f3eb; --risk-ink:#86580e; --risk-bg:#fff3d7; --cancelled-ink:#a23636; --cancelled-bg:#faeaea; }
+.rimbaloka-app { --upcoming-ink:#8b6b1f; --upcoming-bg:#fffcf0; --done-ink:#236448; --done-bg:#e7f3eb; --risk-ink:#a23636; --risk-bg:#faeaea; --cancelled-ink:#245580; --cancelled-bg:#e9f1fb; }
 .status-upcoming { --status-ink:var(--upcoming-ink); --status-bg:var(--upcoming-bg); }
 .status-done { --status-ink:var(--done-ink); --status-bg:var(--done-bg); }
 .status-risk { --status-ink:var(--risk-ink); --status-bg:var(--risk-bg); }
