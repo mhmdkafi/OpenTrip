@@ -27,10 +27,22 @@ export async function exchangeToken(params: Record<string, string>) {
   const config = googleConfig();
   const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, ...params }), cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new DomainError("Otorisasi Google gagal atau dicabut. Hubungkan kembali akun Google.", 401);
-  return await response.json() as { access_token: string; refresh_token?: string };
+  const token = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number };
+  if (!token.access_token) throw new DomainError("Respons token Google tidak valid.", 502);
+  return token;
 }
 export async function googleAccessToken(tenantId: string) {
-  const { data, error } = await createAdminClient().from("tripdash_google_connections").select("encrypted_refresh_token").eq("tenant_id", tenantId).maybeSingle();
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("tripdash_google_connections").select("encrypted_refresh_token,encrypted_access_token,expires_at,updated_at").eq("tenant_id", tenantId).maybeSingle();
   if (error || !data) throw new DomainError("Hubungkan akun Google terlebih dahulu di Pengaturan.", 503);
-  return (await exchangeToken({ grant_type: "refresh_token", refresh_token: decryptToken(data.encrypted_refresh_token) })).access_token;
+  if (data.encrypted_access_token && Date.parse(data.expires_at) > Date.now() + 60000) return decryptToken(data.encrypted_access_token);
+  const token = await exchangeToken({ grant_type: "refresh_token", refresh_token: decryptToken(data.encrypted_refresh_token) });
+  const {error:saveError} = await admin.from("tripdash_google_connections").update({
+    encrypted_access_token:encryptToken(token.access_token),
+    encrypted_refresh_token:token.refresh_token ? encryptToken(token.refresh_token) : data.encrypted_refresh_token,
+    expires_at:new Date(Date.now() + (token.expires_in || 3600)*1000).toISOString(),
+    updated_at:new Date().toISOString(),
+  }).eq("tenant_id",tenantId).eq("updated_at",data.updated_at);
+  if (saveError) throw new DomainError("Token Google gagal disimpan.",503);
+  return token.access_token;
 }

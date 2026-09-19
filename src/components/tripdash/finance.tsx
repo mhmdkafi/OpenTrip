@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
 import { cashDate, cashTotals, filterPeriod, previousReference } from "@/lib/workspace/finance-view";
-import { dateLabel, demoToday, todayWib, weekKey } from "@/lib/workspace/presentation";
+import { dateLabel, todayWib, weekKey } from "@/lib/workspace/presentation";
 import { periodBounds } from "@/lib/workspace/period";
 import type { Cash } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
@@ -22,10 +22,10 @@ export function Finance() {
 }
 
 function FinanceView() {
-  const { state, prototype, mutate } = useWorkspace();
+  const { state, mutate } = useWorkspace();
   const params = useSearchParams();
   const [period,setPeriod] = useState("month");
-  const [reference,setReference] = useState(prototype ? demoToday : todayWib);
+  const [reference,setReference] = useState(todayWib);
   const [tripId,setTripId] = useState<string|null>(params.get("trip"));
   const [detailWeek,setDetailWeek] = useState<string|null>(null);
   const [tab,setTab] = useState("transactions");
@@ -85,7 +85,7 @@ function FinanceView() {
           }}>{item.label}{item.count!==undefined&&<span>{item.count}</span>}</button>)}
         </div>
         <div role="tabpanel" id={"cf-panel-"+tab} aria-labelledby={"cf-tab-"+tab} tabIndex={0}>
-          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={state.cash} trips={state.trips} tripId={tripId} prototype={prototype} onEdit={setEditing} onDelete={setDeleting}/>}
+          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={state.cash} trips={state.trips} tripId={tripId} onEdit={setEditing} onDelete={setDeleting}/>}
           {tab==="participants"&&selectedTrip&&<TripReceivables state={state} tripId={tripId}/>}
           {tab==="categories"&&<ExpenseBreakdown entries={detailEntries}/>}
         </div>

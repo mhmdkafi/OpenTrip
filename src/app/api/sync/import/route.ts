@@ -3,7 +3,6 @@ import { z } from "zod";
 import { fetchSheetMetadata, fetchSheetRows, parseGoogleSheetsUrl } from "@/lib/google";
 import { apiError, loadWorkspace, requireWorkspace, saveWorkspace } from "@/lib/workspace/server";
 import { googleAccessToken } from "@/lib/workspace/google-auth";
-import { readPublicSheet } from "@/lib/workspace/public-sheet";
 import { DomainError } from "@/lib/workspace/commands";
 import { detectSheetHeader, importSpreadsheet } from "@/lib/workspace/auto-import";
 
@@ -14,14 +13,7 @@ export async function POST(request: NextRequest) {
     const parsed = parseGoogleSheetsUrl(body.spreadsheetUrl);
     const current = await loadWorkspace(auth.tenantId);
     if (current.revision !== body.revision) throw new DomainError("Data berubah. Muat ulang sebelum mengimpor.", 409);
-    let token:string;
-    try { token=await googleAccessToken(auth.tenantId); }
-    catch {
-      const {metadata,sheet,values}=await readPublicSheet(body.spreadsheetUrl);
-      const result=importSpreadsheet(current.state,metadata,sheet,values,auth.userId,body.tripId);
-      const revision=await saveWorkspace(auth.tenantId,current.revision,result.state,current.exists);
-      return NextResponse.json({...result,revision});
-    }
+    const token=await googleAccessToken(auth.tenantId);
     const metadata = await fetchSheetMetadata(parsed.spreadsheetId, token);
     // A gid in the URL is authoritative; without it, locate the response tab.
     const candidates = parsed.sheetId !== undefined ? metadata.sheets.filter(s => s.sheetId === parsed.sheetId) : [...metadata.sheets].sort((a,b) => Number(/responses|jawaban|respons/i.test(b.title)) - Number(/responses|jawaban|respons/i.test(a.title)));

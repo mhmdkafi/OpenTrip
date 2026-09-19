@@ -1,16 +1,8 @@
 # TripDash
 
+Auth dan impor backend terhubung pada `/login` dan `/dashboard`. Registrasi publik dihapus; owner menambahkan admin melalui menu Pengguna. Untuk migrasi 0003–0004, aktivasi owner, OAuth Google, scheduled sync, dan aturan konflik, ikuti [panduan integrasi](docs/auth-import-integration.md). Bagian konfigurasi MVP di bawah merupakan referensi arsitektur sebelumnya.
+
 Dashboard operasional Rimbaloka Trip. Acuan UI terbaru adalah **Product Requirements Document (PRD) TripDash.pdf**, bagian **Revisi UI Design, halaman 16–18**. Pemetaan perubahan dan keputusan implementasi ada di `docs/prd-ui-alignment.md`.
-
-## Mencoba prototipe UI Rimbaloka
-
-Jalankan `npm run dev`, lalu buka `http://localhost:3000/prototype`. Halaman `/` juga mengarah ke prototipe. Login untuk data bisnis tetap tersedia di `/login`, dan dashboard bisnis di `/dashboard` tetap dilindungi autentikasi.
-
-Prototipe tidak memerlukan Supabase atau OAuth Google. Empat menu utama memakai komponen yang sama dengan dashboard bisnis: Overview, Trip Schedule, Cashflow, dan Inventory. Peserta dan cetak absensi ada di detail trip (`/prototype/trips/:tripId`). Navbar atas dihapus; identitas admin berada di bagian bawah navigasi kiri. Logo asli tersimpan di `public/brand/rimbaloka-logo.jpeg`; ikon browser berbentuk bulat.
-
-Data simulasi mengikuti struktur 19 respons/21 peserta dan tarif pada lampiran. Nama, transaksi, jadwal, dan stok bersifat fiktif; tidak menyertakan nomor telepon, kesehatan, alamat, atau bukti transfer pribadi. Perubahan prototipe tersimpan di localStorage browser dengan tombol reset. Pembayaran, pengeluaran, trip, dan stok dapat dicoba; koneksi dan sinkronisasi Google disimulasikan, tidak menghubungi API. Absensi prototipe menggunakan dialog cetak browser dengan pilihan Simpan sebagai PDF, dan diberi label SIMULASI.
-
-Smoke test browser: jalankan aplikasi, kemudian `node scripts/prd-smoke.mjs`. Default test memakai port 3012; set `PROTOTYPE_URL` sesuai server yang berjalan. Tes memeriksa empat menu, detail trip, pagination peserta, pembayaran grup, absensi 21 peserta urut mepo, mapping spreadsheet, CRUD inventory, peminjaman/pengembalian/pemakaian, CRUD pengeluaran, grafik dan penelusuran Cashflow, CSV, persistensi, serta layar 375/768/1024/1440px dan landscape 812×375. Screenshot ada di `artifacts/prd-*.png`. Script smoke lama meneruskan ke pemeriksaan ini.
 
 ## Menjalankan
 
@@ -50,16 +42,14 @@ Referensi implementasi: [Google OAuth web server](https://developers.google.com/
 
 Data operasional MVP disimpan sebagai aggregate JSONB per tenant pada `tripdash_workspaces`. Penulisan hanya melalui backend tervalidasi menggunakan service role, dengan conditional update `tenant_id + revision`; satu perubahan menyimpan pembayaran, alokasi, kas, audit dan request ID secara atomik. RLS membatasi pembacaan langsung ke anggota tenant dan melarang penulisan browser. Token Google berada di tabel privat terpisah.
 
-Pilihan aggregate ini menghindari penyimpanan prototipe di memori dan mencegah konflik diam-diam, tetapi belum di-benchmark untuk beban besar. Seluruh workspace dimuat ke browser; pagination dilakukan di sisi browser. Untuk skala besar, migrasikan ke tabel entitas terpisah dan pagination server. Skema Drizzle dan helper ledger lama belum menjadi jalur penyimpanan aplikasi ini. API mutasi utama adalah `POST /api/workspace`; beberapa endpoint prototipe lama mengembalikan 410 atau menerima kontrak baru.
+Pilihan aggregate ini menghindari penyimpanan sementara di memori dan mencegah konflik diam-diam, tetapi belum di-benchmark untuk beban besar. Seluruh workspace dimuat ke browser; pagination dilakukan di sisi browser. Untuk skala besar, migrasikan ke tabel entitas terpisah dan pagination server. Skema Drizzle dan helper ledger lama belum menjadi jalur penyimpanan aplikasi ini. API mutasi utama adalah `POST /api/workspace`; beberapa endpoint lama mengembalikan 410 atau menerima kontrak baru.
 
 Sinkronisasi berjalan manual, maksimal 5.000 respons per impor. Identitas sumber ambigu diperingatkan dan tidak ditimpa otomatis; belum ada UI rekonsiliasi khusus. File bukti tidak diunduh/cache oleh server. Refund, perubahan tarif setelah pembayaran, rekonsiliasi alokasi lanjutan, job terjadwal, WhatsApp, payment gateway, dan AI deteksi struk tidak diimplementasikan pada lingkup client ini.
 
 ## Verifikasi
 
-`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+`npm run typecheck`, `npm run lint`, `npm run build`.
 
-Smoke test UI memakai `node scripts/prototype-smoke.mjs` seperti petunjuk prototipe di atas. Pemeriksaan revisi navigasi, kalender, filter stok, pencarian transaksi, dan layout desktop/tablet/mobile tersedia lewat `node scripts/ui-revision-smoke.mjs` dengan konfigurasi `PROTOTYPE_URL` yang sama. Ini tidak menggantikan UAT integrasi live.
 
-Uji domain baru di `src/lib/workspace/workspace.test.ts`: 19 respons/21 peserta, sinkron ulang dan reorder, DP/pelunasan, satu kas grup, kelebihan alokasi, penolakan tagihan belum pasti, batas minggu WIB, sumber berubah, stok keluar/kembali, dan validasi URL.
 
 UAT dengan Supabase dan Google nyata wajib dilakukan setelah migrasi serta konfigurasi OAuth tersedia: login, buat trip, impor respons client, verifikasi bukti, cek kas, pinjam/kembalikan inventaris, lalu unduh PDF. Tes lokal tidak membuktikan integrasi live atau isolasi RLS pada database yang belum dimigrasikan.

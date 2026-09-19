@@ -1,6 +1,5 @@
 import { paidFor, type Trip, type Workspace } from "./types";
 
-export const demoToday = "2026-09-13";
 export const todayWib = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 export const dateLabel = (date: string, long = false) => !date ? "Belum dijadwalkan" : new Date(`${date.slice(0, 10)}T12:00:00+07:00`).toLocaleDateString("id-ID", { day: "numeric", month: long ? "long" : "short", year: "numeric" });
 export const monthLabel = (date: string) => new Date(`${date.slice(0, 7)}-01T12:00:00+07:00`).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
