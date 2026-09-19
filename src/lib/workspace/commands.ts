@@ -11,6 +11,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("trip.create"), ...tripDetails }),
   z.object({ action: z.literal("trip.update"), tripId: id, ...tripDetails }),
   z.object({ action: z.literal("trip.status"), tripId: id, status: z.enum(["active", "archived", "completed", "cancelled"]) }),
+  z.object({ action: z.literal("trip.delete"), tripId: id }),
   z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: name }),
   z.object({ action: z.literal("participant.cancel"), participantId: id, reason: name }),
   z.object({ action: z.literal("payment.verify"), participantIds: z.array(id).min(1).max(500), amount: money.positive(), method: z.enum(["transfer", "cash", "other"]), notes: z.string().max(500).default(""), fullyPaid: z.boolean().default(false) }),
@@ -53,6 +54,17 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       detail = `Trip diperbarui: ${trip.title}`; break;
     }
     case "trip.status": found(state.trips.find(t => t.id === command.tripId), "Trip").status = command.status; detail = command.status; break;
+    case "trip.delete": {
+      const trip = found(state.trips.find(t => t.id === command.tripId), "Trip");
+      if (state.payments.some(p => p.tripId === trip.id) || state.cash.some(c => c.tripId === trip.id)) throw new DomainError("Trip memiliki catatan keuangan. Batalkan trip alih-alih menghapusnya.");
+      if (state.inventory.some(i => i.loans.some(l => l.tripId === trip.id && !l.returned))) throw new DomainError("Barang masih dipinjam untuk trip ini. Catat pengembalian sebelum menghapus.");
+      const bookingIds = new Set(state.bookings.filter(b => b.tripId === trip.id).map(b => b.id));
+      state.trips = state.trips.filter(t => t.id !== trip.id);
+      state.participants = state.participants.filter(p => p.tripId !== trip.id);
+      state.bookings = state.bookings.filter(b => !bookingIds.has(b.id));
+      state.sources = state.sources.filter(s => s.tripId !== trip.id);
+      detail = `Hapus trip: ${trip.title}`; break;
+    }
     case "participant.edit": {
       const p = found(state.participants.find(p => p.id === command.participantId), "Peserta");
       const trip = found(state.trips.find(t => t.id === p.tripId), "Trip");

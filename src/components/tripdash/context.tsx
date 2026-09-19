@@ -20,6 +20,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode; }) {
   const [notice, setNotice] = useState("");
   const locked = useRef(false);
   const pending = useRef<{ payload: string; id: string } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   function replace(next: Snapshot) {
     
     setData({ state: next.state, revision: next.revision });
