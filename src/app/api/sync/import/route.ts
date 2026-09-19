@@ -10,7 +10,7 @@ import { detectSheetHeader, importSpreadsheet } from "@/lib/workspace/auto-impor
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireWorkspace();
-    const body = z.object({ spreadsheetUrl: z.url().max(1000), revision: z.number().int().nonnegative(), tripId: z.uuid().optional() }).parse(await request.json());
+    const body = z.object({ spreadsheetUrl: z.url().max(1000), revision: z.number().int().nonnegative(), tripId: z.uuid().optional(), departureDate: z.iso.date().optional() }).parse(await request.json());
     const parsed = parseGoogleSheetsUrl(body.spreadsheetUrl);
     const current = await loadWorkspace(auth.tenantId);
     if (current.revision !== body.revision) throw new DomainError("Data berubah. Muat ulang sebelum mengimpor.", 409);
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     try { token=await googleAccessToken(auth.tenantId); }
     catch {
       const {metadata,sheet,values}=await readPublicSheet(body.spreadsheetUrl);
-      const result=importSpreadsheet(current.state,metadata,sheet,values,auth.userId,body.tripId);
+      const result=importSpreadsheet(current.state,metadata,sheet,values,auth.userId,body.tripId,body.departureDate);
       const revision=await saveWorkspace(auth.tenantId,current.revision,result.state,current.exists);
       return NextResponse.json({...result,revision});
     }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!selected) throw new DomainError("Header tidak dikenali. Gunakan tautan tab respons dengan kolom Timestamp, Nama Lengkap, Fasilitas, dan Mepo.");
     const data = await fetchSheetRows(parsed.spreadsheetId, selected.sheet.title, token, selected.headerRow, 5001);
     const values = [...selected.prefix, data.headers, ...data.rows];
-    const result = importSpreadsheet(current.state, metadata, selected.sheet, values, auth.userId, body.tripId);
+    const result = importSpreadsheet(current.state, metadata, selected.sheet, values, auth.userId, body.tripId, body.departureDate);
     const revision = await saveWorkspace(auth.tenantId, current.revision, result.state, current.exists);
     return NextResponse.json({ ...result, revision });
   } catch (error) { return apiError(error); }
