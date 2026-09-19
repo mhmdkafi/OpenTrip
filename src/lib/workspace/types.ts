@@ -1,5 +1,5 @@
 export type Trip = { id: string; title: string; departureDate: string; status: "active" | "archived" | "completed" | "cancelled"; fullPrice: number; nonPrice: number; raincoatPrice: number; volume?: string; location?: string; bankAccount?: string; meetingPoints?: string[]; minimumParticipants?: number; riskDays?: number };
-export type Booking = { id: string; tripId: string; sourceId: string; fingerprint: string; registeredAt: string; rawName: string; proof: string; phone: string };
+export type Booking = { id: string; tripId: string; sourceId: string; fingerprint: string; registeredAt: string; rawName: string; proof: string; phone: string; sourceSnapshot?: Record<string,string> };
 export type Person = { id: string; bookingId: string; tripId: string; name: string; meetingPoint: string; facility: string; raincoats: number | null; charge: number; reviewed: boolean; status: "active" | "cancelled" };
 export type Payment = { id: string; tripId: string; amount: number; method: string; notes: string; verifiedAt: string; allocations: { participantId: string; amount: number }[]; proof: string };
 export type Cash = { id: string; tripId: string; direction: "in" | "out"; amount: number; occurredAt: string; description: string; category: string; sourceId: string; dateSource: "registration" | "manual" };

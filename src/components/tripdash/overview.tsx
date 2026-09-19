@@ -4,13 +4,13 @@ import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useWorkspace } from "./context";
 import { TripCalendar } from "./trip-calendar";
-import { dateLabel, demoToday, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
+import { dateLabel, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
 
 
 export function Overview() {
-  const { state, basePath, prototype } = useWorkspace();
+  const { state, basePath } = useWorkspace();
   const [selected, setSelected] = useState("");
-  const today = prototype ? demoToday : todayWib();
+  const today = todayWib();
   const trips = [...state.trips].sort((a, b) => a.departureDate.localeCompare(b.departureDate));
   const current = selected ? trips.filter(t => t.departureDate === selected) : trips.filter(t => t.departureDate >= today && !["cancelled", "archived", "completed"].includes(t.status)).slice(0, 5);
   const active = state.participants.filter(p => p.status === "active");

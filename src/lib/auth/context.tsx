@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = React.useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = React.useState(() => createClient());
 
   const loadSession = React.useCallback(async () => {
     try {
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch("/api/auth/session");
       if (response.ok) {
         const data = await response.json();
-        setSession(data);
+        setSession(data.tenant?.id ? data : null);
       } else {
         setSession(null);
       }
@@ -57,13 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (active) init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        await loadSession();
+        setTimeout(() => void loadSession(), 0);
       } else if (event === "SIGNED_OUT") {
         setSession(null);
       } else if (event === "USER_UPDATED") {
-        await loadSession();
+        setTimeout(() => void loadSession(), 0);
       }
     });
 

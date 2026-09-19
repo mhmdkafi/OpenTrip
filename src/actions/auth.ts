@@ -24,11 +24,23 @@ export async function login(formData: LoginFormData) {
     });
 
     if (error) {
+      if (error.name === "AuthRetryableFetchError" || /fetch failed|failed to fetch|network/i.test(error.message)) {
+        return { success: false, error: "Server aplikasi tidak dapat terhubung ke Supabase. Periksa koneksi internet server, VPN/proxy, dan akses jaringan proses Next.js, lalu coba lagi." };
+      }
       return { success: false, error: error.message };
     }
 
     if (!user) {
       return { success: false, error: "User tidak ditemukan" };
+    }
+
+    const {data:profile,error:profileError} = await supabase.from("users").select("status").eq("id",user.id).maybeSingle();
+    if (profileError) {
+      return {success:false,error:"Profil akun gagal dimuat dari Supabase. Periksa koneksi server dan migrasi database, lalu coba lagi."};
+    }
+    if (profile?.status !== "active") {
+      await supabase.auth.signOut();
+      return {success:false,error:"Akun tidak aktif."};
     }
 
     const { data: memberships, error: membershipError } = await supabase

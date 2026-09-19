@@ -6,16 +6,16 @@ import { useWorkspace } from "./context";
 import { Field, Modal, Select } from "./ui";
 
 import { SpreadsheetImport } from "./spreadsheet-import";
-import { dateLabel, demoToday, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
+import { dateLabel, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
 
 export function Trips() {
-  const { state, basePath, prototype } = useWorkspace();
+  const { state, basePath } = useWorkspace();
   const [importing, setImporting] = useState(false);
   const [period, setPeriod] = useState("month");
-  const [reference, setReference] = useState(prototype ? demoToday : todayWib);
+  const [reference, setReference] = useState(todayWib);
   const [search, setSearch] = useState("");
   useEffect(() => { if (window.location.hash === "#impor") queueMicrotask(() => setImporting(true)); }, []);
-  const today = prototype ? demoToday : todayWib();
+  const today = todayWib();
   const trips = state.trips.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) && (!t.departureDate || period === "all" || period === "year" && t.departureDate.startsWith(reference.slice(0,4)) || period === "month" && t.departureDate.startsWith(reference.slice(0,7)) || period === "week" && weekKey(t.departureDate) === weekKey(reference))).sort((a,b) => a.departureDate.localeCompare(b.departureDate));
   const months = [...new Set(trips.map(t => t.departureDate.slice(0,7)))];
   return <div className="section-stack">
