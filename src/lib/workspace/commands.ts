@@ -19,7 +19,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("expense.update"), expenseId: id, amount: money.positive(), date, category: name, description: name }),
   z.object({ action: z.literal("expense.delete"), expenseId: id, reason: name }),
   z.object({ action: z.literal("inventory.create"), ...inventoryDetails }),
-  z.object({ action: z.literal("inventory.update"), itemId: id, ...inventoryDetails, damaged: z.number().int().min(0).max(100000), reason: name }),
+  z.object({ action: z.literal("inventory.update"), itemId: id, ...inventoryDetails, damaged: z.number().int().min(0).max(100000), reason: z.string().trim().max(200).default("") }),
   z.object({ action: z.literal("inventory.delete"), itemId: id }),
   z.object({ action: z.literal("inventory.consume"), itemId: id, quantity: z.number().int().positive().max(100000), reason: name }),
   z.object({ action: z.literal("inventory.adjust"), itemId: id, total: z.number().int().min(0).max(100000), damaged: z.number().int().min(0).max(100000), reason: name }),
@@ -112,6 +112,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       state.cash = state.cash.filter(c => c.id !== expense.id); detail = `Hapus ${expense.description}: ${expense.amount}; ${command.reason}`; break;
     }
     case "inventory.create": {
+      if (command.stockTracked !== false && command.total < 1) throw new DomainError("Stok awal minimal 1 barang.");
       const { action: _action, ...fields } = command;
       state.inventory.push({ ...fields, id: crypto.randomUUID(), damaged: 0, loans: [] }); detail = command.name; break;
     }
