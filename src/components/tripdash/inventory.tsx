@@ -9,6 +9,7 @@ import {
   Trash2,
   RotateCcw,
   ArrowUpRight,
+  AlertTriangle,
 } from "lucide-react";
 import { availableStock, type Inventory as Item } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
@@ -43,7 +44,7 @@ export function Inventory() {
   const items = state.inventory.filter(
     (i) =>
       i.name.toLowerCase().includes(search.toLowerCase()) &&
-      (!kind || (kind === "consumable" ? i.consumable : i.kind === kind)),
+      (!kind || i.kind === kind),
   );
   const current = Math.min(page, Math.max(0, Math.ceil(items.length / 8) - 1));
   const low = state.inventory
@@ -81,7 +82,6 @@ export function Inventory() {
             <option value="">Semua jenis</option>
             <option value="operational">Operasional</option>
             <option value="rental">Sewaan</option>
-            <option value="consumable">Habis pakai</option>
           </Select>
           <button className="td-button" onClick={() => setEditing("new")}>
             <Plus size={16} /> Tambah barang
@@ -214,9 +214,8 @@ export function Inventory() {
       </section>
       <aside className="stock-reminders">
         <h2>
-          Stok menipis <span>{low.length}</span>
+          Stok menipis <span className="reminder-count">{low.length}</span>
         </h2>
-        <p>Barang habis pakai yang mencapai batas pengingat.</p>
         {low.map((item) => (
           <button
             key={item.id}
@@ -224,9 +223,7 @@ export function Inventory() {
             onClick={() => setEditing(item)}
           >
             <strong>{item.name}</strong>
-            <span>
-              Tersisa {availableStock(item)} · batas {item.reorderLevel ?? 5}
-            </span>
+            <span>Tersisa {availableStock(item)}</span>
             <small>
               Perbarui stok <ArrowUpRight size={13} />
             </small>
@@ -234,7 +231,7 @@ export function Inventory() {
         ))}
         {!low.length && (
           <div className="stock-clear">
-            Stok habis pakai masih di atas batas pengingat.
+            Semua stok masih di atas batas pengingat.
           </div>
         )}
       </aside>
@@ -287,6 +284,72 @@ export function Inventory() {
               {detail.consumable ? "Catat pemakaian" : "Catat peminjaman"}
               <ArrowUpRight size={14} />
             </button>
+          )}
+          <button
+            className="text-link inventory-note-action"
+            onClick={() => {
+              setIncident(detail);
+              setIncidentKind("note");
+              setIncidentLoan("");
+              setDetail(null);
+            }}
+          >
+            Catat kejadian (hilang/rusak)
+            <AlertTriangle size={14} />
+          </button>
+          {detail.loans.some((l) => !l.returned) && (
+            <div className="loan-list">
+              <h3>Peminjaman aktif</h3>
+              {detail.loans
+                .filter((l) => !l.returned)
+                .map((loan) => (
+                  <div className="loan-line" key={loan.id}>
+                    <div>
+                      <strong>
+                        {state.trips.find((t) => t.id === loan.tripId)
+                          ?.title ?? "Trip tidak ditemukan"}
+                      </strong>
+                      <small>
+                        {loan.quantity} unit
+                        {loan.notes ? ` · ${loan.notes}` : ""}
+                      </small>
+                    </div>
+                    <button
+                      className="td-secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(() =>
+                          mutate({
+                            action: "inventory.return",
+                            itemId: detail.id,
+                            loanId: loan.id,
+                          }),
+                        )
+                      }
+                    >
+                      <RotateCcw size={14} /> Kembalikan
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+          {!!detail.incidents?.length && (
+            <div className="incident-list">
+              <h3>Riwayat kejadian</h3>
+              {detail.incidents
+                .slice()
+                .reverse()
+                .map((note) => (
+                  <div className="inventory-incident" key={note.id}>
+                    <strong>{note.description}</strong>
+                    <small>
+                      {new Date(note.at).toLocaleDateString("id-ID")}
+                      {note.kind === "lost" && ` · ${note.quantity} hilang`}
+                      {note.kind === "damaged" && ` · ${note.quantity} rusak`}
+                    </small>
+                  </div>
+                ))}
+            </div>
           )}
         </Modal>
       )}
@@ -406,10 +469,13 @@ export function Inventory() {
               value={tripId}
               onChange={setTripId}
               all="Pilih trip aktif"
+              activeOnly
             />
           )}
           <Form
             onSave={async (data) => {
+              if (!moving.consumable && !tripId)
+                throw new Error("Pilih trip aktif terlebih dahulu.");
               await mutate(
                 moving.consumable
                   ? {

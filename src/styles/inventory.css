@@ -29,9 +29,13 @@
 .inventory-v2 .product-placeholder { color:#77866e; }.inventory-v2 .product-placeholder span { font-size:12px; }
 .inventory-photo-button>span { position:absolute; right:12px; bottom:12px; padding:5px 9px; border:1px solid #dce3d7; border-radius:5px; background:#fffffff0; font-size:11px; color:#33543c; }
 .inventory-photo-button:hover>span { background:#e9f0e0; }
+.inventory-v2 .inventory-photo-button>span { inset:0; right:0; bottom:0; display:grid; place-items:center; border:0; border-radius:5px; padding:0; opacity:0; background:#1c2a1ca6; color:#fff; transition:opacity .15s; }
+.inventory-v2 .inventory-photo-button:hover>span,.inventory-v2 .inventory-photo-button:focus-visible>span { opacity:1; }
 .inventory-v2 .inventory-stock { margin:0; text-align:right; }.inventory-v2 .inventory-stock strong { font-size:25px; }.inventory-v2 .inventory-stock>span { font-size:11px; }
 .inventory-v2 .inventory-row-actions { margin:0; gap:4px; }.inventory-v2 .inventory-row-actions .table-icon { display:flex; align-items:center; gap:6px; border:1px solid #e1e6dc; min-height:40px; padding:8px; font-size:12px; }
 .inventory-v2 .loan-line { flex-wrap:wrap; gap:4px; }.inventory-v2 .inventory-note-action { margin:0 0 0 12px; }
+.loan-list,.incident-list { margin-top:18px; }.loan-list h3,.incident-list h3 { font-size:13px; font-weight:600; color:#244436; margin-bottom:6px; }
+.loan-list .loan-line:first-of-type { border-top:0; margin-top:0; padding-top:0; }
 .item-name-link { background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer; }
 .item-name-link:hover { text-decoration:underline; }
 .inventory-v2 .stock-reminders { margin-top:65px; position:sticky; top:24px; }
