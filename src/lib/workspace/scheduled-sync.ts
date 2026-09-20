@@ -19,7 +19,7 @@ export async function syncTenant(tenantId:string) {
       // Reload after network I/O. CAS still rejects edits arriving during parsing/save.
       const current = await loadWorkspace(tenantId);
       const latest = current.state.sources.find(s=>s.id===source.id);
-      if (!latest || JSON.stringify(latest.mapping)!==JSON.stringify(source.mapping) || latest.headerRow!==source.headerRow || latest.spreadsheetId!==source.spreadsheetId || latest.sheetId!==source.sheetId) throw new DomainError("Konfigurasi sumber berubah. Coba lagi pada jadwal berikutnya.",409);
+      if (!latest || JSON.stringify(latest.mapping)!==JSON.stringify(source.mapping) || latest.headerRow!==source.headerRow || latest.spreadsheetId!==source.spreadsheetId || latest.sheetId!==source.sheetId || latest.dateOrder!==source.dateOrder) throw new DomainError("Konfigurasi sumber berubah. Coba lagi pada jadwal berikutnya.",409);
       if (JSON.stringify(rows.headers)!==JSON.stringify(latest.headers)) throw new DomainError("Header berubah; impor manual untuk meninjau mapping.");
       const result = importRows(current.state,latest,rows.rows,"scheduled-sync");
       await saveWorkspace(tenantId,current.revision,result.state,current.exists);

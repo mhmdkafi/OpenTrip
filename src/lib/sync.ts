@@ -24,14 +24,13 @@ export type ReconciliationResult = {
   reason?: string;
 };
 
-const billingFields = new Set(["facility", "participant_count", "price"]);
+const billingFields = new Set(["facility", "participant_count", "price", "raincoat_option", "registered_at", "raw_name"]);
 
 export function createSourceFingerprint(values: Record<string, string>) {
   const canonical = Object.keys(values)
     .sort()
-    .map((key) => `${key}:${normalizeValue(values[key])}`)
-    .join("\n");
-  return createHash("sha256").update(canonical).digest("hex");
+    .map((key) => [key, (values[key] ?? "").normalize("NFKC").trim()]);
+  return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
 }
 
 export function reconcileSourceRows(rows: SourceRow[], existing: BookingSnapshot[]): ReconciliationResult[] {
@@ -52,8 +51,11 @@ export function reconcileSourceRows(rows: SourceRow[], existing: BookingSnapshot
 
     const candidate = candidates[0];
     const changedFields = changedKeys(candidate.snapshot, row.values);
+    if (!["registered_at", "raw_name"].every(field => normalizeValue(row.values[field]) !== "" && normalizeValue(row.values[field]) === normalizeValue(candidate.snapshot[field]))) {
+      return result(row, fingerprint, "review", changedFields, changedFields, "Timestamp dan nama harus tetap sama untuk update otomatis.");
+    }
     const local = new Set(candidate.locallyEditedFields ?? []);
-    const protectedFields = changedFields.filter((field) => local.has(field) || (candidate.paymentVerified && billingFields.has(field)));
+    const protectedFields = changedFields.filter((field) => local.has(field) || billingFields.has(field));
     claimed.add(candidate.bookingId);
     return { row, fingerprint, bookingId: candidate.bookingId, action: changedFields.length === 0 ? "unchanged" : protectedFields.length ? "review" : "update", changedFields, protectedFields, reason: protectedFields.length ? "Perubahan lokal atau tagihan terverifikasi harus ditinjau." : undefined };
   });
@@ -69,7 +71,7 @@ function identityScore(current: Record<string, string>, previous: Record<string,
 }
 
 function changedKeys(previous: Record<string, string>, current: Record<string, string>) {
-  return Array.from(new Set([...Object.keys(previous), ...Object.keys(current)])).filter((key) => normalizeValue(previous[key]) !== normalizeValue(current[key]));
+  return Array.from(new Set([...Object.keys(previous), ...Object.keys(current)])).filter((key) => (previous[key]??"").normalize("NFKC").trim() !== (current[key]??"").normalize("NFKC").trim());
 }
 
 function normalizeValue(value?: string) {
