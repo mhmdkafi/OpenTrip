@@ -26,6 +26,7 @@ export const userMemberships = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     user_id: uuid("user_id").notNull(),
     tenant_id: uuid("tenant_id").notNull(),
+    role: varchar("role", { length: 20 }).notNull().default("admin"),
     created_at: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireMembership } from "./membership";
+import { DomainError } from "@/lib/workspace/commands";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -37,11 +39,8 @@ export async function middleware(request: NextRequest) {
   if (!path.startsWith("/api/auth/")) {
     const tenant = request.cookies.get("tenant-id")?.value;
     if (!tenant) return deny(403);
-    const [{data:member},{data:profile}] = await Promise.all([
-      client.from("user_memberships").select("tenant_id").eq("tenant_id",tenant).eq("user_id",user.id).maybeSingle(),
-      client.from("users").select("status").eq("id",user.id).maybeSingle(),
-    ]);
-    if (!member || profile?.status !== "active") return deny(403);
+    try { await requireMembership(client, user.id, tenant); }
+    catch (error) { return deny(error instanceof DomainError ? error.status : 503); }
     headers.set("x-workspace-id",tenant);
     headers.set("x-user-id",user.id);
   }

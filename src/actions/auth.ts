@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { LoginFormData } from "@/types/auth";
 import { z } from "zod";
+import { requireMembership } from "@/lib/auth/membership";
 
 const loginSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -46,13 +47,15 @@ export async function login(formData: LoginFormData) {
     const { data: memberships, error: membershipError } = await supabase
       .from("user_memberships")
       .select("tenant_id")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .in("role", ["owner", "admin"]);
 
     if (membershipError) {
       return { success: false, error: "Gagal memuat data tenant" };
     }
 
     if (memberships.length === 0) {
+      await supabase.auth.signOut();
       return { success: false, error: "User belum terdaftar di tenant manapun" };
     }
 
@@ -121,16 +124,7 @@ export async function switchTenant(tenantId: string) {
       return { success: false, error: "User tidak login" };
     }
 
-    const { data: membership, error } = await supabase
-      .from("user_memberships")
-      .select()
-      .eq("user_id", user.id)
-      .eq("tenant_id", tenantId)
-      .single();
-
-    if (error || !membership) {
-      return { success: false, error: "User tidak memiliki akses ke tenant ini" };
-    }
+    await requireMembership(supabase, user.id, tenantId);
 
     const cookieStore = await cookies();
     cookieStore.set("tenant-id", tenantId, {
@@ -165,6 +159,8 @@ export async function getCurrentSession() {
     if (!tenantId) {
       return { user: user, tenant: null };
     }
+
+    await requireMembership(supabase, user.id, tenantId);
 
     const { data: membership, error: membershipError } = await supabase
       .from("user_memberships")

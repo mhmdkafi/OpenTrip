@@ -44,9 +44,13 @@ export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetad
   for(const key of ["volume","location","bankAccount"] as const)if(!trip[key]&&details[key])trip[key]=details[key];
   const people=state.participants.filter(p=>p.tripId===trip.id);
   if(people.every(p=>paidFor(state,p.id)===0)) {
+    const oldPrices = { fullPrice:trip.fullPrice, nonPrice:trip.nonPrice, raincoatPrice:trip.raincoatPrice };
     for(const key of ["fullPrice","nonPrice","raincoatPrice"] as const)if(!trip[key]&&details[key])trip[key]=details[key];
     for(const person of people) {
-      if(["Full Transport","Non Transport"].includes(person.facility))person.charge=(person.facility==="Full Transport"?trip.fullPrice:trip.nonPrice)+(person.raincoats??0)*trip.raincoatPrice;
+      const oldCharge=(person.facility==="Full Transport"?oldPrices.fullPrice:oldPrices.nonPrice)+(person.raincoats??0)*oldPrices.raincoatPrice;
+      // Only fill an unreviewed, previously calculated bill. Admin corrections
+      // must not be overwritten just because the participant has not paid yet.
+      if(!person.reviewed && person.charge===oldCharge && ["Full Transport","Non Transport"].includes(person.facility))person.charge=(person.facility==="Full Transport"?trip.fullPrice:trip.nonPrice)+(person.raincoats??0)*trip.raincoatPrice;
     }
   }
   const source = state.sources.find(s => s.tripId === trip.id);

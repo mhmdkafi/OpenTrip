@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { apiError, requireWorkspace } from "@/lib/workspace/server";
+import { apiError, requireWorkspace, loadWorkspace } from "@/lib/workspace/server";
 import { DomainError } from "@/lib/workspace/commands";
+import { googleAccessToken } from "@/lib/workspace/google-auth";
 export async function GET() {
   try {
     const auth=await requireWorkspace();
@@ -15,6 +16,12 @@ export async function POST(request:NextRequest) {
   try {
     const auth=await requireWorkspace();
     const body=z.object({enabled:z.boolean(),interval_minutes:z.number().int().min(15).max(10080)}).parse(await request.json());
+    if (body.enabled) {
+      await googleAccessToken(auth.tenantId);
+      const {state}=await loadWorkspace(auth.tenantId);
+      if (!state.sources.length) throw new DomainError("Impor setidaknya satu spreadsheet sebelum mengaktifkan jadwal.");
+      if (state.sources.length>10) throw new DomainError("Maksimal 10 sumber per workspace untuk sinkronisasi otomatis.");
+    }
     const {error}=await createAdminClient().from("tripdash_sync_jobs").upsert({tenant_id:auth.tenantId,...body,next_run_at:new Date().toISOString()});
     if(error)throw new DomainError("Jadwal gagal disimpan.",503);
     return NextResponse.json({success:true});

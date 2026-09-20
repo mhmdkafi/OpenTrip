@@ -6,6 +6,7 @@ import { emptyWorkspace, type Workspace } from "./types";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { GoogleApiError } from "@/lib/google";
+import { requireMembership } from "@/lib/auth/membership";
 
 export async function requireWorkspace() {
   const client = await createClient();
@@ -13,11 +14,8 @@ export async function requireWorkspace() {
   if (error || !user) throw new DomainError("Silakan login terlebih dahulu.", 401);
   const tenantId = (await cookies()).get("tenant-id")?.value;
   if (!tenantId) throw new DomainError("Ruang kerja belum dipilih. Silakan login kembali.", 403);
-  const { data: membership, error: membershipError } = await client.from("user_memberships").select("tenant_id,role").eq("user_id", user.id).eq("tenant_id", tenantId).maybeSingle();
-  if (membershipError) throw new DomainError("Role workspace belum tersedia. Jalankan migrasi 0004_owner_admin.sql.", 503);
-  const { data: profile } = await client.from("users").select("status").eq("id", user.id).maybeSingle();
-  if (!membership || !["owner", "admin"].includes(membership.role) || profile?.status !== "active") throw new DomainError("Akses ruang kerja ditolak.", 403);
-  return { tenantId, workspace_id: tenantId, userId: user.id, role: membership.role as "owner" | "admin" };
+  const role = await requireMembership(client, user.id, tenantId);
+  return { tenantId, workspace_id: tenantId, userId: user.id, role };
 }
 
 export async function requireOwner() {
