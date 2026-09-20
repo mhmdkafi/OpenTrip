@@ -12,7 +12,7 @@ export function Form({ onSave, children }: { onSave: (data: FormData) => Promise
 }
 export const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
 export const number = (data: FormData, key: string) => Number(data.get(key));
-export function TripSelect({ value, onChange, all = "Semua trip" }: { value: string; onChange: (value: string) => void; all?: string }) { const { state } = useWorkspace(); return <Select label="Trip" value={value} onChange={onChange}><option value="">{all}</option>{state.trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</Select>; }
+export function TripSelect({ value, onChange, all = "Semua trip", activeOnly = false }: { value: string; onChange: (value: string) => void; all?: string; activeOnly?: boolean }) { const { state } = useWorkspace(); const trips = activeOnly ? state.trips.filter(t => t.status === "active") : state.trips; return <Select label="Trip" value={value} onChange={onChange}><option value="">{all}</option>{trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</Select>; }
 export function Modal({title,children,onClose,wide=false}:{title:string;children:ReactNode;onClose:()=>void;wide?:boolean}) {
   const ref=useRef<HTMLDialogElement>(null); const headingId=useId();
   const {error}=useWorkspace();

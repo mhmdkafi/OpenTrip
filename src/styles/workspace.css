@@ -181,7 +181,7 @@
 .stock-reminders { margin-top:6px; padding:20px; border:1px solid #e4ddc9; border-radius:8px; background:#faf7ee; }
 .stock-reminders h2 { display:flex; justify-content:space-between; font-size:15px; font-weight:600; }
 .stock-reminders h2 span { font-size:12px; color:#8b6b32; }
-.stock-reminders>p { font-size:12px; line-height:1.7; color:#746c58; margin-top:10px; }
+.stock-reminders h2 .reminder-count { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:#8b6b32; color:#fff; font-weight:600; }
 .stock-reminder { display:block; width:100%; text-align:left; border-top:1px solid #e5decc; margin-top:18px; padding-top:16px; }
 .stock-reminder strong { display:block; font-size:13px; font-weight:600; }
 .stock-reminder>span { display:block; font-size:12px; color:#8a602d; margin-top:5px; }
