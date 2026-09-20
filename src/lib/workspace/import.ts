@@ -28,6 +28,17 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
   if (!trip) throw new DomainError("Trip tidak ditemukan.", 404);
   const review: string[] = []; let added = 0; let unchanged = 0;
   const seen = new Set<string>();
+  const identities = new Map<string, Set<string>>();
+  for (const row of rows) {
+    try {
+      const stamp=registrationDate(String(row[source.mapping.registered_at]??""),source.dateOrder);
+      const name=String(row[source.mapping.raw_name]??"").trim();
+      const key=JSON.stringify([stamp,name]);
+      const versions=identities.get(key)??new Set<string>();
+      versions.add(JSON.stringify(importFields.map(field=>source.mapping[field]===undefined?"":String(row[source.mapping[field]]??"").trim())));
+      identities.set(key,versions);
+    } catch { /* Invalid rows are reported below with their spreadsheet row. */ }
+  }
   for (const [index, row] of rows.entries()) {
     if (row.every(v => !String(v).trim())) continue;
     const values = Object.fromEntries(importFields.filter(f => source.mapping[f] !== undefined).map(f => [f, String(row[source.mapping[f]] ?? "").trim()]));
@@ -35,9 +46,12 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
     const rowLabel = `Baris ${source.headerRow + index + 1}`;
     if (seen.has(fingerprint)) { review.push(`${rowLabel}: respons identik; tidak diimpor dua kali.`); continue; }
     seen.add(fingerprint);
-    if (state.bookings.some(b => b.sourceId === source.id && b.fingerprint === fingerprint)) { unchanged++; continue; }
     try {
       const registeredAt = registrationDate(values.registered_at ?? "", source.dateOrder);
+      if ((identities.get(JSON.stringify([registeredAt,values.raw_name]))?.size??0)>1) {
+        review.push(`${rowLabel}: beberapa respons memiliki timestamp dan nama sama tetapi isi berbeda; tinjau sumber terlebih dahulu.`); continue;
+      }
+      if (state.bookings.some(b => b.sourceId === source.id && b.fingerprint === fingerprint)) { unchanged++; continue; }
       const names = splitName(values.raw_name ?? "").names.map(n => n.name);
       if (!names.length) throw new DomainError("Nama peserta kosong.");
       const candidates = state.bookings.filter(b => b.sourceId === source.id && (b.registeredAt === registeredAt || b.rawName === values.raw_name));
@@ -86,6 +100,7 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
   if (missing) review.push(`${missing} booking berubah atau tidak ditemukan pada sumber; peserta dan transaksi tetap disimpan.`);
   const saved = { ...source, lastSuccessAt: new Date().toISOString(), lastError: undefined, review };
   state.sources = [...state.sources.filter(s => s.id !== source.id), saved];
+  trip.meetingPoints = [...new Set([...(trip.meetingPoints??[]),...state.participants.filter(p=>p.tripId===trip.id).map(p=>p.meetingPoint).filter(Boolean)])];
   state.audit.push({ id: crypto.randomUUID(), userId, at: saved.lastSuccessAt, action: "sync.completed", detail: `${added} respons baru; ${unchanged} tetap; ${review.length} perlu diperiksa` });
   return { state, stats: { added, unchanged, review: review.length } };
 }

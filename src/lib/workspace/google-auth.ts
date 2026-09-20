@@ -34,15 +34,17 @@ export async function exchangeToken(params: Record<string, string>) {
 export async function googleAccessToken(tenantId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("tripdash_google_connections").select("encrypted_refresh_token,encrypted_access_token,expires_at,updated_at").eq("tenant_id", tenantId).maybeSingle();
-  if (error || !data) throw new DomainError("Hubungkan akun Google terlebih dahulu di Pengaturan.", 503);
+  if (error) throw new DomainError("Koneksi Google gagal dimuat. Periksa migrasi dan akses database.", 503);
+  if (!data) throw new DomainError("Hubungkan akun Google terlebih dahulu di Pengaturan.", 409);
   if (data.encrypted_access_token && Date.parse(data.expires_at) > Date.now() + 60000) return decryptToken(data.encrypted_access_token);
   const token = await exchangeToken({ grant_type: "refresh_token", refresh_token: decryptToken(data.encrypted_refresh_token) });
-  const {error:saveError} = await admin.from("tripdash_google_connections").update({
+  const {data:saved,error:saveError} = await admin.from("tripdash_google_connections").update({
     encrypted_access_token:encryptToken(token.access_token),
     encrypted_refresh_token:token.refresh_token ? encryptToken(token.refresh_token) : data.encrypted_refresh_token,
     expires_at:new Date(Date.now() + (token.expires_in || 3600)*1000).toISOString(),
     updated_at:new Date().toISOString(),
-  }).eq("tenant_id",tenantId).eq("updated_at",data.updated_at);
+  }).eq("tenant_id",tenantId).eq("updated_at",data.updated_at).select("tenant_id").maybeSingle();
   if (saveError) throw new DomainError("Token Google gagal disimpan.",503);
+  if (!saved) throw new DomainError("Koneksi Google berubah selama pemuatan. Coba kembali.",409);
   return token.access_token;
 }

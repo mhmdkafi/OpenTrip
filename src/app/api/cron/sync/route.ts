@@ -19,8 +19,9 @@ export async function GET(request:NextRequest) {
     let failure:string|null=null;
     try { await syncTenant(job.tenant_id); }
     catch(error) { failure=error instanceof DomainError ? error.message : "Sync gagal. Periksa konfigurasi layanan."; }
-    const {error:finishError}=await admin.from("tripdash_sync_jobs").update({lease_id:null,lease_until:null,last_run_at:new Date().toISOString(),last_error:failure}).eq("tenant_id",job.tenant_id).eq("lease_id",job.lease_id);
+    const {data:finished,error:finishError}=await admin.from("tripdash_sync_jobs").update({lease_id:null,lease_until:null,last_run_at:new Date().toISOString(),last_error:failure}).eq("tenant_id",job.tenant_id).eq("lease_id",job.lease_id).select("tenant_id").maybeSingle();
     if (finishError) throw new DomainError("Status job gagal disimpan.",503);
+    if (!finished) throw new DomainError("Lease job sudah berubah; hasil worker lama tidak diterima.",409);
     return NextResponse.json({processed:1,success:!failure},{status:failure?502:200});
   } catch(error) { return apiError(error); }
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { requireMembership } from "@/lib/auth/membership";
+import { apiError } from "@/lib/workspace/server";
 
 const switchTenantSchema = z.object({
   tenantId: z.string().uuid(),
@@ -21,19 +23,7 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    const { data: membership, error } = await supabase
-      .from("user_memberships")
-      .select()
-      .eq("user_id", user.id)
-      .eq("tenant_id", validated.tenantId)
-      .single();
-
-    if (error || !membership) {
-      return NextResponse.json({
-        success: false,
-        error: "User tidak memiliki akses ke tenant ini"
-      }, { status: 403 });
-    }
+    await requireMembership(supabase, user.id, validated.tenantId);
 
     const response = NextResponse.json({
       success: true,
@@ -57,10 +47,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.error("Switch tenant error:", error);
-    return NextResponse.json({
-      success: false,
-      error: "Gagal pindah tenant"
-    }, { status: 500 });
+    return apiError(error);
   }
 }
