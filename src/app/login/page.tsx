@@ -25,7 +25,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const params = useSearchParams();
-  const [error, setError] = useState(callbackErrors[params.get("error") ?? ""] ?? "");
+  const [error, setError] = useState(() => { const base = callbackErrors[params.get("error") ?? ""] ?? ""; const detail = params.get("detail"); return base && detail ? `${base} (${detail})` : base; });
   const [busy, setBusy] = useState(false);
   const { login, session, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
