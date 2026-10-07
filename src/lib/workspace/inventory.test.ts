@@ -50,7 +50,7 @@ test("inventory.create adds item with zeroed damage and no loans", () => {
 test("inventory.create rejects a tracked item with zero starting stock", () => {
   assert.throws(
     () => applyCommand(baseState(), { action: "inventory.create", name: "Kompor", kind: "operational", total: 0 }, userId, reqId()),
-    /Stok awal minimal 1 barang/,
+    /Starting stock must be at least 1/,
   );
 });
 
@@ -68,7 +68,7 @@ test("inventory.update rejects switching a loaned item to consumable", () => {
   const state = withItem({ loans: [{ id: reqId(), tripId, quantity: 2, returned: false }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.update", itemId, name: "Tenda dome", kind: "rental", total: 10, consumable: true, damaged: 0, reason: "test" }, userId, reqId()),
-    /Selesaikan peminjaman/,
+    /Finish active loans/,
   );
 });
 
@@ -76,7 +76,7 @@ test("inventory.update rejects total lower than damaged plus loaned", () => {
   const state = withItem({ loans: [{ id: reqId(), tripId, quantity: 3, returned: false }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.update", itemId, name: "Tenda dome", kind: "rental", total: 2, damaged: 0, reason: "test" }, userId, reqId()),
-    /Stok total tidak boleh kurang/,
+    /Total stock can't be less/,
   );
 });
 
@@ -92,7 +92,7 @@ test("inventory.delete rejects an item with an active loan", () => {
   const state = withItem({ loans: [{ id: reqId(), tripId, quantity: 1, returned: false }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.delete", itemId }, userId, reqId()),
-    /masih dipinjam/,
+    /still on loan/,
   );
 });
 
@@ -105,7 +105,7 @@ test("inventory.consume rejects a non-consumable item", () => {
   const state = withItem();
   assert.throws(
     () => applyCommand(state, { action: "inventory.consume", itemId, quantity: 1, reason: "pakai" }, userId, reqId()),
-    /hanya untuk barang habis pakai/,
+    /only to consumable items/,
   );
 });
 
@@ -113,7 +113,7 @@ test("inventory.consume rejects quantity above available stock", () => {
   const state = withItem({ consumable: true, total: 5 });
   assert.throws(
     () => applyCommand(state, { action: "inventory.consume", itemId, quantity: 6, reason: "pakai" }, userId, reqId()),
-    /Stok tersedia tidak mencukupi/,
+    /Not enough available stock/,
   );
 });
 
@@ -126,7 +126,7 @@ test("inventory.adjust rejects a total lower than damaged plus loaned", () => {
   const state = withItem({ loans: [{ id: reqId(), tripId, quantity: 4, returned: false }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.adjust", itemId, total: 3, damaged: 1, reason: "koreksi" }, userId, reqId()),
-    /Stok total tidak boleh kurang/,
+    /Total stock can't be less/,
   );
 });
 
@@ -140,7 +140,7 @@ test("inventory.lend rejects a consumable item", () => {
   const state = withItem({ consumable: true, total: 5 });
   assert.throws(
     () => applyCommand(state, { action: "inventory.lend", itemId, tripId, quantity: 1 }, userId, reqId()),
-    /hanya untuk barang kembali/,
+    /only to returnable items/,
   );
 });
 
@@ -149,7 +149,7 @@ test("inventory.lend rejects lending to a non-active trip", () => {
   state.trips[0].status = "cancelled";
   assert.throws(
     () => applyCommand(state, { action: "inventory.lend", itemId, tripId, quantity: 1 }, userId, reqId()),
-    /Trip aktif/,
+    /Active trip/,
   );
 });
 
@@ -157,7 +157,7 @@ test("inventory.lend rejects quantity above available stock", () => {
   const state = withItem({ total: 3 });
   assert.throws(
     () => applyCommand(state, { action: "inventory.lend", itemId, tripId, quantity: 4 }, userId, reqId()),
-    /Stok tersedia tidak mencukupi/,
+    /Not enough available stock/,
   );
 });
 
@@ -183,7 +183,7 @@ test("inventory.return rejects an already-returned loan", () => {
   const state = withItem({ loans: [{ id: loanId, tripId, quantity: 4, returned: true }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.return", itemId, loanId }, userId, reqId()),
-    /sudah dikembalikan/,
+    /already been returned/,
   );
 });
 
@@ -230,7 +230,7 @@ test("inventory.incident rejects quantity above the linked loan's quantity", () 
   const state = withItem({ loans: [{ id: loanId, tripId, quantity: 2, returned: false }] });
   assert.throws(
     () => applyCommand(state, { action: "inventory.incident", itemId, loanId, kind: "lost", quantity: 3, description: "hilang" }, userId, reqId()),
-    /melebihi barang pada lokasi/,
+    /exceeds the items at the selected location/,
   );
 });
 
@@ -238,7 +238,7 @@ test("inventory.incident rejects an affecting quantity on an untracked item", ()
   const state = withItem({ stockTracked: false });
   assert.throws(
     () => applyCommand(state, { action: "inventory.incident", itemId, kind: "damaged", quantity: 1, description: "rusak" }, userId, reqId()),
-    /stok harus tercatat/,
+    /stock must be tracked/,
   );
 });
 

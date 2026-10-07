@@ -6,11 +6,11 @@ import type { Cash } from "@/lib/workspace/types";
 import { formatRupiah } from "@/lib/money";
 
 const WIDTH = 680, HEIGHT = 252, INSET = 12;
-const amount = (value: number | null) => value === null ? "Tidak ada tanggal" : formatRupiah(value);
+const amount = (value: number | null) => value === null ? "No date" : formatRupiah(value);
 const compact = (value: number) => {
   const magnitude = Math.abs(value);
   const unit = magnitude >= 1_000_000 ? 1_000_000 : magnitude >= 1_000 ? 1_000 : 1;
-  return `${(value / unit).toLocaleString("id-ID", { maximumFractionDigits: 1 })}${unit === 1_000_000 ? " jt" : unit === 1_000 ? " rb" : ""}`;
+  return `${(value / unit).toLocaleString("en-US", { maximumFractionDigits: 1 })}${unit === 1_000_000 ? "M" : unit === 1_000 ? "K" : ""}`;
 };
 
 export function CashGraph({ entries, period, reference }: { entries: Cash[]; period: ProfitPeriod; reference: string }) {
@@ -50,22 +50,22 @@ export function CashGraph({ entries, period, reference }: { entries: Cash[]; per
     const index = Math.round(((clientX - left) / width * WIDTH - INSET) / (WIDTH - INSET * 2) * (points.length - 1));
     setSelected(Math.max(0, Math.min(points.length - 1, index)));
   };
-  const unit = period === "month" ? "tanggal" : "bulan";
+  const unit = period === "month" ? "date" : "month";
 
   return <section className="cash-graph cf-graph" aria-labelledby={`${id}-title`}>
     <header className="cf-panel-heading cf-profit-heading">
-      <div><span className="cf-profit-eyebrow">PERBANDINGAN PERIODE</span><h2 id={`${id}-title`}>Perkembangan profit bersih</h2><p>Akumulasi pemasukan dikurangi pengeluaran.</p></div>
+      <div><span className="cf-profit-eyebrow">PERIOD COMPARISON</span><h2 id={`${id}-title`}>Net profit trend</h2><p>Cumulative income minus expenses.</p></div>
     </header>
-    <div className="cf-profit-periods" aria-label="Hasil akhir kedua periode">
+    <div className="cf-profit-periods" aria-label="Final result of both periods">
       <div className="is-current"><span><i/>{currentLabel}</span><strong>{formatRupiah(currentTotal)}</strong></div>
       <div className="is-previous"><span><i/>{previousLabel}</span><strong>{formatRupiah(previousTotal)}</strong></div>
     </div>
-    <p className="cf-profit-delta">{currentTotal === previousTotal ? "Hasil kedua periode sama" : `${currentTotal > previousTotal ? "Naik" : "Turun"} ${formatRupiah(Math.abs(currentTotal - previousTotal))} dari periode sebelumnya`}</p>
+    <p className="cf-profit-delta">{currentTotal === previousTotal ? "Both periods ended the same" : `${currentTotal > previousTotal ? "Up" : "Down"} ${formatRupiah(Math.abs(currentTotal - previousTotal))} from the previous period`}</p>
     {hasTransactions ? <>
       <div className="cf-profit-plot">
         <div className="cf-profit-yaxis" aria-hidden="true">{ticks.map(tick => <span key={tick} style={{ top: `${y(tick) / HEIGHT * 100}%` }}>{compact(tick)}</span>)}</div>
         <div className="cf-profit-canvas">
-          <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`Grafik akumulasi profit bersih ${currentLabel} dan ${previousLabel}. Angka lengkap ada dalam tabel di bawah.`}
+          <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`Cumulative net profit chart for ${currentLabel} and ${previousLabel}. Full figures are in the table below.`}
             onPointerMove={event => { if (event.pointerType === "mouse") { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); } }}
             onClick={event => { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); }}>
             {ticks.map(tick => <line key={tick} className={tick === 0 ? "cf-profit-zero" : "cf-profit-grid"} x1={INSET} x2={WIDTH - INSET} y1={y(tick)} y2={y(tick)}/>)}
@@ -83,15 +83,15 @@ export function CashGraph({ entries, period, reference }: { entries: Cash[]; per
       <div className="cf-profit-detail" aria-live="polite" aria-atomic="true">
         <label htmlFor={`${id}-point`}>Lihat {unit}</label>
         <select id={`${id}-point`} value={selected} onChange={event => setSelected(Number(event.target.value))}>
-          {points.map((item, index) => <option key={index} value={index}>{period === "month" ? `Tanggal ${item.label}` : item.label}</option>)}
+          {points.map((item, index) => <option key={index} value={index}>{period === "month" ? `Date ${item.label}` : item.label}</option>)}
         </select>
         <div><span>{currentLabel}</span><strong>{amount(point.current)}</strong></div>
         <div><span>{previousLabel}</span><strong>{amount(point.previous)}</strong></div>
       </div>
-    </> : <p className="cf-chart-empty">Belum ada transaksi pada kedua periode ini.</p>}
-    <details className="graph-data"><summary>Lihat angka per {period === "year" ? "bulan" : "tanggal"}</summary>
+    </> : <p className="cf-chart-empty">No transactions in either period yet.</p>}
+    <details className="graph-data"><summary>View figures by {period === "year" ? "month" : "date"}</summary>
       <div className="table-wrap"><table className="td-table"><caption className="sr-only">Akumulasi profit bersih {currentLabel} dan {previousLabel}</caption>
-        <thead><tr><th>{period === "year" ? "Bulan" : "Tanggal"}</th><th>{currentLabel}</th><th>{previousLabel}</th><th>Selisih</th></tr></thead>
+        <thead><tr><th>{period === "year" ? "Month" : "Date"}</th><th>{currentLabel}</th><th>{previousLabel}</th><th>Difference</th></tr></thead>
         <tbody>{points.map(item => <tr key={item.label}><td>{item.label}</td><td>{amount(item.current)}</td><td>{amount(item.previous)}</td><td>{item.current !== null && item.previous !== null ? formatRupiah(item.current - item.previous) : "—"}</td></tr>)}</tbody>
       </table></div>
     </details>

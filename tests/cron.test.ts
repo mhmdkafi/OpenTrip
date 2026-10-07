@@ -36,7 +36,7 @@ describe("Cron service authentication and lease completion", () => {
       assert.equal(url.searchParams.get("lease_id"), `eq.${lease}`);
       const body = JSON.parse(String(init?.body));
       assert.equal(body.lease_id, null); assert.equal(body.lease_until, null);
-      assert.match(body.last_error, /Hubungkan akun Google/); completed = true;
+      assert.match(body.last_error, /Reconnect your Google account|Connect your Google account/); completed = true;
       return json(stale ? [] : [{ tenant_id: tenant }]);
     });
     const response = await GET(request());

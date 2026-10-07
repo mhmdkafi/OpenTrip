@@ -48,9 +48,9 @@ export const BILL_STATUSES = {
 } as const;
 
 export const BILL_STATUS_LABELS: Record<string, string> = {
-  unpaid: "Belum Lunas — Belum bayar",
-  dp: "Belum Lunas — DP",
-  paid: "Lunas",
+  unpaid: "Unpaid",
+  dp: "Deposit paid",
+  paid: "Paid",
 };
 
 export const PAYMENT_STATUSES = {
@@ -110,9 +110,9 @@ export function splitNames(rawName: string): string[] {
 
 export function validateSplitNames(names: string[]): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
-  if (names.length === 0) issues.push("Tidak ada nama yang valid");
+  if (names.length === 0) issues.push("No valid names");
   for (let i = 0; i < names.length; i++) {
-    if (!names[i] || names[i].trim().length === 0) issues.push(`Nama ke-${i + 1} kosong`);
+    if (!names[i] || names[i].trim().length === 0) issues.push(`Name #${i + 1} is empty`);
   }
   return { valid: issues.length === 0, issues };
 }

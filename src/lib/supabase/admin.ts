@@ -8,7 +8,7 @@ export function createAdminClient() {
 
   if (!supabaseUrl || !secretKey) {
     throw new Error(
-      "Konfigurasi server Supabase belum lengkap. Isi SUPABASE_SECRET_KEY."
+      "Server Supabase config is incomplete. Set SUPABASE_SECRET_KEY."
     );
   }
 

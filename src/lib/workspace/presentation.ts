@@ -1,8 +1,8 @@
 import { paidFor, type Trip, type Workspace } from "./types";
 
 export const todayWib = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-export const dateLabel = (date: string, long = false) => !date ? "Belum dijadwalkan" : new Date(`${date.slice(0, 10)}T12:00:00+07:00`).toLocaleDateString("id-ID", { day: "numeric", month: long ? "long" : "short", year: "numeric" });
-export const monthLabel = (date: string) => new Date(`${date.slice(0, 7)}-01T12:00:00+07:00`).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+export const dateLabel = (date: string, long = false) => !date ? "Not scheduled" : new Date(`${date.slice(0, 10)}T12:00:00+07:00`).toLocaleDateString("en-GB", { day: "numeric", month: long ? "long" : "short", year: "numeric" });
+export const monthLabel = (date: string) => new Date(`${date.slice(0, 7)}-01T12:00:00+07:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 export function weekKey(date: string) {
   if (!date) return "";
   const value = new Date(`${date.slice(0, 10)}T12:00:00Z`);
@@ -18,7 +18,7 @@ export function tripStatus(trip: Trip, state: Workspace, today: string) {
   const count = state.participants.filter(p => p.tripId === trip.id && p.status === "active").length;
   return trip.status === "active" && days <= (trip.riskDays ?? 7) && count < (trip.minimumParticipants ?? 7) ? "risk" : "upcoming";
 }
-export const statusLabel = { upcoming: "On coming", done: "Done", cancelled: "Cancel", risk: "At risk" };
+export const statusLabel = { upcoming: "Upcoming", done: "Done", cancelled: "Cancelled", risk: "At risk" };
 export function tripFigures(state: Workspace, tripId: string) {
   const people = state.participants.filter(p => p.tripId === tripId && p.status === "active");
   return { people, remaining: people.reduce((sum, p) => sum + Math.max(0, p.charge - paidFor(state, p.id)), 0), paid: people.filter(p => p.reviewed && paidFor(state, p.id) >= p.charge).length };

@@ -29,7 +29,7 @@ export function cashSeries(entries: Cash[], period: string, reference: string) {
   while (day.getTime() < end + 7 * 3600000) {
     const date = day.toISOString().slice(0, 10);
     const key = period === "year" ? date.slice(0, 7) : period === "week" ? date : weekKey(date);
-    if (!groups.has(key)) groups.set(key, { label: period === "year" ? day.toLocaleDateString("id-ID", { month: "short", timeZone: "UTC" }) : period === "week" ? day.toLocaleDateString("id-ID", { weekday: "short", timeZone: "UTC" }) : `${day.getUTCDate()} ${day.toLocaleDateString("id-ID", { month: "short", timeZone: "UTC" })}`, entries: [] });
+    if (!groups.has(key)) groups.set(key, { label: period === "year" ? day.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) : period === "week" ? day.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }) : `${day.getUTCDate()} ${day.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}`, entries: [] });
     day.setUTCDate(day.getUTCDate() + 1);
   }
   for (const entry of filterPeriod(entries, period, reference)) {

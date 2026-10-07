@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import Image from "next/image";
 import {
@@ -62,8 +62,8 @@ export function Inventory() {
           <label className="search-field">
             <Search size={16} />
             <input
-              aria-label="Cari barang"
-              placeholder="Cari barang"
+              aria-label="Search items"
+              placeholder="Search items"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -72,24 +72,24 @@ export function Inventory() {
             />
           </label>
           <Select
-            label="Jenis barang"
+            label="Item type"
             value={kind}
             onChange={(value) => {
               setKind(value);
               setPage(0);
             }}
           >
-            <option value="">Semua jenis</option>
-            <option value="operational">Operasional</option>
-            <option value="rental">Sewaan</option>
+            <option value="">All types</option>
+            <option value="operational">Operational</option>
+            <option value="rental">Rental</option>
           </Select>
           <button className="td-button" onClick={() => setEditing("new")}>
-            <Plus size={16} /> Tambah barang
+            <Plus size={16} /> Add item
           </button>
         </div>
         <div className="inventory-list-head" aria-hidden="true">
-          <span>Barang</span>
-          <span>Stok tersedia / total</span>
+          <span>Item</span>
+          <span>Available / total</span>
           <span>Tindakan</span>
         </div>
         <div className="inventory-list">
@@ -103,7 +103,7 @@ export function Inventory() {
                     {item.imageUrl ? (
                       <button
                         className="inventory-photo-button"
-                        aria-label={`Perbesar foto ${item.name}`}
+                        aria-label={`Enlarge photo of ${item.name}`}
                         onClick={() => setViewing(item)}
                       >
                         <Image
@@ -113,16 +113,16 @@ export function Inventory() {
                           height={280}
                           unoptimized
                         />
-                        <span>Perbesar foto</span>
+                        <span>Enlarge photo</span>
                       </button>
                     ) : (
                       <button
                         className="product-placeholder"
-                        aria-label={`Tambahkan foto ${item.name}`}
+                        aria-label={`Add a photo of ${item.name}`}
                         onClick={() => setEditing(item)}
                       >
                         <Package size={40} strokeWidth={1.4} />
-                        <span>Tambahkan foto</span>
+                        <span>Add photo</span>
                       </button>
                     )}
                     <div>
@@ -136,17 +136,17 @@ export function Inventory() {
                       </h2>
                       <p>
                         {item.consumable
-                          ? "Habis pakai"
+                          ? "Consumable"
                           : item.kind === "rental"
-                            ? "Sewaan"
-                            : "Operasional"}
+                            ? "Rental"
+                            : "Operational"}
                       </p>
                     </div>
                   </div>
                   <div className="inventory-stock">
                     {item.stockTracked === false ? (
                       <span className="stock-untracked">
-                        Jumlah tidak dicatat
+                        Quantity not tracked
                       </span>
                     ) : (
                       <>
@@ -155,8 +155,8 @@ export function Inventory() {
                           <small> / {item.total}</small>
                         </strong>
                         <span>
-                          {used ? `${used} dipinjam` : "Tersedia"}
-                          {item.damaged ? ` · ${item.damaged} rusak` : ""}
+                          {used ? `${used} on loan` : "Available"}
+                          {item.damaged ? ` · ${item.damaged} damaged` : ""}
                         </span>
                       </>
                     )}
@@ -172,7 +172,7 @@ export function Inventory() {
                     </button>
                     <button
                       className="table-icon danger-button"
-                      aria-label={`Hapus ${item.name}`}
+                      aria-label={`Delete ${item.name}`}
                       onClick={() => setDeleting(item)}
                     >
                       <Trash2 size={16} />
@@ -185,36 +185,36 @@ export function Inventory() {
         </div>
         {!items.length && (
           <div className="empty-state">
-            <h3>Tidak ada barang yang cocok</h3>
-            <p>Ubah pencarian atau tambahkan barang.</p>
+            <h3>No matching items</h3>
+            <p>Change your search or add an item.</p>
           </div>
         )}
         <div className="table-foot">
           <span>
             {items.length ? current * 8 + 1 : 0}–
-            {Math.min((current + 1) * 8, items.length)} dari {items.length}{" "}
-            barang
+            {Math.min((current + 1) * 8, items.length)} of {items.length}{" "}
+            items
           </span>
           <div className="pagination">
             <button
               disabled={current === 0}
               onClick={() => setPage(current - 1)}
             >
-              Sebelumnya
+              Previous
             </button>
             <span>{current + 1}</span>
             <button
               disabled={(current + 1) * 8 >= items.length}
               onClick={() => setPage(current + 1)}
             >
-              Berikutnya
+              Next
             </button>
           </div>
         </div>
       </section>
       <aside className="stock-reminders">
         <h2>
-          Stok menipis <span className="reminder-count">{low.length}</span>
+          Low stock <span className="reminder-count">{low.length}</span>
         </h2>
         {low.map((item) => (
           <button
@@ -223,15 +223,15 @@ export function Inventory() {
             onClick={() => setEditing(item)}
           >
             <strong>{item.name}</strong>
-            <span>Tersisa {availableStock(item)}</span>
+            <span>{availableStock(item)} left</span>
             <small>
-              Perbarui stok <ArrowUpRight size={13} />
+              Update stock <ArrowUpRight size={13} />
             </small>
           </button>
         ))}
         {!low.length && (
           <div className="stock-clear">
-            Semua stok masih di atas batas pengingat.
+            All stock is above its reminder level.
           </div>
         )}
       </aside>
@@ -251,13 +251,13 @@ export function Inventory() {
         <Modal title={detail.name} onClose={() => setDetail(null)}>
           <p className="empty-note">
             {detail.consumable
-              ? "Habis pakai"
+              ? "Consumable"
               : detail.kind === "rental"
-                ? "Sewaan"
-                : "Operasional"}
+                ? "Rental"
+                : "Operational"}
           </p>
           {detail.stockTracked === false ? (
-            <p className="empty-note">Jumlah tidak dicatat</p>
+            <p className="empty-note">Quantity not tracked</p>
           ) : (
             <div className="inventory-stock">
               <strong>
@@ -266,9 +266,9 @@ export function Inventory() {
               </strong>
               <span>
                 {detail.total - detail.damaged - availableStock(detail)
-                  ? `${detail.total - detail.damaged - availableStock(detail)} dipinjam`
-                  : "Tersedia"}
-                {detail.damaged ? ` · ${detail.damaged} rusak` : ""}
+                  ? `${detail.total - detail.damaged - availableStock(detail)} on loan`
+                  : "Available"}
+                {detail.damaged ? ` · ${detail.damaged} damaged` : ""}
               </span>
             </div>
           )}
@@ -281,7 +281,7 @@ export function Inventory() {
                 setDetail(null);
               }}
             >
-              {detail.consumable ? "Catat pemakaian" : "Catat peminjaman"}
+              {detail.consumable ? "Record usage" : "Record loan"}
               <ArrowUpRight size={14} />
             </button>
           )}
@@ -294,12 +294,12 @@ export function Inventory() {
               setDetail(null);
             }}
           >
-            Catat kejadian (hilang/rusak)
+            Log incident (lost/damaged)
             <AlertTriangle size={14} />
           </button>
           {detail.loans.some((l) => !l.returned) && (
             <div className="loan-list">
-              <h3>Peminjaman aktif</h3>
+              <h3>Active loans</h3>
               {detail.loans
                 .filter((l) => !l.returned)
                 .map((loan) => (
@@ -307,10 +307,10 @@ export function Inventory() {
                     <div>
                       <strong>
                         {state.trips.find((t) => t.id === loan.tripId)
-                          ?.title ?? "Trip tidak ditemukan"}
+                          ?.title ?? "Trip not found"}
                       </strong>
                       <small>
-                        {loan.quantity} unit
+                        {loan.quantity} units
                         {loan.notes ? ` · ${loan.notes}` : ""}
                       </small>
                     </div>
@@ -327,7 +327,7 @@ export function Inventory() {
                         )
                       }
                     >
-                      <RotateCcw size={14} /> Kembalikan
+                      <RotateCcw size={14} /> Return
                     </button>
                   </div>
                 ))}
@@ -335,7 +335,7 @@ export function Inventory() {
           )}
           {!!detail.incidents?.length && (
             <div className="incident-list">
-              <h3>Riwayat kejadian</h3>
+              <h3>Incident history</h3>
               {detail.incidents
                 .slice()
                 .reverse()
@@ -343,9 +343,9 @@ export function Inventory() {
                   <div className="inventory-incident" key={note.id}>
                     <strong>{note.description}</strong>
                     <small>
-                      {new Date(note.at).toLocaleDateString("id-ID")}
-                      {note.kind === "lost" && ` · ${note.quantity} hilang`}
-                      {note.kind === "damaged" && ` · ${note.quantity} rusak`}
+                      {new Date(note.at).toLocaleDateString("en-GB")}
+                      {note.kind === "lost" && ` · ${note.quantity} lost`}
+                      {note.kind === "damaged" && ` · ${note.quantity} damaged`}
                     </small>
                   </div>
                 ))}
@@ -360,14 +360,14 @@ export function Inventory() {
         />
       )}
       {deleting && (
-        <Modal title="Hapus barang" onClose={() => setDeleting(null)}>
+        <Modal title="Delete item" onClose={() => setDeleting(null)}>
           <p className="empty-note">
-            Hapus {deleting.name} dari inventory? Barang yang masih dipinjam
-            harus dikembalikan terlebih dahulu.
+            Delete {deleting.name} from inventory? Items on loan must be
+            returned first.
           </p>
           <div className="confirm-actions">
             <button className="td-secondary" onClick={() => setDeleting(null)}>
-              Batal
+              Cancel
             </button>
             <button
               className="td-button danger-solid"
@@ -382,14 +382,14 @@ export function Inventory() {
                 })
               }
             >
-              Hapus barang
+              Delete item
             </button>
           </div>
         </Modal>
       )}
       {incident && (
         <Modal
-          title={`Catatan — ${incident.name}`}
+          title={`Incident — ${incident.name}`}
           onClose={() => setIncident(null)}
         >
           <Form
@@ -407,75 +407,75 @@ export function Inventory() {
             }}
           >
             <Field
-              label="Catatan kejadian"
+              label="Incident note"
               name="description"
-              placeholder="Contoh: tenda hilang"
+              placeholder="Example: tent lost"
               maxLength={200}
               required
             />
             <Select
-              label="Dampak pada stok"
+              label="Stock impact"
               value={incidentKind}
               onChange={setIncidentKind}
             >
-              <option value="note">Catatan saja</option>
-              <option value="lost">Barang hilang</option>
-              <option value="damaged">Barang rusak</option>
+              <option value="note">Note only</option>
+              <option value="lost">Item lost</option>
+              <option value="damaged">Item damaged</option>
             </Select>
             {incidentKind !== "note" && (
               <>
                 <Select
-                  label="Lokasi barang"
+                  label="Item location"
                   value={incidentLoan}
                   onChange={setIncidentLoan}
                 >
-                  <option value="">Stok tersedia di gudang</option>
+                  <option value="">Available stock in storage</option>
                   {incident.loans
                     .filter((l) => !l.returned)
                     .map((l) => (
                       <option key={l.id} value={l.id}>
                         {state.trips.find((t) => t.id === l.tripId)?.title} ·{" "}
-                        {l.quantity} dipinjam
+                        {l.quantity} on loan
                       </option>
                     ))}
                 </Select>
                 <Field
-                  label="Jumlah barang terdampak"
+                  label="Affected quantity"
                   name="quantity"
                   type="number"
                   min={1}
                   required
                 />
                 <p className="empty-note">
-                  Barang hilang mengurangi total stok. Barang rusak mengurangi
-                  stok tersedia.
+                  Lost items reduce total stock. Damaged items reduce
+                  available stock.
                 </p>
               </>
             )}
-            <Submit>Simpan catatan</Submit>
+            <Submit>Save note</Submit>
           </Form>
         </Modal>
       )}
       {moving && (
         <Modal
-          title={moving.consumable ? "Catat pemakaian" : "Catat peminjaman"}
+          title={moving.consumable ? "Record usage" : "Record loan"}
           onClose={() => setMoving(null)}
         >
           <p className="empty-note">
-            {moving.name} · {availableStock(moving)} unit tersedia
+            {moving.name} · {availableStock(moving)} units available
           </p>
           {!moving.consumable && (
             <TripSelect
               value={tripId}
               onChange={setTripId}
-              all="Pilih trip aktif"
+              all="Select an active trip"
               activeOnly
             />
           )}
           <Form
             onSave={async (data) => {
               if (!moving.consumable && !tripId)
-                throw new Error("Pilih trip aktif terlebih dahulu.");
+                throw new Error("Select an active trip first.");
               await mutate(
                 moving.consumable
                   ? {
@@ -496,7 +496,7 @@ export function Inventory() {
             }}
           >
             <Field
-              label="Jumlah unit"
+              label="Units"
               name="quantity"
               type="number"
               min={1}
@@ -504,17 +504,17 @@ export function Inventory() {
               required
             />
             {moving.consumable ? (
-              <Field label="Keperluan" name="reason" required />
+              <Field label="Purpose" name="reason" required />
             ) : (
               <Field
-                label="Catatan peminjaman"
+                label="Loan note"
                 name="notes"
-                placeholder="Contoh: dibawa tim logistik ke Malabar"
+                placeholder="Example: taken by the logistics team to Malabar"
                 maxLength={500}
               />
             )}
             <Submit>
-              {moving.consumable ? "Simpan pemakaian" : "Simpan peminjaman"}
+              {moving.consumable ? "Save usage" : "Save loan"}
             </Submit>
           </Form>
         </Modal>

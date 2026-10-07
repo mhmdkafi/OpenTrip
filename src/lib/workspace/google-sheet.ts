@@ -12,7 +12,7 @@ export async function readAuthenticatedSheet(tenantId: string, spreadsheetUrl: s
   const candidates = parsed.sheetId !== undefined
     ? metadata.sheets.filter(sheet => sheet.sheetId === parsed.sheetId)
     : [...metadata.sheets].sort((a, b) => Number(/responses|jawaban|respons/i.test(b.title)) - Number(/responses|jawaban|respons/i.test(a.title)));
-  if (!candidates.length) throw new DomainError("Tab pada tautan tidak ditemukan.");
+  if (!candidates.length) throw new DomainError("The tab in this link was not found.");
   for (const sheet of candidates.slice(0, 10)) {
     const sample = await fetchSheetRows(parsed.spreadsheetId, sheet.title, token, 1, 100);
     const preview = [sample.headers, ...sample.rows];
@@ -20,8 +20,8 @@ export async function readAuthenticatedSheet(tenantId: string, spreadsheetUrl: s
     try { headerRow = detectSheetHeader(preview).headerRow; }
     catch (error) { if (error instanceof DomainError) continue; throw error; }
     const data = await fetchSheetRows(parsed.spreadsheetId, sheet.title, token, headerRow, 5001);
-    if (data.rows.length > 5000) throw new DomainError("Impor melebihi batas 5.000 respons. Pisahkan sumber per trip.");
+    if (data.rows.length > 5000) throw new DomainError("Import exceeds the 5,000-response limit. Split sources per trip.");
     return { metadata, sheet, values: [...preview.slice(0, headerRow - 1), data.headers, ...data.rows] };
   }
-  throw new DomainError("Header tidak dikenali. Gunakan tautan tab respons dengan kolom Timestamp, Nama Lengkap, Fasilitas, dan Mepo.");
+  throw new DomainError("Headers not recognized. Use the responses tab link with Timestamp, Nama Lengkap, Fasilitas, and Mepo columns.");
 }

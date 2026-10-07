@@ -11,13 +11,13 @@ export async function POST(request: NextRequest) {
     const { tripId } = z.object({ tripId: z.string().uuid() }).parse(await request.json());
     const { state, revision } = await loadWorkspace(auth.tenantId);
     const trip = state.trips.find(t=>t.id===tripId);
-    if (!trip) throw new DomainError("Trip tidak ditemukan.",404);
+    if (!trip) throw new DomainError("Trip not found.",404);
     const people = state.participants.filter(p=>p.tripId===tripId&&p.status==="active");
-    if (!people.length) throw new DomainError("Belum ada peserta aktif.");
-    if (people.some(p=>!p.name.trim()||!p.meetingPoint.trim())) throw new DomainError("Lengkapi nama dan MEPO seluruh peserta sebelum ekspor.");
-    const document = { tripId, title: `Absensi ${trip.title}`, organizer: "TripDash", version: revision, snapshotAt: new Date() };
+    if (!people.length) throw new DomainError("No active participants yet.");
+    if (people.some(p=>!p.name.trim()||!p.meetingPoint.trim())) throw new DomainError("Fill in every participant's name and meeting point before exporting.");
+    const document = { tripId, title: `Attendance ${trip.title}`, organizer: "TripDash", version: revision, snapshotAt: new Date() };
     const html = renderAttendanceTemplate(document,people.map(p=>({id:p.id,bookingId:p.bookingId,name:p.name,meetingPoint:p.meetingPoint,status:p.status})));
     const pdf = await generatePdf(html);
-    return new NextResponse(new Uint8Array(pdf),{headers:{"Content-Type":"application/pdf","Content-Disposition":`attachment; filename="absensi-${tripId}.pdf"`,"Cache-Control":"private, no-store"}});
+    return new NextResponse(new Uint8Array(pdf),{headers:{"Content-Type":"application/pdf","Content-Disposition":`attachment; filename="attendance-${tripId}.pdf"`,"Cache-Control":"private, no-store"}});
   } catch(e) { return apiError(e); }
 }

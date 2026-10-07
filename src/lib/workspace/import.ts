@@ -10,12 +10,12 @@ export function registrationDate(value: string, dateOrder: "dmy" | "mdy" = "dmy"
   let input = value.trim();
   if (match) { const [, first, second, y, h = "0", min = "0", s = "0"] = match; const [d,m] = dateOrder === "mdy" ? [second,first] : [first,second]; input = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${min}:${s.padStart(2,"0")}+07:00`; }
   else if (/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/.test(input)) input = input.length === 10 ? `${input}T00:00:00+07:00` : `${input.replace(" ", "T")}+07:00`;
-  else if (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input)) throw new DomainError("Format timestamp tidak dikenali. Gunakan DD/MM/YYYY HH:mm:ss atau ISO.");
+  else if (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input)) throw new DomainError("Timestamp format not recognized. Use DD/MM/YYYY HH:mm:ss or ISO.");
   const date = new Date(input);
-  if (!Number.isFinite(date.getTime())) throw new DomainError("Timestamp pendaftaran tidak valid.");
+  if (!Number.isFinite(date.getTime())) throw new DomainError("Invalid registration timestamp.");
   const calendar = input.match(/^(\d{4})-(\d{2})-(\d{2})/)!;
   const calendarDate = new Date(Date.UTC(Number(calendar[1]), Number(calendar[2])-1, Number(calendar[3])));
-  if (calendarDate.getUTCFullYear() !== Number(calendar[1]) || calendarDate.getUTCMonth()+1 !== Number(calendar[2]) || calendarDate.getUTCDate() !== Number(calendar[3])) throw new DomainError("Tanggal pendaftaran tidak valid.");
+  if (calendarDate.getUTCFullYear() !== Number(calendar[1]) || calendarDate.getUTCMonth()+1 !== Number(calendar[2]) || calendarDate.getUTCDate() !== Number(calendar[3])) throw new DomainError("Invalid registration date.");
   return date.toISOString();
 }
 export function canonicalProof(value: string) {
@@ -25,7 +25,7 @@ export function canonicalProof(value: string) {
 export function importRows(original: Workspace, source: Source, rows: string[][], userId: string) {
   const state = structuredClone(original);
   const trip = state.trips.find(t => t.id === source.tripId);
-  if (!trip) throw new DomainError("Trip tidak ditemukan.", 404);
+  if (!trip) throw new DomainError("Trip not found.", 404);
   const review: string[] = []; let added = 0; let unchanged = 0;
   const seen = new Set<string>();
   const identities = new Map<string, Set<string>>();
@@ -43,29 +43,29 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
     if (row.every(v => !String(v).trim())) continue;
     const values = Object.fromEntries(importFields.filter(f => source.mapping[f] !== undefined).map(f => [f, String(row[source.mapping[f]] ?? "").trim()]));
     const fingerprint = createSourceFingerprint(values);
-    const rowLabel = `Baris ${source.headerRow + index + 1}`;
-    if (seen.has(fingerprint)) { review.push(`${rowLabel}: respons identik; tidak diimpor dua kali.`); continue; }
+    const rowLabel = `Row ${source.headerRow + index + 1}`;
+    if (seen.has(fingerprint)) { review.push(`${rowLabel}: identical response; not imported twice.`); continue; }
     seen.add(fingerprint);
     try {
       const registeredAt = registrationDate(values.registered_at ?? "", source.dateOrder);
       if ((identities.get(JSON.stringify([registeredAt,values.raw_name]))?.size??0)>1) {
-        review.push(`${rowLabel}: beberapa respons memiliki timestamp dan nama sama tetapi isi berbeda; tinjau sumber terlebih dahulu.`); continue;
+        review.push(`${rowLabel}: several responses share a timestamp and name but differ in content; review the source first.`); continue;
       }
       if (state.bookings.some(b => b.sourceId === source.id && b.fingerprint === fingerprint)) { unchanged++; continue; }
       const names = splitName(values.raw_name ?? "").names.map(n => n.name);
-      if (!names.length) throw new DomainError("Nama peserta kosong.");
+      if (!names.length) throw new DomainError("Participant name is empty.");
       const candidates = state.bookings.filter(b => b.sourceId === source.id && (b.registeredAt === registeredAt || b.rawName === values.raw_name));
       if (candidates.length) {
         const booking = candidates[0];
         const previous = booking.sourceSnapshot;
         // Only a stable timestamp AND name establish identity for automatic updates.
         if (candidates.length !== 1 || !previous || booking.registeredAt !== registeredAt || booking.rawName !== values.raw_name) {
-          review.push(`${rowLabel}: identitas ambigu atau snapshot lama tidak tersedia; data database dipertahankan.`); continue;
+          review.push(`${rowLabel}: ambiguous identity or old snapshot unavailable; database data kept.`); continue;
         }
         const changed = [...new Set([...Object.keys(previous),...Object.keys(values)])].filter(key=>previous[key]!==values[key]);
         const safe = new Set(["contact_phone","meeting_point","proof_refs"]);
         if (changed.some(key=>!safe.has(key))) {
-          review.push(`${rowLabel}: perubahan identitas/tagihan (${changed.join(", ")}); database menang. Koreksi melalui detail trip.`); continue;
+          review.push(`${rowLabel}: identity/billing change (${changed.join(", ")}); database wins. Correct it from the trip details.`); continue;
         }
         const people = state.participants.filter(p=>p.bookingId===booking.id);
         for (const field of changed) {
@@ -80,7 +80,7 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
             localConflict=people.some(p=>p.meetingPoint!==(previous.meeting_point||""));
             if (!localConflict) people.forEach(p=>{p.meetingPoint=values.meeting_point||"";});
           }
-          if (localConflict) review.push(`${rowLabel}: ${field} sudah diedit lokal; nilai database dipertahankan.`);
+          if (localConflict) review.push(`${rowLabel}: ${field} was edited locally; database value kept.`);
         }
         booking.sourceSnapshot=values; booking.fingerprint=fingerprint;
         continue;
@@ -94,10 +94,10 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
       const base = facility === "Full Transport" ? trip.fullPrice : facility === "Non Transport" ? trip.nonPrice : 0;
       for (const name of names) state.participants.push({ id: crypto.randomUUID(), bookingId, tripId: trip.id, name, meetingPoint: values.meeting_point ?? "", facility, raincoats: quantity, charge: base + (quantity ?? 0) * trip.raincoatPrice, reviewed: Boolean(base && quantity !== null && names.length === 1), status: "active" });
       added++;
-    } catch (e) { review.push(`${rowLabel}: ${e instanceof Error ? e.message : "Data tidak valid"}`); }
+    } catch (e) { review.push(`${rowLabel}: ${e instanceof Error ? e.message : "Invalid data"}`); }
   }
   const missing = state.bookings.filter(b => b.sourceId === source.id && !seen.has(b.fingerprint)).length;
-  if (missing) review.push(`${missing} booking berubah atau tidak ditemukan pada sumber; peserta dan transaksi tetap disimpan.`);
+  if (missing) review.push(`${missing} bookings changed or are missing from the source; participants and transactions are kept.`);
   const saved = { ...source, lastSuccessAt: new Date().toISOString(), lastError: undefined, review };
   state.sources = [...state.sources.filter(s => s.id !== source.id), saved];
   trip.meetingPoints = [...new Set([...(trip.meetingPoints??[]),...state.participants.filter(p=>p.tripId===trip.id).map(p=>p.meetingPoint).filter(Boolean)])];
