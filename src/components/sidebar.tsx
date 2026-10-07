@@ -40,7 +40,7 @@ export function Sidebar() {
   return <>
     <button ref={trigger} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="workspace-navigation" onClick={() => setOpen(!open)} className="mobile-menu">{open ? <X size={20}/> : <Menu size={20}/>}</button>
     <aside ref={aside} id="workspace-navigation" className={`forest-sidebar ${open ? "is-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
-      <Link href={basePath} aria-label="TripDash — Overview" onClick={() => setOpen(false)} className="brand-lockup"><Image src="/brand/rimbaloka-logo.jpeg" alt="Rimbaloka Trip logo" width={43} height={43}/><div><strong>TripDash<span>.</span></strong><small>Rimbaloka Trip</small></div></Link>
+      <Link href={basePath} aria-label="TripDash — Overview" onClick={() => setOpen(false)} className="brand-lockup"><Image src="/brand/rimbaloka-logo.jpeg" alt="Rimbaloka Trip logo" width={43} height={43}/><div><strong>TripDash</strong><small>Rimbaloka Trip</small></div></Link>
       <nav aria-label="Main navigation">{navigation.map(item => {
         const Icon = item.icon;
         const active = item.slug ? pathname.startsWith(basePath + item.slug) : pathname === basePath;
