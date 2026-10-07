@@ -20,7 +20,7 @@ export async function requireWorkspace() {
 
 export async function requireOwner() {
   const auth = await requireWorkspace();
-  if (auth.role !== "owner") throw new DomainError("Only the owner can add admins.", 403);
+  if (auth.role !== "owner") throw new DomainError("Only the owner can manage admins.", 403);
   return auth;
 }
 
