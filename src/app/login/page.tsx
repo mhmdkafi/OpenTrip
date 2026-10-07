@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/client";
+import { useAutoDismiss } from "@/components/tripdash/use-auto-dismiss";
 
 const callbackErrors: Record<string, string> = {
   oauth: "Google sign-in failed. Please try again.",
@@ -27,6 +28,7 @@ function LoginForm() {
   const params = useSearchParams();
   const [error, setError] = useState(() => { const base = callbackErrors[params.get("error") ?? ""] ?? ""; const detail = params.get("detail"); return base && detail ? `${base} (${detail})` : base; });
   const [busy, setBusy] = useState(false);
+  useAutoDismiss(error, () => setError(""));
   const { login, session, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();

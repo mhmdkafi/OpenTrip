@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { requestJson } from "./context";
 import { Panel } from "./ui";
+import { useAutoDismiss } from "./use-auto-dismiss";
 type Schedule={enabled:boolean;interval_minutes:number;last_run_at?:string;last_error?:string};
 export function SyncSchedule() {
   const [schedule,setSchedule]=useState<Schedule|null>(null);
-  const [message,setMessage]=useState("");
+  const [message,setMessage]=useState(""),[loadError,setLoadError]=useState("");
   const [busy,setBusy]=useState(false);
-  useEffect(()=>{let active=true;requestJson("/api/sync/schedule").then(data=>{if(active)setSchedule(data);}).catch(()=>{if(active)setMessage("Schedule unavailable. Run database migration 0003.");});return()=>{active=false;};},[]);
+  useAutoDismiss(message,()=>setMessage(""));
+  useEffect(()=>{let active=true;requestJson("/api/sync/schedule").then(data=>{if(active)setSchedule(data);}).catch(()=>{if(active)setLoadError("Schedule unavailable. Run database migration 0003.");});return()=>{active=false;};},[]);
   return <Panel title="Automatic sync">
     <p className="empty-note">Refresh imported spreadsheet sources. Local edits and transactions are kept.</p>
     {schedule && <form onSubmit={async event=>{event.preventDefault();setBusy(true);try{await requestJson("/api/sync/schedule",{enabled:schedule.enabled,interval_minutes:schedule.interval_minutes});setMessage("Schedule saved.");}catch(error){setMessage(error instanceof Error?error.message:"Could not save.");}finally{setBusy(false);}}}>
@@ -17,6 +19,6 @@ export function SyncSchedule() {
       {schedule.last_run_at && <p>Last run: {new Date(schedule.last_run_at).toLocaleString("en-GB")}</p>}
       {schedule.last_error && <p role="alert">{schedule.last_error}</p>}
     </form>}
-    {message && <p role="status">{message}</p>}
+    {loadError && <p role="alert">{loadError}</p>}{message && <p role="status">{message}</p>}
   </Panel>;
 }

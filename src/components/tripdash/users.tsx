@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, RefreshCw, Users } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
+import { useAutoDismiss } from "./use-auto-dismiss";
 
 type Member = { id:string; name:string; email:string; role:"owner"|"admin"; status:string; createdAt:string };
 type Result = { users:Member[]; total:number; page:number; role:"owner"|"admin" };
@@ -13,6 +14,8 @@ export function UsersPage() {
   const [loading,setLoading]=useState(true), [error,setError]=useState(""), [notice,setNotice]=useState("");
   const [open,setOpen]=useState(false), [busy,setBusy]=useState(false), [formError,setFormError]=useState("");
   const [refresh,setRefresh]=useState(0);
+  useAutoDismiss(notice,()=>setNotice(""));
+  useAutoDismiss(formError,()=>setFormError(""));
   const reload=useCallback(()=>setRefresh(n=>n+1),[]);
   useEffect(()=>{
     let active=true;
