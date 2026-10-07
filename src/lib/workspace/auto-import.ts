@@ -18,13 +18,13 @@ export function detectSheetHeader(values: string[][]) {
     if (mapped.some(s => normalized.filter(h => h === normalized[s.index!]).length > 1)) continue;
     return { headerRow: index + 1, headers, mapping: Object.fromEntries(mapped.map(s => [s.field, s.index!])) };
   }
-  throw new DomainError("Kolom pendaftaran belum dikenali. Spreadsheet perlu memiliki header Timestamp, Nama Lengkap, Fasilitas, dan Mepo yang tidak duplikat.");
+  throw new DomainError("Registration columns not recognized. The spreadsheet needs unique Timestamp, Nama Lengkap, Fasilitas, and Mepo headers.");
 }
 
 export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetadata, "spreadsheetId" | "title"> & {locale?:string}, sheet: { sheetId: number; title: string }, values: string[][], userId: string, tripId?: string, departureDate?: string) {
   const detected = detectSheetHeader(values);
   const rows = values.slice(detected.headerRow);
-  if (rows.length > 5000) throw new DomainError("Impor melebihi batas 5.000 respons. Pisahkan sumber per trip.");
+  if (rows.length > 5000) throw new DomainError("Import exceeds the 5,000-response limit. Split sources per trip.");
   const dateOrder = sheetDateOrder(rows.map(row=>[row[detected.mapping.registered_at]??""]),metadata.locale);
   const details = readTripDetails(metadata.title,values,detected.headerRow,dateOrder);
   // Admin-provided departure date wins over anything guessed from the sheet,
@@ -32,9 +32,9 @@ export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetad
   if (departureDate) details.departureDate = departureDate;
   const state = structuredClone(original);
   const linked = state.sources.find(s => s.spreadsheetId === metadata.spreadsheetId && s.sheetId === sheet.sheetId);
-  if (tripId && linked && linked.tripId !== tripId) throw new DomainError("Spreadsheet ini sudah terhubung ke trip lain.", 409);
+  if (tripId && linked && linked.tripId !== tripId) throw new DomainError("This spreadsheet is already linked to another trip.", 409);
   let trip = state.trips.find(t => t.id === (tripId || linked?.tripId));
-  if ((tripId || linked) && !trip) throw new DomainError("Trip tidak ditemukan.", 404);
+  if ((tripId || linked) && !trip) throw new DomainError("Trip not found.", 404);
   if (!trip) {
     trip = { id: crypto.randomUUID(), ...details, status: "active" };
     state.trips.push(trip);
@@ -54,7 +54,7 @@ export function importSpreadsheet(original: Workspace, metadata: Pick<SheetMetad
     }
   }
   const source = state.sources.find(s => s.tripId === trip.id);
-  if (source && (source.spreadsheetId !== metadata.spreadsheetId || source.sheetId !== sheet.sheetId)) throw new DomainError("Trip ini sudah memiliki sumber spreadsheet lain.");
+  if (source && (source.spreadsheetId !== metadata.spreadsheetId || source.sheetId !== sheet.sheetId)) throw new DomainError("This trip already has a different spreadsheet source.");
   const result = importRows(state, { id: source?.id ?? crypto.randomUUID(), tripId: trip.id, spreadsheetId: metadata.spreadsheetId, sheetId: sheet.sheetId, sheetTitle: sheet.title, ...detected, dateOrder, lastSuccessAt: "", review: [] }, rows, userId);
   const importedTrip = result.state.trips.find(t => t.id === trip.id)!;
   importedTrip.meetingPoints = [...new Set([...(importedTrip.meetingPoints ?? []), ...result.state.participants.filter(p => p.tripId === trip.id).map(p => p.meetingPoint).filter(Boolean)])];

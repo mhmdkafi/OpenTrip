@@ -44,12 +44,12 @@ export function splitName(rawName: string): SplitNameResult {
   const trimmedTokens = processedTokens.map(t => t.trim()).filter(t => t.length > 0);
 
   if (trimmedTokens.length !== processedTokens.map(t => t.trim()).length) {
-    warnings.push("Token kosong ditemukan dan dibuang");
+    warnings.push("Empty token found and removed");
   }
 
   const emptyCount = rawName.split(/[\+\n,]/).filter(t => t.trim().length === 0).length;
   if (emptyCount > 1) {
-    warnings.push(`${emptyCount} token kosong ditemukan`);
+    warnings.push(`${emptyCount} empty tokens found`);
   }
 
   let hasAmbiguous = false;
@@ -68,7 +68,7 @@ export function splitName(rawName: string): SplitNameResult {
     }
 
     if (token.trim() !== token) {
-      result.warnings.push("Spasi ekstra ditemukan");
+      result.warnings.push("Extra whitespace found");
     }
 
     names.push(result);

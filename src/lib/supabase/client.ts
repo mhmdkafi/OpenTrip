@@ -6,7 +6,7 @@ export function createClient() {
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Konfigurasi Supabase belum lengkap. Isi NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+      "Supabase is not fully configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
     );
   }
 

@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const auth = await requireWorkspace();
     const { data,error } = await createAdminClient().from("tripdash_google_connections").select("updated_at").eq("tenant_id", auth.tenantId).maybeSingle();
-    if (error) throw new DomainError("Status koneksi Google gagal dimuat. Periksa konfigurasi database.",503);
+    if (error) throw new DomainError("Could not load the Google connection status. Check the database configuration.",503);
     return NextResponse.json({ configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REDIRECT_URI && process.env.GOOGLE_TOKEN_ENCRYPTION_KEY), connected: Boolean(data) });
   } catch (e) { return apiError(e); }
 }

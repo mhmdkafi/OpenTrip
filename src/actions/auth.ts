@@ -101,17 +101,17 @@ export async function logout() {
   try {
     const supabase = await createClient();
     const { error } = await supabase.auth.signOut();
-    if (error) return { success: false, error: "Gagal logout. Silakan coba lagi." };
+    if (error) return { success: false, error: "Sign-out failed. Please try again." };
 
     const cookieStore = await cookies();
     cookieStore.delete("tenant-id");
 
     revalidatePath("/");
 
-    return { success: true, message: "Logout berhasil" };
+    return { success: true, message: "Signed out" };
   } catch (error) {
     console.error("Logout error:", error);
-    return { success: false, error: "Gagal logout" };
+    return { success: false, error: "Sign-out failed" };
   }
 }
 
@@ -121,7 +121,7 @@ export async function switchTenant(tenantId: string) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return { success: false, error: "User tidak login" };
+      return { success: false, error: "Not signed in" };
     }
 
     await requireMembership(supabase, user.id, tenantId);
@@ -137,10 +137,10 @@ export async function switchTenant(tenantId: string) {
 
     revalidatePath("/dashboard");
 
-    return { success: true, message: "Berhasil pindah tenant" };
+    return { success: true, message: "Workspace switched" };
   } catch (error) {
     console.error("Switch tenant error:", error);
-    return { success: false, error: "Gagal pindah tenant" };
+    return { success: false, error: "Could not switch workspace" };
   }
 }
 

@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { emptyWorkspace, type Workspace } from "@/lib/workspace/types";
 import { type Command } from "@/lib/workspace/commands";
 export async function requestJson(url: string, body?: unknown, method = "POST") {
   const response = await fetch(url, body === undefined ? { cache: "no-store", method: "GET" } : { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error ?? "Permintaan gagal.");
+  if (!response.ok) throw new Error(result.error ?? "Request failed.");
   return result;
 }
 type Snapshot = { state: Workspace; revision: number };
@@ -43,7 +43,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode; }) {
   async function run(fn: () => Promise<void>) {
     if (locked.current) return;
     locked.current = true; setBusy(true); setError(""); setNotice("");
-    try { await fn(); setNotice("Perubahan berhasil disimpan."); }
+    try { await fn(); setNotice("Changes saved."); }
     catch (e) { setError((e as Error).message); }
     finally { locked.current = false; setBusy(false); }
   }

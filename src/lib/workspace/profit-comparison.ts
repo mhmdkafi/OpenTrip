@@ -7,7 +7,7 @@ export type ProfitPeriod = "month" | "year";
 // null; a date with no recorded transactions is zero.
 export function profitComparison(entries: Cash[], period: ProfitPeriod, reference: string) {
   const previous = previousReference(period, reference);
-  const label = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("id-ID", {
+  const label = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", {
     year: "numeric", ...(period === "month" ? { month: "long" as const } : {}), timeZone: "UTC",
   });
   const bucketCount = (date: string) => period === "year" ? 12 : new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 0)).getUTCDate();
@@ -23,7 +23,7 @@ export function profitComparison(entries: Cash[], period: ProfitPeriod, referenc
     currentLabel: label(reference), previousLabel: label(previous),
     hasTransactions: current.count + prior.count > 0,
     points: Array.from({ length: Math.max(current.net.length, prior.net.length) }, (_, index) => ({
-      label: period === "year" ? new Date(Date.UTC(2000, index, 1)).toLocaleDateString("id-ID", { month: "short", timeZone: "UTC" }) : String(index + 1),
+      label: period === "year" ? new Date(Date.UTC(2000, index, 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) : String(index + 1),
       current: current.net[index] ?? null,
       previous: prior.net[index] ?? null,
     })),

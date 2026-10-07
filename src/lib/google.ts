@@ -64,12 +64,12 @@ export function parseGoogleSheetsUrl(input: string): GoogleSheetUrl {
   try {
     url = new URL(value);
   } catch {
-    throw new GoogleApiError("URL spreadsheet tidak valid.", 400, "invalid_sheet_url");
+    throw new GoogleApiError("Invalid spreadsheet URL.", 400, "invalid_sheet_url");
   }
 
   if (url.protocol !== "https:" || url.hostname !== "docs.google.com") throw new GoogleApiError("Gunakan URL Google Sheets resmi (https://docs.google.com).", 400, "invalid_host");
   const spreadsheetId = url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1];
-  if (!spreadsheetId) throw new GoogleApiError("URL spreadsheet tidak berisi spreadsheet ID.", 400, "missing_spreadsheet_id");
+  if (!spreadsheetId) throw new GoogleApiError("The spreadsheet URL has no spreadsheet ID.", 400, "missing_spreadsheet_id");
 
   const gid = url.searchParams.get("gid") ?? url.hash.match(/gid=([0-9]+)/)?.[1];
   return { spreadsheetId, sheetId: gid ? Number(gid) : undefined };
@@ -83,13 +83,13 @@ export function parseGoogleDriveUrl(input: string): GoogleDriveUrl {
   try {
     url = new URL(value);
   } catch {
-    throw new GoogleApiError("URL Drive tidak valid.", 400, "invalid_drive_url");
+    throw new GoogleApiError("Invalid Drive URL.", 400, "invalid_drive_url");
   }
 
   if (url.protocol !== "https:" || !["drive.google.com", "docs.google.com"].includes(url.hostname)) throw new GoogleApiError("Gunakan URL Google Drive resmi.", 400, "invalid_host");
   const fileId = url.pathname.match(/\/file\/d\/([a-zA-Z0-9-_]+)/)?.[1] ?? url.searchParams.get("id");
-  if (fileId && !/^[a-zA-Z0-9_-]+$/.test(fileId)) throw new GoogleApiError("File ID tidak valid.", 400, "invalid_file_id");
-  if (!fileId) throw new GoogleApiError("URL Drive tidak berisi file ID.", 400, "missing_file_id");
+  if (fileId && !/^[a-zA-Z0-9_-]+$/.test(fileId)) throw new GoogleApiError("Invalid file ID.", 400, "invalid_file_id");
+  if (!fileId) throw new GoogleApiError("The Drive URL has no file ID.", 400, "missing_file_id");
   return { fileId };
 }
 
@@ -99,14 +99,14 @@ export function suggestHeaderMappings(headers: string[], sampleRows: string[][] 
     const aliases = sheetAliases[field].map(normalizeHeader);
     let index = normalizedHeaders.findIndex((header) => aliases.includes(header));
     let confidence = index >= 0 ? 0.95 : 0;
-    let reason = index >= 0 ? "alias header cocok" : "tidak ditemukan";
+    let reason = index >= 0 ? "header alias matched" : "not found";
 
     if (index < 0) {
       const partial = normalizedHeaders.findIndex((header) => header.length > 0 && aliases.some((alias) => header.includes(alias) || alias.includes(header)));
       if (partial >= 0) {
         index = partial;
         confidence = 0.7;
-        reason = "header mirip alias";
+        reason = "header resembles alias";
       }
     }
 
@@ -115,7 +115,7 @@ export function suggestHeaderMappings(headers: string[], sampleRows: string[][] 
       if (inferred !== null) {
         index = inferred;
         confidence = 0.55;
-        reason = "bentuk nilai cocok";
+        reason = "value shape matched";
       }
     }
 
@@ -203,9 +203,9 @@ function escapeSheetTitle(title: string) {
 }
 
 function resolveGoogleErrorMessage(status: number) {
-  if (status === 401) return "Token Google tidak valid atau sudah dicabut.";
-  if (status === 403) return "Akun Google tidak memiliki izin membaca file.";
-  if (status === 404) return "File atau tab Google tidak ditemukan.";
+  if (status === 401) return "The Google token is invalid or was revoked.";
+  if (status === 403) return "The Google account is not allowed to read this file.";
+  if (status === 404) return "Google file or tab not found.";
   if (status === 429) return "Kuota Google API terlampaui. Coba lagi nanti.";
-  return "Google API gagal dipanggil.";
+  return "The Google API call failed.";
 }

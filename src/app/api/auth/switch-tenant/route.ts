@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({
         success: false,
-        error: "User tidak login"
+        error: "Not signed in"
       }, { status: 401 });
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: "Berhasil pindah tenant"
+      message: "Workspace switched"
     });
 
     response.cookies.set("tenant-id", validated.tenantId, {

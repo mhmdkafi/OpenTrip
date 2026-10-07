@@ -13,15 +13,15 @@ export async function GET(request:NextRequest) {
   try {
     const admin=createAdminClient();
     const {data,error}=await admin.rpc("claim_tripdash_sync_job");
-    if (error) throw new DomainError("Antrean sync belum tersedia.",503);
+    if (error) throw new DomainError("Sync queue unavailable.",503);
     const job=data?.[0];
     if (!job) return NextResponse.json({processed:0});
     let failure:string|null=null;
     try { await syncTenant(job.tenant_id); }
-    catch(error) { failure=error instanceof DomainError ? error.message : "Sync gagal. Periksa konfigurasi layanan."; }
+    catch(error) { failure=error instanceof DomainError ? error.message : "Sync failed. Check the service configuration."; }
     const {data:finished,error:finishError}=await admin.from("tripdash_sync_jobs").update({lease_id:null,lease_until:null,last_run_at:new Date().toISOString(),last_error:failure}).eq("tenant_id",job.tenant_id).eq("lease_id",job.lease_id).select("tenant_id").maybeSingle();
-    if (finishError) throw new DomainError("Status job gagal disimpan.",503);
-    if (!finished) throw new DomainError("Lease job sudah berubah; hasil worker lama tidak diterima.",409);
+    if (finishError) throw new DomainError("Could not save the job status.",503);
+    if (!finished) throw new DomainError("The job lease changed; the old worker result was discarded.",409);
     return NextResponse.json({processed:1,success:!failure},{status:failure?502:200});
   } catch(error) { return apiError(error); }
 }

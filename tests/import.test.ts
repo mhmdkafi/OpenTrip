@@ -29,7 +29,7 @@ describe("Import and resync preserve database corrections", () => {
     assert.equal(result.state.participants[0].meetingPoint, "Koreksi admin");
     assert.equal(result.state.participants[0].charge, 123456);
     assert.equal(result.state.bookings[0].phone, "089999999999");
-    assert.match(result.state.sources[0].review.join(" "), /diedit lokal/);
+    assert.match(result.state.sources[0].review.join(" "), /edited locally/);
     assert.equal(state.bookings[0].phone, row[4]);
   });
   it("holds identity/billing changes for review and never rewrites verified transactions", () => {
@@ -39,7 +39,7 @@ describe("Import and resync preserve database corrections", () => {
     const result = importRows(state, state.sources[0], [changed], "test-admin");
     assert.equal(result.state.participants[0].facility, "Full Transport");
     assert.deepEqual(result.state.payments, state.payments);
-    assert.match(result.state.sources[0].review.join(" "), /identitas\/tagihan/);
+    assert.match(result.state.sources[0].review.join(" "), /identity\/billing/);
   });
   it("keeps missing bookings and handles ambiguous duplicate identities without last-row wins", () => {
     const { state } = initial();
@@ -48,14 +48,14 @@ describe("Import and resync preserve database corrections", () => {
     const changed = [...row]; changed[3] = "Cimahi";
     const ambiguous = importRows(state, state.sources[0], [row, changed], "test-admin");
     assert.equal(ambiguous.state.participants[0].meetingPoint, "Bandung");
-    assert.match(ambiguous.state.sources[0].review.join(" "), /isi berbeda/);
+    assert.match(ambiguous.state.sources[0].review.join(" "), /differ in content/);
   });
   it("keeps legacy bookings without snapshots for review", () => {
     const { state } = initial(); delete state.bookings[0].sourceSnapshot;
     const changed = [...row]; changed[4] = "089999999999";
     const result = importRows(state, state.sources[0], [changed], "test-admin");
     assert.equal(result.state.bookings[0].phone, row[4]);
-    assert.match(result.state.sources[0].review.join(" "), /snapshot lama/);
+    assert.match(result.state.sources[0].review.join(" "), /old snapshot/);
   });
   it("does not collapse case-sensitive Drive IDs into the same fingerprint", () => {
     assert.notEqual(createSourceFingerprint({ proof_refs: "AbCd" }), createSourceFingerprint({ proof_refs: "abcd" }));

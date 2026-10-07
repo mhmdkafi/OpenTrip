@@ -18,7 +18,7 @@ import { FinanceRecap } from "./finance-recap";
 import { FinanceLedger } from "./finance-ledger";
 
 export function Finance() {
-  return <Suspense fallback={<p>Memuat cashflow…</p>}><FinanceView/></Suspense>;
+  return <Suspense fallback={<p>Loading cashflow…</p>}><FinanceView/></Suspense>;
 }
 
 function FinanceView() {
@@ -52,9 +52,9 @@ function FinanceView() {
     ? (period==="month"&&detailWeek<reference.slice(0,7)+"-01" ? reference.slice(0,7)+"-01" : detailWeek)
     : reference;
   const tabs = [
-    { id:"transactions", label:"Transaksi", count:detailEntries.length },
-    ...(selectedTrip ? [{ id:"participants", label:"Pembayaran peserta", count:state.participants.filter(p=>p.tripId===tripId&&p.status==="active").length }] : []),
-    { id:"categories", label:"Kategori pengeluaran", count:undefined },
+    { id:"transactions", label:"Transactions", count:detailEntries.length },
+    ...(selectedTrip ? [{ id:"participants", label:"Participant payments", count:state.participants.filter(p=>p.tripId===tripId&&p.status==="active").length }] : []),
+    { id:"categories", label:"Expense categories", count:undefined },
   ];
 
   return <div className="cashflow-workspace">
@@ -64,19 +64,19 @@ function FinanceView() {
       <div className={`cf-analysis ${period==="week" ? "is-weekly" : ""}`}>
         <div className="cf-panel cf-chart-panel">
           {(period==="month"||period==="year")&&<CashGraph key={period+reference} entries={state.cash} period={period} reference={reference}/>}
-          <div className="cash-balance" aria-label="Saldo kas tercatat"><div><span>Saldo awal tercatat</span><strong>{formatRupiah(opening)}</strong></div><ArrowRight size={16}/><div><span>Saldo akhir tercatat</span><strong>{formatRupiah(closing)}</strong></div><small>Berdasarkan transaksi di aplikasi</small></div>
+          <div className="cash-balance" aria-label="Recorded cash balance"><div><span>Recorded opening balance</span><strong>{formatRupiah(opening)}</strong></div><ArrowRight size={16}/><div><span>Recorded closing balance</span><strong>{formatRupiah(closing)}</strong></div><small>Based on transactions in the app</small></div>
         </div>
         <ExpenseBreakdown entries={entries}/>
       </div>
       <FinanceRecap entries={entries} trips={state.trips} period={period} reference={reference} onOpen={openTrip}/>
     </> : <>
       <section className="cf-detail-heading detail-finance-heading">
-        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Kembali ke rekap cashflow</button><h2>{selectedTrip?.title??(tripId===""?"Umum bisnis":"Trip tidak ditemukan")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transaksi minggu "+dateLabel(detailWeek) : "Transaksi pada periode terpilih"}</p></div>
-        {(selectedTrip||tripId==="")&&<button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Catat pengeluaran</button>}
+        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Back to cashflow summary</button><h2>{selectedTrip?.title??(tripId===""?"General business":"Trip not found")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transactions for the week of "+dateLabel(detailWeek) : "Transactions in the selected period"}</p></div>
+        {(selectedTrip||tripId==="")&&<button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Record expense</button>}
       </section>
       <FinanceSummary entries={detailEntries} period={period}/>
       <section className="cf-panel finance-trip-detail">
-        <div className="cf-detail-tabs" role="tablist" aria-label="Detail keuangan trip">
+        <div className="cf-detail-tabs" role="tablist" aria-label="Trip finance details">
           {tabs.map((item,index)=><button key={item.id} role="tab" id={"cf-tab-"+item.id} aria-controls={"cf-panel-"+item.id} aria-selected={tab===item.id} tabIndex={tab===item.id?0:-1} onClick={()=>setTab(item.id)} onKeyDown={e=>{
             if (!["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return;
             e.preventDefault();
@@ -92,8 +92,8 @@ function FinanceView() {
       </section>
     </>}
     {editing&&tripId!==null&&<ExpenseForm tripId={tripId} expense={editing==="new"?undefined:editing} date={expenseDate} onClose={()=>setEditing(null)}/>}
-    {deleting&&<Modal title="Hapus pengeluaran" onClose={()=>setDeleting(null)}><p className="empty-note">{deleting.description} · {formatRupiah(deleting.amount)}</p><Form onSave={async data=>{
+    {deleting&&<Modal title="Delete expense" onClose={()=>setDeleting(null)}><p className="empty-note">{deleting.description} · {formatRupiah(deleting.amount)}</p><Form onSave={async data=>{
       await mutate({action:"expense.delete",expenseId:deleting.id,reason:text(data,"reason")}); setDeleting(null);
-    }}><Field label="Alasan penghapusan" name="reason" required/><Submit>Hapus pengeluaran</Submit></Form></Modal>}
+    }}><Field label="Reason for deletion" name="reason" required/><Submit>Delete expense</Submit></Form></Modal>}
   </div>;
 }

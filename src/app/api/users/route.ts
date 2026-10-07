@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
     const { data, count, error } = await admin.from("user_memberships")
       .select("user_id,role,created_at,users!inner(email,status)", { count: "exact" })
       .eq("tenant_id", auth.tenantId).order("created_at").order("id").range((page - 1) * 20, page * 20 - 1);
-    if (error) throw new DomainError("Daftar pengguna gagal dimuat.", 503);
+    if (error) throw new DomainError("Could not load users.", 503);
     const users = await Promise.all((data || []).map(async member => {
       const profile = Array.isArray(member.users) ? member.users[0] : member.users;
       const { data: account, error: accountError } = await admin.auth.admin.getUserById(member.user_id);
-      if (accountError) throw new DomainError("Profil pengguna gagal dimuat. Coba kembali.", 503);
+      if (accountError) throw new DomainError("Could not load user profiles. Try again.", 503);
       return { id: member.user_id, name: account.user?.user_metadata?.name || "", email: profile.email,
         status: profile.status, role: member.role, createdAt: member.created_at };
     }));
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
     const { data, error } = await admin.auth.admin.createUser({ email: input.email, password: input.password,
       email_confirm: true, user_metadata: { name: input.name } });
     if (error || !data.user) {
-      if (error?.code === "email_exists" || error?.code === "user_already_exists") throw new DomainError("Email sudah terdaftar. Gunakan email lain.", 409);
-      throw new DomainError("Akun gagal dibuat. Periksa email dan kebijakan password Supabase.", 400);
+      if (error?.code === "email_exists" || error?.code === "user_already_exists") throw new DomainError("This email is already registered. Use a different email.", 409);
+      throw new DomainError("Could not create the account. Check the email and the Supabase password policy.", 400);
     }
     const userId = data.user.id;
     try {
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     } catch {
       // Compensate only the account created by this request, never an existing user.
       const { error: cleanupError } = await admin.auth.admin.deleteUser(userId);
-      if (cleanupError) throw new DomainError("Pembuatan membership gagal. Akun belum memiliki akses; hubungi pengelola Supabase untuk membersihkan akun tersebut.", 503);
-      throw new DomainError("Pembuatan akses gagal; akun dibatalkan. Silakan coba kembali.", 503);
+      if (cleanupError) throw new DomainError("Could not create the membership. The account has no access yet; ask your Supabase admin to clean it up.", 503);
+      throw new DomainError("Could not grant access; the account was rolled back. Please try again.", 503);
     }
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) { return apiError(error); }

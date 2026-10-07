@@ -21,34 +21,34 @@ export function UsersPage() {
     return()=>{active=false;};
   },[page,refresh]);
   return <>
-    <div className="page-heading"><div><h1>Pengguna</h1><p>Daftar owner dan admin dalam workspace ini.</p></div>
-      {result?.role==="owner" && <button className="td-button" onClick={()=>{setFormError("");setOpen(true);}}><Plus size={16} aria-hidden="true"/>Tambah admin</button>}
+    <div className="page-heading"><div><h1>Users</h1><p>Owners and admins in this workspace.</p></div>
+      {result?.role==="owner" && <button className="td-button" onClick={()=>{setFormError("");setOpen(true);}}><Plus size={16} aria-hidden="true"/>Add admin</button>}
     </div>
     {notice&&<p className="notice" role="status">{notice}</p>}
     {error&&<p className="notice error" role="alert">{error}</p>}
     <section className="td-panel">
-      <div className="panel-heading"><h2><Users size={18} className="inline mr-2" aria-hidden="true"/>Daftar pengguna{result?` (${result.total})`:""}</h2><button className="td-secondary" onClick={()=>{setLoading(true);reload();}} disabled={loading}><RefreshCw size={15} aria-hidden="true"/>Muat ulang</button></div>
-      {result?.role==="admin"&&<p className="empty-note mb-4">Anda dapat melihat seluruh pengguna. Penambahan admin dikelola oleh owner.</p>}
-      {loading?<p role="status">Memuat pengguna…</p>:<>
-        <div className="table-wrap"><table className="td-table"><thead><tr><th scope="col">Nama / email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Ditambahkan</th></tr></thead>
-          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`badge ${user.role==="owner"?"":"gray"}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{user.status==="active"?"Aktif":"Nonaktif"}</td><td>{new Date(user.createdAt).toLocaleDateString("id-ID")}</td></tr>)}</tbody></table></div>
-        {result?.total===0&&<p className="empty-note mt-4">Belum ada pengguna.</p>}
-        <div className="table-foot"><span>Halaman {page} dari {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Sebelumnya</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Berikutnya</button></div></div>
+      <div className="panel-heading"><h2><Users size={18} className="inline mr-2" aria-hidden="true"/>Daftar pengguna{result?` (${result.total})`:""}</h2><button className="td-secondary" onClick={()=>{setLoading(true);reload();}} disabled={loading}><RefreshCw size={15} aria-hidden="true"/>Reload</button></div>
+      {result?.role==="admin"&&<p className="empty-note mb-4">You can view all users. Only the owner can add admins.</p>}
+      {loading?<p role="status">Loading users…</p>:<>
+        <div className="table-wrap"><table className="td-table"><thead><tr><th scope="col">Name / email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Added</th></tr></thead>
+          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`badge ${user.role==="owner"?"":"gray"}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{user.status==="active"?"Active":"Inactive"}</td><td>{new Date(user.createdAt).toLocaleDateString("en-GB")}</td></tr>)}</tbody></table></div>
+        {result?.total===0&&<p className="empty-note mt-4">No users yet.</p>}
+        <div className="table-foot"><span>Page {page} of {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Previous</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Next</button></div></div>
       </>}
     </section>
-    {open&&<Modal title="Tambah admin" onClose={()=>{if(!busy)setOpen(false);}}>
-      <p className="empty-note">Admin baru dapat login dan mengakses workspace ini. Sampaikan email dan password awal kepada pemilik akun.</p>
+    {open&&<Modal title="Add admin" onClose={()=>{if(!busy)setOpen(false);}}>
+      <p className="empty-note">The new admin can sign in and access this workspace. Share the email and initial password with the account owner.</p>
       {formError&&<p className="notice error" role="alert">{formError}</p>}
       <form onSubmit={async e=>{
         e.preventDefault(); if(busy)return; const data=new FormData(e.currentTarget);setBusy(true);setFormError("");
-        try{await requestJson("/api/users",{name:String(data.get("name")),email:String(data.get("email")),password:String(data.get("password"))});setOpen(false);setNotice("Admin berhasil ditambahkan dan sudah dapat login.");reload();}
-        catch(error){setFormError(error instanceof Error?error.message:"Akun gagal dibuat.");}
+        try{await requestJson("/api/users",{name:String(data.get("name")),email:String(data.get("email")),password:String(data.get("password"))});setOpen(false);setNotice("Admin added and can now sign in.");reload();}
+        catch(error){setFormError(error instanceof Error?error.message:"Could not create the account.");}
         finally{setBusy(false);}
       }}><fieldset disabled={busy} className="grid gap-4">
-        <Field label="Nama lengkap" name="name" required minLength={2} maxLength={100} autoComplete="name"/>
+        <Field label="Full name" name="name" required minLength={2} maxLength={100} autoComplete="name"/>
         <Field label="Email" name="email" type="email" required autoComplete="off"/>
-        <Field label="Password awal (minimal 6 karakter)" name="password" type="password" required minLength={6} maxLength={128} autoComplete="new-password"/>
-        <p className="empty-note">Role: Admin</p><button type="submit" className="td-button">{busy?"Menambahkan…":"Tambah admin"}</button>
+        <Field label="Initial password (at least 6 characters)" name="password" type="password" required minLength={6} maxLength={128} autoComplete="new-password"/>
+        <p className="empty-note">Role: Admin</p><button type="submit" className="td-button">{busy?"Adding…":"Add admin"}</button>
       </fieldset></form>
     </Modal>}
   </>;

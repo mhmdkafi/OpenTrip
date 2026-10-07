@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
-      return { success: false, error: "Login gagal" };
+      return { success: false, error: "Sign-in failed" };
     }
   };
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        throw new Error("Gagal pindah tenant");
+        throw new Error("Could not switch workspace");
       }
 
       await loadSession();
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error) {
       console.error("Switch tenant error:", error);
-      return { success: false, error: error instanceof Error ? error.message : "Gagal pindah tenant" };
+      return { success: false, error: error instanceof Error ? error.message : "Could not switch workspace" };
     }
   };
 

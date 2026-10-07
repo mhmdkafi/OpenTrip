@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = z.object({ requestId: z.string().uuid(), revision: z.number().int().min(0), command: commandSchema }).parse(await request.json());
     const current = await loadWorkspace(auth.tenantId);
     if (current.state.requests.includes(body.requestId)) return NextResponse.json(current);
-    if (body.revision !== current.revision) throw new DomainError("Data sudah berubah. Muat ulang sebelum menyimpan.", 409);
+    if (body.revision !== current.revision) throw new DomainError("Data has changed. Reload before saving.", 409);
     const state = applyCommand(current.state, body.command, auth.userId, body.requestId);
     const revision = await saveWorkspace(auth.tenantId, current.revision, state, current.exists);
     return NextResponse.json({ state, revision });
