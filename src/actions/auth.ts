@@ -8,8 +8,8 @@ import { z } from "zod";
 import { requireMembership } from "@/lib/auth/membership";
 
 const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   tenantId: z.string().uuid().optional(),
 });
 
@@ -26,22 +26,22 @@ export async function login(formData: LoginFormData) {
 
     if (error) {
       if (error.name === "AuthRetryableFetchError" || /fetch failed|failed to fetch|network/i.test(error.message)) {
-        return { success: false, error: "Server aplikasi tidak dapat terhubung ke Supabase. Periksa koneksi internet server, VPN/proxy, dan akses jaringan proses Next.js, lalu coba lagi." };
+        return { success: false, error: "The server cannot reach Supabase. Check the server network connection and try again." };
       }
       return { success: false, error: error.message };
     }
 
     if (!user) {
-      return { success: false, error: "User tidak ditemukan" };
+      return { success: false, error: "User not found" };
     }
 
     const {data:profile,error:profileError} = await supabase.from("users").select("status").eq("id",user.id).maybeSingle();
     if (profileError) {
-      return {success:false,error:"Profil akun gagal dimuat dari Supabase. Periksa koneksi server dan migrasi database, lalu coba lagi."};
+      return {success:false,error:"Could not load the account profile. Please try again."};
     }
     if (profile?.status !== "active") {
       await supabase.auth.signOut();
-      return {success:false,error:"Akun tidak aktif."};
+      return {success:false,error:"This account is inactive."};
     }
 
     const { data: memberships, error: membershipError } = await supabase
@@ -51,12 +51,12 @@ export async function login(formData: LoginFormData) {
       .in("role", ["owner", "admin"]);
 
     if (membershipError) {
-      return { success: false, error: "Gagal memuat data tenant" };
+      return { success: false, error: "Could not load workspace data" };
     }
 
     if (memberships.length === 0) {
       await supabase.auth.signOut();
-      return { success: false, error: "User belum terdaftar di tenant manapun" };
+      return { success: false, error: "This account has no workspace access. Ask your workspace owner to add you." };
     }
 
     let tenantId = validated.tenantId;
@@ -83,7 +83,7 @@ export async function login(formData: LoginFormData) {
 
     return {
       success: true,
-      message: "Login berhasil",
+      message: "Signed in",
       redirectTo: "/dashboard"
     };
 
@@ -93,7 +93,7 @@ export async function login(formData: LoginFormData) {
     }
 
     console.error("Login error:", error);
-    return { success: false, error: "Terjadi kesalahan internal" };
+    return { success: false, error: "Something went wrong. Please try again." };
   }
 }
 
