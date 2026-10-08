@@ -1,6 +1,16 @@
-import type { Cash } from "./types";
+import type { Cash, Trip } from "./types";
 import { periodBounds } from "./period";
 import { weekKey } from "./presentation";
+// Participant payments belong to the trip they paid for: in cashflow they are counted on the
+// trip's departure date, while the real transfer time is kept in recordedAt for display.
+export function attributeToTrips(cash: Cash[], trips: Trip[]): Cash[] {
+  const departures = new Map(trips.filter(t => t.departureDate).map(t => [t.id, t.departureDate]));
+  return cash.map(entry => {
+    const departure = entry.direction === "in" ? departures.get(entry.tripId) : undefined;
+    return departure ? { ...entry, recordedAt: entry.occurredAt, occurredAt: new Date(`${departure}T12:00:00+07:00`).toISOString() } : entry;
+  });
+}
+export const recordedTime = (entry: Cash) => entry.recordedAt ?? entry.occurredAt;
 export const cashDate = (entry: Cash) => new Date(entry.occurredAt).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 export function cashTotals(entries: Cash[]) {
   const income = entries.filter(c => c.direction === "in").reduce((s, c) => s + c.amount, 0);
