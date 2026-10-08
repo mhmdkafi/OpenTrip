@@ -77,7 +77,7 @@ export function Trips() {
             <div className="ov-agenda-list">{monthTrips.filter(t => weekKey(t.departureDate) === weekGroup).map(trip => {
               const status = tripStatus(trip, state, today);
               const date = trip.departureDate ? new Date(`${trip.departureDate}T12:00:00`) : null;
-              return <Link className={`ov-agenda-item ts-trip ov-tone-${status}`} key={trip.id} href={`${basePath}/trips/${trip.id}`}>
+              return <Link className={`ov-agenda-item ts-trip ov-tone-${status}`} key={trip.id} href={`${basePath}/trips/${trip.id}`} prefetch={true}>
                 <div className="ov-date"><strong>{date ? date.getDate() : "—"}</strong><span>{date ? date.toLocaleDateString("en-GB", { weekday: "short" }) : ""}</span></div>
                 <div className="ov-agenda-body"><h3>{trip.title}{trip.volume ? <small> · {trip.volume}</small> : null}</h3><p>{dateLabel(trip.departureDate, true)}{trip.location ? <span className="ts-location"><MapPin size={12}/>{trip.location}</span> : null}</p></div>
                 <span className="ts-people"><Users size={14}/>{participants(trip.id)}</span>

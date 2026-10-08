@@ -12,6 +12,20 @@ export function signIdentity(identity: ForwardedIdentity) {
   return sign(identity);
 }
 
+// Membership is re-verified against the database at most once per TTL.
+export const MEMBERSHIP_COOKIE = "ws-member";
+export const MEMBERSHIP_TTL_S = 60;
+export function signMembership(identity: ForwardedIdentity) {
+  const expires = Math.floor(Date.now() / 1000) + MEMBERSHIP_TTL_S;
+  return `${identity.role}.${expires}.${createHmac("sha256", secret()).update(`${identity.userId}:${identity.tenantId}:${identity.role}:${expires}`).digest("hex")}`;
+}
+export function readMembership(value: string | undefined, userId: string, tenantId: string): ForwardedIdentity["role"] | null {
+  const [role, expires, signature] = value?.split(".") ?? [];
+  if (!secret() || (role !== "owner" && role !== "admin") || !signature || Number(expires) < Date.now() / 1000) return null;
+  const expected = Buffer.from(createHmac("sha256", secret()).update(`${userId}:${tenantId}:${role}:${expires}`).digest("hex")), actual = Buffer.from(signature);
+  return expected.length === actual.length && timingSafeEqual(expected, actual) ? role : null;
+}
+
 export function readIdentity(headers: Headers): ForwardedIdentity | null {
   const userId = headers.get(FORWARDED.user), tenantId = headers.get(FORWARDED.tenant), role = headers.get(FORWARDED.role), signature = headers.get(FORWARDED.signature);
   if (!secret() || !userId || !tenantId || !signature || (role !== "owner" && role !== "admin")) return null;

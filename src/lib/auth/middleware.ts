@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireMembership } from "./membership";
 import { DomainError } from "@/lib/workspace/commands";
-import { FORWARDED, signIdentity } from "./forwarded";
+import { FORWARDED, MEMBERSHIP_COOKIE, MEMBERSHIP_TTL_S, readMembership, signIdentity, signMembership } from "./forwarded";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -42,9 +42,12 @@ export async function middleware(request: NextRequest) {
   } else {
     const tenant = request.cookies.get("tenant-id")?.value;
     if (!tenant) return deny(403);
-    let role: "owner" | "admin";
-    try { role = await requireMembership(client, userId, tenant); }
-    catch (error) { return deny(error instanceof DomainError ? error.status : 503); }
+    let role = readMembership(request.cookies.get(MEMBERSHIP_COOKIE)?.value, userId, tenant);
+    if (!role) {
+      try { role = await requireMembership(client, userId, tenant); }
+      catch (error) { return deny(error instanceof DomainError ? error.status : 503); }
+      response.cookies.set(MEMBERSHIP_COOKIE, signMembership({ userId, tenantId: tenant, role }), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MEMBERSHIP_TTL_S });
+    }
     headers.set(FORWARDED.user,userId);
     headers.set(FORWARDED.tenant,tenant);
     headers.set(FORWARDED.role,role);
