@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { apiError, requireOwner, requireWorkspace } from "@/lib/workspace/server";
 import { DomainError } from "@/lib/workspace/commands";
+import { listUsers } from "@/lib/workspace/users";
 
 const password = z.string().min(6, "Password must be at least 6 characters.").max(128);
 const name = z.string().trim().min(2).max(100);
@@ -20,19 +21,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireWorkspace();
     const page = z.coerce.number().int().min(1).max(100000).parse(request.nextUrl.searchParams.get("page") || 1);
-    const admin = createAdminClient();
-    const { data, count, error } = await admin.from("user_memberships")
-      .select("user_id,role,users!inner(email)", { count: "exact" })
-      .eq("tenant_id", auth.tenantId).order("created_at").order("id").range((page - 1) * 20, page * 20 - 1);
-    if (error) throw new DomainError("Could not load users.", 503);
-    const users = await Promise.all((data || []).map(async member => {
-      const profile = Array.isArray(member.users) ? member.users[0] : member.users;
-      const { data: account, error: accountError } = await admin.auth.admin.getUserById(member.user_id);
-      if (accountError) throw new DomainError("Could not load user profiles. Try again.", 503);
-      return { id: member.user_id, name: account.user?.user_metadata?.name || "", email: profile.email,
-        role: member.role, lastSignInAt: account.user?.last_sign_in_at ?? null };
-    }));
-    return NextResponse.json({ users, total: count || 0, page, role: auth.role }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(await listUsers(auth.tenantId, auth.role, page), { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) { return apiError(error); }
 }
 

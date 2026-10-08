@@ -1,4 +1,5 @@
-import { cookies } from "next/headers";
+import { cache } from "react";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DomainError } from "./commands";
@@ -7,16 +8,23 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { GoogleApiError } from "@/lib/google";
 import { requireMembership } from "@/lib/auth/membership";
+import { readIdentity } from "@/lib/auth/forwarded";
 
-export async function requireWorkspace() {
+// Cached per request: layouts, pages, and handlers share one verification.
+export const requireWorkspace = cache(async () => {
+  const [requestHeaders, cookieStore] = await Promise.all([headers(), cookies()]);
+  const tenantId = cookieStore.get("tenant-id")?.value;
+  // Reuse the identity the proxy already verified for this request.
+  const forwarded = readIdentity(requestHeaders);
+  if (forwarded && forwarded.tenantId === tenantId) return { tenantId, workspace_id: tenantId, userId: forwarded.userId, role: forwarded.role };
   const client = await createClient();
-  const { data: { user }, error } = await client.auth.getUser();
-  if (error || !user) throw new DomainError("Please sign in first.", 401);
-  const tenantId = (await cookies()).get("tenant-id")?.value;
+  const { data, error } = await client.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (error || !userId) throw new DomainError("Please sign in first.", 401);
   if (!tenantId) throw new DomainError("No workspace selected. Please sign in again.", 403);
-  const role = await requireMembership(client, user.id, tenantId);
-  return { tenantId, workspace_id: tenantId, userId: user.id, role };
-}
+  const role = await requireMembership(client, userId, tenantId);
+  return { tenantId, workspace_id: tenantId, userId, role };
+});
 
 export async function requireOwner() {
   const auth = await requireWorkspace();
