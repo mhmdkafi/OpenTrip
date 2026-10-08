@@ -135,3 +135,37 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
   .ov-heading { align-items: center; }
   .ov-heading-tools .view-date { display: none; }
 }
+
+/* Trip Schedule: shares the overview surfaces, tones, and list rows. */
+.ts-primary { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; background: var(--ov-accent); color: #fff; font-size: 14px; font-weight: 500; }
+.ts-primary:hover { background: #0f4224; }
+.ts-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; }
+.ts-range { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 6px 0 12px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; color: var(--ov-muted); }
+.ts-range input { border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ov-ink); outline: none; }
+.ts-range:focus-within, .ts-search:focus-within { border-color: var(--ov-accent); box-shadow: 0 0 0 3px #14532d1f; }
+.ts-clear { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--ov-muted); }
+.ts-clear:hover { background: var(--ov-soft); color: var(--ov-ink); }
+.ts-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; color: var(--ov-muted); }
+.ts-search input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ov-ink); outline: none; }
+.ts-caption { margin: -6px 0 -6px 4px; font-size: 13px; color: var(--ov-muted); }
+.ts-count { padding: 4px 10px; border-radius: 999px; background: var(--ov-soft); border: 1px solid var(--ov-line); font-size: 12px; font-weight: 500; color: #344054; }
+.ts-month .ov-card-head { margin-bottom: 8px; }
+.ts-week + .ts-week { margin-top: 14px; }
+.ts-week-label { margin: 0 0 8px 2px; font-size: 12px; font-weight: 500; color: var(--ov-muted); text-transform: uppercase; letter-spacing: .4px; }
+.ts .ov-agenda-list { max-height: none; overflow: visible; }
+.ts-trip { gap: 14px; }
+.ts-trip .ov-agenda-body p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.ts-location { display: inline-flex; align-items: center; gap: 3px; }
+.ts-people { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; min-width: 56px; font-size: 13px; font-weight: 500; color: #344054; }
+.ts-chevron { flex-shrink: 0; color: #98a2b3; }
+.ts-trip:hover .ts-chevron { color: var(--ov-ink); }
+.ts-empty { display: grid; justify-items: center; gap: 6px; padding: 48px 20px; text-align: center; color: var(--ov-muted); }
+.ts-empty h3 { font-size: 16px; font-weight: 600; color: var(--ov-ink); }
+.ts-empty p { font-size: 13px; }
+@media (max-width: 767px) {
+  .ts-filters { padding: 10px; }
+  .ts-filters .ov-toolbar { width: 100%; overflow-x: auto; }
+  .ts-range { width: 100%; }
+  .ts-range input { flex: 1; min-width: 0; }
+  .ts-people, .ts-chevron { display: none; }
+}
