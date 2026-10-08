@@ -1,0 +1,137 @@
+/* Overview redesign: flat surfaces, soft status tints, no gradients. */
+.ov {
+  --ov-surface: #ffffff;
+  --ov-line: #e6e8ec;
+  --ov-ink: #101828;
+  --ov-muted: #667085;
+  --ov-soft: #f6f7f9;
+  --ov-accent: #14532d;
+  display: grid;
+  gap: 20px;
+  color: var(--ov-ink);
+}
+.ov-tone-total { --tone: #344054; --tone-soft: #ffffff; --tone-line: #e6e8ec; }
+.ov-tone-done { --tone: #15803d; --tone-soft: #effaf3; --tone-line: #c9ecd6; }
+.ov-tone-cancelled { --tone: #c2410c; --tone-soft: #fff5ed; --tone-line: #fcd9bd; }
+.ov-tone-risk { --tone: #dc2626; --tone-soft: #fef4f4; --tone-line: #fbd5d5; }
+.ov-tone-upcoming { --tone: #a16207; --tone-soft: #fefbe8; --tone-line: #f6e7a8; }
+.ov-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tone, var(--ov-muted)); flex-shrink: 0; }
+
+.view-date { display: inline-flex; align-items: center; padding: 8px 14px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 500; color: #344054; }
+
+/* Stat tiles */
+.ov-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.ov-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px 20px; text-align: left; background: var(--tone-soft); border: 1px solid var(--tone-line); border-radius: 16px; color: var(--ov-ink); transition: box-shadow .15s, transform .15s; }
+.ov-stat { position: relative; }
+.ov-stat-icon { position: absolute; top: 18px; right: 18px; display: grid; color: var(--tone); opacity: .5; }
+.ov-stat:hover { box-shadow: 0 6px 18px #1018280f; transform: translateY(-1px); }
+.ov-stat-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--tone); }
+.ov-tone-total .ov-stat-label { color: var(--ov-muted); }
+.ov-stat strong { font-size: 34px; line-height: 1.1; font-weight: 600; letter-spacing: -1px; color: var(--ov-ink); }
+
+/* Cards */
+.ov-main { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+.ov-card { background: var(--ov-surface); border: 1px solid var(--ov-line); border-radius: 16px; padding: 20px; }
+.ov-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.ov-card-head h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; letter-spacing: -.3px; color: var(--ov-ink); }
+.ov-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--ov-accent); white-space: nowrap; }
+.ov-link:hover { text-decoration: underline; }
+
+/* Calendar */
+.cal-sub { font-size: 13px; color: var(--ov-muted); margin-top: 2px; }
+.cal-controls { display: flex; align-items: center; gap: 6px; }
+.cal-today, .cal-clear { height: 34px; padding: 0 12px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; font-size: 13px; font-weight: 500; color: #344054; display: inline-flex; align-items: center; gap: 4px; }
+.cal-today:hover, .cal-clear:hover, .cal-nav:hover { background: var(--ov-soft); }
+.cal-nav { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--ov-line); border-radius: 50%; background: #fff; color: #344054; flex-shrink: 0; }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; }
+.cal-weekdays span { font-size: 12px; font-weight: 500; color: var(--ov-muted); padding: 0 8px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-cell { position: relative; min-height: 92px; padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 3px; border: 1px solid transparent; border-radius: 10px; background: var(--ov-soft); text-align: left; min-width: 0; color: #344054; }
+.cal-cell.is-empty { background: transparent; }
+button.cal-cell:hover { border-color: var(--ov-line); background: #fff; }
+.cal-cell.has-trips, button.cal-cell.has-trips:hover { background: var(--tone-soft); border-color: var(--tone-line); color: var(--tone); }
+button.cal-cell.has-trips:hover { border-color: var(--tone); }
+.cal-cell.is-selected { box-shadow: 0 0 0 2px var(--ov-accent); }
+.cal-number { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font-size: 13px; font-weight: 500; }
+.cal-cell.has-trips .cal-number { font-weight: 700; }
+.cal-cell.is-today .cal-number { background: var(--ov-accent); color: #fff; }
+.cal-event { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.35; color: var(--tone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-more { font-size: 11px; color: var(--tone); opacity: .8; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ov-line); }
+.cal-legend span { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ov-muted); }
+
+/* Agenda and preview lists */
+.ov-agenda-list { display: grid; gap: 8px; }
+.ov-agenda-item { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--ov-line); border-radius: 12px; color: var(--ov-ink); background: #fff; }
+.ov-agenda-item:hover { background: var(--ov-soft); }
+.ov-date { width: 50px; height: 54px; flex-shrink: 0; display: grid; place-content: center; text-align: center; border-radius: 10px; background: var(--tone-soft); border: 1px solid var(--tone-line); color: var(--tone); }
+.ov-date strong { font-size: 19px; line-height: 1.1; font-weight: 600; }
+.ov-date span { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .4px; }
+.ov-agenda-body { min-width: 0; flex: 1; }
+.ov-agenda-body h3 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ov-agenda-body h3 small { font-weight: 500; color: var(--ov-muted); }
+.ov-agenda-body p { font-size: 12px; color: var(--ov-muted); margin-top: 2px; }
+.ov-badge { flex-shrink: 0; padding: 4px 10px; border-radius: 999px; background: var(--tone-soft); border: 1px solid var(--tone-line); color: var(--tone); font-size: 12px; font-weight: 600; }
+.ov-empty { padding: 24px 8px; text-align: center; font-size: 13px; color: var(--ov-muted); }
+
+/* Tile preview card */
+.ov-preview { width: min(480px, calc(100vw - 32px)); max-height: min(560px, calc(100dvh - 48px)); margin: auto; padding: 0; border: 0; border-radius: 18px; background: transparent; }
+.ov-preview::backdrop { background: #10182859; }
+.ov-preview-card { background: #fff; border-radius: 18px; padding: 20px; box-shadow: 0 24px 48px #1018282e; max-height: inherit; overflow: auto; }
+
+@media (max-width: 1200px) {
+  .ov-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ov-main { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .ov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ov-stat.ov-tone-total { grid-column: 1 / -1; }
+  .ov-stat strong { font-size: 28px; }
+  .ov-card { padding: 16px; }
+  .ov-card-head { flex-wrap: wrap; }
+  .cal-grid, .cal-weekdays { gap: 3px; }
+  .cal-cell { min-height: 48px; padding: 4px; align-items: center; }
+  .cal-event, .cal-more { display: none; }
+}
+
+/* Month / year switch and yearly grid */
+.ov-toolbar { justify-self: start; display: inline-flex; padding: 4px; gap: 4px; background: #fff; border: 1px solid var(--ov-line); border-radius: 999px; }
+.ov-toolbar button { height: 32px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ov-muted); }
+.ov-toolbar button:hover { color: var(--ov-ink); }
+.ov-toolbar button.is-active { background: var(--ov-accent); color: #fff; }
+.yr-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.yr-month { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 112px; padding: 14px; text-align: left; border: 1px solid var(--ov-line); border-radius: 12px; background: #fff; color: var(--ov-ink); }
+.yr-month:hover { border-color: var(--ov-accent); background: var(--ov-soft); }
+.yr-month.is-empty { background: var(--ov-soft); }
+.yr-month.is-current { box-shadow: 0 0 0 2px var(--ov-accent); }
+.yr-name { font-size: 13px; font-weight: 500; color: var(--ov-muted); }
+.yr-month strong { font-size: 24px; font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
+.yr-month strong small { font-size: 12px; font-weight: 500; color: var(--ov-muted); letter-spacing: 0; }
+.yr-statuses { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.yr-statuses span { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--tone-soft); border: 1px solid var(--tone-line); color: var(--tone); font-size: 11px; font-weight: 600; }
+.ov-agenda-list { max-height: 640px; overflow: auto; }
+@media (max-width: 767px) { .yr-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .yr-month { min-height: 96px; } }
+
+/* Heading row holds the period switch and date; agenda height follows the calendar. */
+.ov-heading { margin-bottom: 4px; }
+.ov-heading-tools { display: flex; align-items: center; gap: 10px; }
+.ov-toolbar { justify-self: auto; }
+.ov-main { align-items: stretch; }
+.ov-agenda { display: flex; flex-direction: column; contain: size; min-height: 0; }
+.ov-agenda .ov-card-head { flex-shrink: 0; }
+.ov-agenda .ov-agenda-list { flex: 1 1 0; min-height: 0; max-height: none; overflow: auto; align-content: start; padding-right: 2px; }
+.ov-agenda .ov-agenda-item { gap: 12px; padding: 8px 10px; border-radius: 10px; }
+.ov-agenda .ov-date { width: 40px; height: 42px; border-radius: 8px; }
+.ov-agenda .ov-date strong { font-size: 15px; }
+.ov-agenda .ov-date span { font-size: 10px; }
+.ov-agenda .ov-agenda-body h3 { font-size: 13px; }
+.ov-agenda .ov-agenda-body p { font-size: 11.5px; margin-top: 1px; }
+.ov-agenda .ov-badge { padding: 3px 9px; font-size: 11px; }
+@media (max-width: 1200px) {
+  .ov-agenda { contain: none; }
+  .ov-agenda .ov-agenda-list { flex: none; max-height: 480px; }
+}
+@media (max-width: 767px) {
+  .ov-heading { align-items: center; }
+  .ov-heading-tools .view-date { display: none; }
+}
