@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import "@/styles/workspace.css";
 import "@/styles/cashflow.css";
 import "@/styles/inventory.css";
+import "@/styles/overview.css";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import TenantProvider from "@/lib/auth/tenant-provider";
