@@ -6,7 +6,7 @@ import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
 import { useAutoDismiss } from "./use-auto-dismiss";
 
-type Member = { id:string; name:string; email:string; role:"owner"|"admin"; lastSignInAt:string|null };
+type Member = { id:string; name:string; email:string; role:"owner"|"admin"; lastActiveAt:string|null };
 type Result = { users:Member[]; total:number; page:number; role:"owner"|"admin" };
 
 const lastAccess = (value:string|null) => value
@@ -48,7 +48,7 @@ export function UsersPage({initial}:{initial:Result|null}) {
       {result?.role==="admin"&&<p className="empty-note mb-4">You can view all users. Only the owner can manage admins.</p>}
       {loading?<p role="status">Loading users…</p>:<>
         <div className="table-wrap"><table className="td-table"><thead><tr><th scope="col">Name / email</th><th scope="col">Role</th><th scope="col">Last access</th>{owner&&<th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
-          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`pt-status pt-role-${user.role}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{lastAccess(user.lastSignInAt)}</td>
+          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`pt-status pt-role-${user.role}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{lastAccess(user.lastActiveAt)}</td>
             {owner&&<td>{user.role==="admin"&&<div className="flex gap-2 justify-end"><button className="table-icon" aria-label={`Edit ${user.email}`} onClick={()=>{setFormError("");setEditing(user);}}><Pencil size={15}/></button><button className="table-icon danger-button" aria-label={`Remove ${user.email}`} onClick={()=>{setFormError("");setDeleting(user);}}><Trash2 size={15}/></button></div>}</td>}</tr>)}</tbody></table></div>
         {result?.total===0&&<p className="empty-note mt-4">No users yet.</p>}
         {(result?.total??0)>20&&<div className="table-foot"><span>Page {page} of {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Previous</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Next</button></div></div>}
