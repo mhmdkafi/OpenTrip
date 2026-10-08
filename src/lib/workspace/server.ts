@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,9 +40,20 @@ export async function loadWorkspace(tenantId: string) {
   return { revision: data?.revision ?? 0, state: { ...emptyWorkspace(), ...(data?.data ?? {}) } as Workspace, exists: Boolean(data) };
 }
 
+// Idempotency only needs recent request ids; audit keeps a long but bounded history.
+const KEEP_REQUESTS = 1000, KEEP_AUDIT = 5000;
+const photoVersion = (data: string) => createHash("sha1").update(data).digest("hex").slice(0, 12);
+export const photoPath = (itemId: string, data: string) => `/api/inventory/${itemId}/photo?v=${photoVersion(data)}`;
+
+// What the browser receives: no server-only history, and photos as cacheable URLs instead of base64.
+export function clientWorkspace(state: Workspace): Workspace {
+  return { ...state, audit: [], requests: [], inventory: state.inventory.map(item => item.imageUrl?.startsWith("data:") ? { ...item, imageUrl: photoPath(item.id, item.imageUrl) } : item) };
+}
+
 export async function saveWorkspace(tenantId: string, revision: number, state: Workspace, exists: boolean) {
   const admin = createAdminClient();
-  const row = { data: state, revision: revision + 1, updated_at: new Date().toISOString() };
+  const trimmed = { ...state, requests: state.requests.slice(-KEEP_REQUESTS), audit: state.audit.slice(-KEEP_AUDIT) };
+  const row = { data: trimmed, revision: revision + 1, updated_at: new Date().toISOString() };
   const result = exists
     ? await admin.from("tripdash_workspaces").update(row).eq("tenant_id", tenantId).eq("revision", revision).select("revision").maybeSingle()
     : await admin.from("tripdash_workspaces").insert({ tenant_id: tenantId, ...row }).select("revision").single();
