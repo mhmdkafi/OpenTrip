@@ -5,8 +5,8 @@ export type ProfitPeriod = "month" | "year";
 
 // Compare calendar days/months, not rolling balances. A missing calendar date is
 // null; a date with no recorded transactions is zero.
-export function profitComparison(entries: Cash[], period: ProfitPeriod, reference: string) {
-  const previous = previousReference(period, reference);
+export function profitComparison(entries: Cash[], period: ProfitPeriod, reference: string, compareReference?: string) {
+  const previous = compareReference ?? previousReference(period, reference);
   const label = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", {
     year: "numeric", ...(period === "month" ? { month: "long" as const } : {}), timeZone: "UTC",
   });
@@ -32,8 +32,8 @@ export function profitComparison(entries: Cash[], period: ProfitPeriod, referenc
 
 // A running net result makes the progress of two periods comparable even when
 // transactions are sparse. Null still means that calendar date does not exist.
-export function cumulativeProfitComparison(entries: Cash[], period: ProfitPeriod, reference: string) {
-  const comparison = profitComparison(entries, period, reference);
+export function cumulativeProfitComparison(entries: Cash[], period: ProfitPeriod, reference: string, compareReference?: string) {
+  const comparison = profitComparison(entries, period, reference, compareReference);
   let current = 0, previous = 0;
   return {
     ...comparison,

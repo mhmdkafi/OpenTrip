@@ -1,0 +1,183 @@
+/* Cashflow, Inventory, and Users aligned with the Overview / Trip Schedule design:
+   white 16px cards, one solid green accent, pill buttons, green table headers, zebra rows. */
+
+/* Shared controls inside redesigned pages */
+.ov .td-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #14532d; color: #fff; font-size: 14px; font-weight: 500; }
+.ov .td-button:hover:not(:disabled) { background: #0f4224; }
+.ov .td-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; color: #344054; font-size: 13px; font-weight: 500; }
+.ov .td-secondary:hover:not(:disabled) { background: #f6f7f9; border-color: #d0d5dd; }
+.ov .table-icon { display: inline-grid; place-items: center; min-width: 34px; min-height: 34px; border: 1px solid #e6e8ec; border-radius: 10px; background: #fff; color: #344054; }
+.ov .table-icon:hover { background: #f6f7f9; }
+.ov .table-icon.danger-button { color: #dc2626; }
+.ov .table-icon.danger-button:hover { background: #fef4f4; border-color: #fbd5d5; }
+.ov .td-panel, .ov .cf-panel { background: #fff; border: 1px solid #e6e8ec; border-radius: 16px; box-shadow: none; }
+.ov .td-panel { padding: 20px; }
+.ov .panel-heading h2, .ov .cf-panel-heading h2 { font-size: 18px; font-weight: 600; letter-spacing: -.3px; color: #101828; }
+.ov .panel-subtitle, .ov .cf-panel-heading p { color: #667085; }
+.ov .search-field { height: 42px; border: 1px solid #e6e8ec; border-radius: 12px; background: #fff; }
+.ov .search-field:focus-within { border-color: #14532d; box-shadow: 0 0 0 3px #14532d1f; }
+
+/* Tables: strong green header, alternating rows */
+.ov .table-wrap { border: 1px solid #e6e8ec; border-radius: 12px; overflow: auto; }
+.ov .td-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ov .td-table thead th { background: #14532d; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; padding: 12px 14px; border-bottom: 0; text-align: left; }
+.ov .td-table tbody td { padding: 12px 14px; border-bottom: 1px solid #eef0f3; font-size: 13px; color: #101828; }
+.ov .td-table tbody tr:nth-child(even) td { background: #f6f7f9; }
+.ov .td-table tbody tr:hover td { background: #eef4f0; }
+.ov .td-table tbody tr:last-child td { border-bottom: 0; }
+.ov .table-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; font-size: 13px; color: #667085; }
+.ov .pagination button, .ov .table-foot .td-secondary { min-height: 36px; padding: 0 14px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 13px; color: #344054; }
+.ov .pagination button:disabled { opacity: .45; }
+.ov .pagination > span { display: inline-grid; place-items: center; min-width: 36px; min-height: 36px; border-radius: 999px; background: #14532d; color: #fff; font-size: 13px; font-weight: 600; }
+
+/* Cashflow */
+.cf-v2 { gap: 20px; }
+.cf-period-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cf-period-picker .dd { min-width: 128px; }
+.cf-v2 .cf-metrics { gap: 16px; }
+.cf-v2 .cf-metric { background: #fff; border: 1px solid #e6e8ec; border-radius: 16px; padding: 20px; color: #101828; }
+.cf-v2 .cf-metric-net { background: #fff; border-color: #e6e8ec; color: #101828; }
+.cf-v2 .cf-metric-net > p, .cf-v2 .cf-metric > p, .cf-v2 .cf-metric > small { color: #667085; }
+.cf-v2 .cf-metric-label { color: #667085; font-weight: 500; }
+.cf-v2 .cf-metric-label svg { color: #98a2b3; }
+.cf-v2 .cf-metric > strong { font-weight: 600; letter-spacing: -1px; }
+.cf-v2 .cf-income { color: #15803d; }
+.cf-v2 .cf-expense { color: #c2410c; }
+.cf-v2 .cash-balance { background: #f6f7f9; border-top: 1px solid #e6e8ec; border-radius: 0 0 16px 16px; }
+.cf-v2 .cf-detail-tabs { gap: 4px; padding: 4px; background: #f6f7f9; border: 1px solid #e6e8ec; border-radius: 999px; width: fit-content; }
+.cf-v2 .cf-detail-tabs button { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: #667085; font-size: 13px; font-weight: 500; }
+.cf-v2 .cf-detail-tabs button[aria-selected="true"] { background: #14532d; color: #fff; }
+.cf-v2 .cf-detail-heading h2 { font-size: 22px; font-weight: 600; letter-spacing: -.4px; color: #101828; }
+.cf-v2 .cf-month-heading { color: #101828; }
+
+/* Inventory */
+.inv-page .inventory-v2 { gap: 20px; align-items: start; }
+.inv-page .inventory-list-panel { display: grid; gap: 16px; min-width: 0; }
+.inv-filters { padding: 16px 18px; }
+.inv-field-type { width: 190px; }
+.inv-page .inventory-v2 .inventory-list { border: 1px solid #e6e8ec; border-radius: 16px; background: #fff; }
+.inv-page .inventory-v2 .inventory-row:nth-child(even) { background: #f6f7f9; }
+.inv-page .inventory-v2 .inventory-row + .inventory-row { border-top: 1px solid #eef0f3; }
+.inv-page .inventory-v2 .inventory-row:hover { background: #eef4f0; }
+.inv-page .inventory-v2 .inventory-product h2 { font-size: 14px; font-weight: 600; color: #101828; }
+.inv-page .inventory-v2 .inventory-product p { color: #667085; font-size: 12px; }
+.inv-page .inventory-v2 .inventory-stock strong { font-size: 24px; font-weight: 600; letter-spacing: -.6px; color: #101828; }
+.inv-page .inventory-v2 .inventory-stock > span { color: #667085; }
+.inv-page .inventory-photo-button, .inv-page .product-placeholder { border-radius: 12px; }
+.inv-page .stock-reminders { margin-top: 0; padding: 20px; border: 1px solid #fbd5d5; border-radius: 16px; background: #fef4f4; }
+.inv-page .stock-reminders h2 { font-size: 16px; font-weight: 600; color: #101828; }
+.inv-page .stock-reminders h2 .reminder-count { background: #dc2626; color: #fff; }
+.inv-page .stock-reminder { border-radius: 12px; background: #fff; border: 1px solid #fbd5d5; padding: 12px 14px; margin-top: 10px; }
+.inv-page .stock-reminder strong { color: #101828; }
+.inv-page .stock-reminder span { color: #dc2626; font-weight: 500; }
+.inv-page .stock-reminder small { color: #667085; }
+.inv-page .stock-clear { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #fff; color: #667085; font-size: 13px; }
+.inv-page .table-foot { margin-top: 0; }
+
+/* Users */
+.pt-role-owner { background: #14532d; }
+.pt-role-admin { background: #475467; }
+.users-page .td-table tbody td strong { font-weight: 600; }
+.users-page .td-table tbody td .break-all { color: #667085; font-size: 12px; }
+
+@media (max-width: 767px) {
+  .ov-heading { flex-wrap: wrap; }
+  .cf-period-picker { width: 100%; }
+  .cf-period-picker .dd { flex: 1 1 120px; min-width: 0; }
+  .inv-field-type { width: auto; flex: 1 1 100%; }
+}
+
+/* Cashflow refinements: compact tiles, readable comparison, tooltip on the chart. */
+.cf-v2 .cf-metric { padding: 16px 18px; }
+.cf-v2 .cf-metric > strong { font-size: clamp(20px, 1.8vw, 26px); margin: 8px 0 0; line-height: 1.2; }
+.cf-v2 .cf-comparison { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #667085; }
+.cf-v2 .cf-comparison b { padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.cf-v2 .cf-comparison.is-up b { background: #effaf3; color: #15803d; }
+.cf-v2 .cf-comparison.is-down b { background: #fef4f4; color: #dc2626; }
+.cf-v2 .cf-comparison span { color: #667085; }
+.cf-v2 .cf-profit-canvas { position: relative; }
+.cf-profit-tooltip { position: absolute; z-index: 2; transform: translate(-50%, calc(-100% - 14px)); display: grid; gap: 4px; min-width: 170px; padding: 10px 12px; border: 1px solid #e6e8ec; border-radius: 12px; background: #fff; box-shadow: 0 10px 24px #10182824; pointer-events: none; font-size: 12px; color: #344054; white-space: nowrap; }
+.cf-profit-tooltip.is-left { transform: translate(calc(-100% - 14px), -50%); }
+.cf-profit-tooltip.is-right { transform: translate(14px, -50%); }
+.cf-profit-tooltip .cf-tooltip-label { font-weight: 600; color: #101828; }
+.cf-profit-tooltip > span:not(.cf-tooltip-label) { display: flex; align-items: center; gap: 6px; }
+.cf-profit-tooltip strong { margin-left: auto; padding-left: 12px; font-weight: 600; color: #101828; }
+.cf-profit-tooltip i { width: 14px; border-top: 3px solid #206844; }
+.cf-profit-tooltip .is-previous i { border-top: 2px dashed #a17a4c; }
+/* Net profit: comparison sits to the right of the amount. */
+.cf-v2 .cf-metric-net { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; }
+.cf-v2 .cf-metric-net > .cf-metric-label { flex: 1 1 100%; }
+.cf-v2 .cf-metric-net > .cf-comparison { margin-top: 8px; }
+/* Cashflow main view: the chart takes the full width now that expense allocation lives per trip. */
+.cf-v2 .cf-analysis { grid-template-columns: minmax(0, 1fr); }
+
+/* Finances by trip: clean month bands, expandable week rows, table-style trip rows. */
+.cf-v2 .cf-recap { padding: 0; overflow: hidden; border-radius: 16px; }
+.cf-v2 .cf-recap > .cf-panel-heading { padding: 18px 20px; }
+.cf-v2 .cf-month-heading { padding: 12px 20px; background: #f6f7f9; border-block: 1px solid #e6e8ec; }
+.cf-v2 .cf-month-heading h3 { font-size: 15px; font-weight: 600; color: #101828; }
+.cf-v2 .cf-month-heading > span { padding: 3px 10px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 500; color: #344054; }
+.cf-v2 .cash-week + .cash-week { border-top: 1px solid #eef0f3; }
+.cf-v2 .cash-week summary { gap: 12px; padding: 14px 20px; min-height: 56px; font-size: 14px; }
+.cf-v2 .cash-week summary:hover { background: #f9fafb; }
+.cf-v2 .cash-week[open] summary { background: #f9fafb; }
+.cf-v2 .cash-week summary > svg { width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: #f2f4f7; color: #667085; flex-shrink: 0; transition: transform .15s; }
+.cf-v2 .cash-week summary > span { font-weight: 600; color: #101828; }
+.cf-v2 .cash-week summary > small { margin-left: auto; padding: 3px 10px; border-radius: 999px; background: #f2f4f7; color: #475467; font-size: 12px; font-weight: 500; }
+.cf-v2 .cash-week summary > strong { min-width: 140px; font-size: 14px; font-weight: 600; text-align: right; }
+.cf-v2 .is-positive { color: #15803d; }
+.cf-v2 .is-negative { color: #dc2626; }
+.cf-v2 .cf-recap-labels { padding: 10px 20px; background: #14532d; border: 0; color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.cf-v2 .cash-trip { padding: 12px 20px; border-top: 0; background: #fff; }
+.cf-v2 .cash-trip:nth-of-type(even) { background: #f6f7f9; }
+.cf-v2 .cash-trip:hover { background: #eef4f0; }
+.cf-v2 .cf-trip-name > i { width: 36px; height: 36px; border-radius: 10px; background: #e8f3ec; color: #14532d; }
+.cf-v2 .cf-trip-name strong { font-size: 13px; color: #101828; }
+.cf-v2 .cf-trip-name small { font-size: 12px; color: #667085; }
+.cf-v2 .cash-trip > span.cf-trip-amount { font-size: 13px; font-weight: 500; }
+.cf-v2 .cash-trip > span.cf-trip-net { font-weight: 700; }
+.cf-v2 .cash-trip > svg { color: #98a2b3; }
+.cf-v2 .cash-trip:hover > svg { color: #101828; }
+@media (max-width: 767px) {
+  .cf-v2 .cash-week summary > strong { min-width: 0; }
+  .cf-v2 .cash-trip:nth-of-type(even) { background: #f6f7f9; }
+}
+/* Single-month recap: month and count share the panel heading row. */
+.cf-v2 .cf-recap > .cf-panel-heading { align-items: center; border-bottom: 1px solid #e6e8ec; }
+.cf-recap-period { display: flex; align-items: center; gap: 10px; }
+.cf-recap-period > span { font-size: 15px; font-weight: 600; color: #101828; }
+.cf-recap-period > small { padding: 3px 10px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 500; color: #344054; }
+/* Chart legend: period chips with their totals under the plot. */
+.cf-v2 .cf-profit-heading { margin-bottom: 12px; }
+.cf-v2 .cf-profit-periods { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0 0; }
+.cf-v2 .cf-profit-periods > div { display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; }
+.cf-v2 .cf-profit-periods > div.is-previous { background: #fff; border-color: #e6e8ec; }
+.cf-v2 .cf-profit-periods span { gap: 6px; font-size: 12px; color: #667085; }
+.cf-v2 .cf-profit-periods i { width: 16px; }
+.cf-v2 .cf-profit-periods strong { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0; color: #101828; }
+.cf-v2 .cf-profit-periods .is-previous strong { color: #101828; }
+/* Yearly recap: collapsible month rows. */
+.cf-v2 .cf-month-toggle > summary { display: flex; align-items: center; gap: 12px; list-style: none; cursor: pointer; }
+.cf-v2 .cf-month-toggle > summary::-webkit-details-marker { display: none; }
+.cf-v2 .cf-month-toggle > summary:hover { background: #eef1f4; }
+.cf-v2 .cf-month-toggle > summary > svg { width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: #fff; color: #667085; flex-shrink: 0; transition: transform .15s; }
+.cf-v2 .cf-month-toggle[open] > summary > svg { transform: rotate(180deg); }
+.cf-v2 .cf-month-toggle > summary > span { margin-left: auto; }
+.cf-v2 .cf-month-toggle > summary > strong { min-width: 140px; text-align: right; font-size: 14px; font-weight: 600; }
+.cf-v2 .cf-month-toggle + .cf-month-toggle > summary { border-top: 0; }
+.cf-v2 .cf-month-toggle .cash-week summary { padding-left: 36px; }
+/* Axis titles on the profit chart. */
+.cf-axis-title { font-size: 11px; font-weight: 500; color: #667085; white-space: nowrap; }
+.cf-axis-y { align-self: center; writing-mode: vertical-rl; transform: rotate(180deg); flex-shrink: 0; }
+.cf-axis-x { display: block; margin-top: 2px; text-align: center; }
+
+/* Chart comparison pickers: two customizable periods. */
+.cf-v2 .cf-profit-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.cf-compare { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cf-compare-vs { font-size: 12px; font-weight: 600; color: #98a2b3; }
+.cf-compare-period { display: inline-flex; align-items: center; gap: 6px; }
+.cf-compare-period > i { width: 16px; flex-shrink: 0; border-top: 3px solid #206844; }
+.cf-compare-period.is-previous > i { border-top: 2px dashed #a17a4c; }
+.cf-compare .dd-trigger { height: 36px; padding: 0 10px; font-size: 13px; }
+.cf-compare .dd { min-width: 0; }
+

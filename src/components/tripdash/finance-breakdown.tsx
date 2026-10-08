@@ -7,7 +7,7 @@ export function ExpenseBreakdown({ entries }: { entries: Cash[] }) {
   const total = cashTotals(expenses).expense;
   const categories = [...new Set(expenses.map(c => c.category))].map(category => ({ category, amount: expenses.filter(c=>c.category===category).reduce((s,c)=>s+c.amount,0), count: expenses.filter(c=>c.category===category).length })).sort((a,b)=>b.amount-a.amount);
   return <section className="td-panel expense-breakdown">
-    <div className="panel-heading"><div><h2>Expense allocation</h2><p className="panel-subtitle">{expenses.length} transactions in the selected period</p></div></div>
+    <div className="panel-heading"><div><h2>Expense allocation</h2></div></div>
     <div className="cf-category-summary"><span>Total expenses</span><strong>{formatRupiah(total)}</strong></div>
     <div className="cf-category-stack" aria-hidden="true">{categories.map((row,index)=><span key={row.category} className={`cf-category-color cf-category-${index%4}`} style={{width:`${row.amount/total*100}%`}}/>)}</div>
     <div className="cf-category-list">{categories.map((row,index)=><div className="category-row" key={row.category}>
@@ -16,7 +16,7 @@ export function ExpenseBreakdown({ entries }: { entries: Cash[] }) {
       <div><strong>{formatRupiah(row.amount)}</strong><small>{Math.round(row.amount/total*100)}%</small></div>
     </div>)}</div>
     {!categories.length&&<p className="empty-note">No expenses in this period yet.</p>}
-    <p className="cf-category-note">Share of each cost in total recorded expenses.</p>
+    
   </section>;
 }
 
@@ -27,5 +27,5 @@ export function TripReceivables({ state, tripId }: { state: Workspace; tripId: s
   const paid = reviewed.reduce((s,p)=>s+paidFor(state,p.id),0);
   const outstanding = reviewed.reduce((s,p)=>s+Math.max(0,p.charge-paidFor(state,p.id)),0);
   const due = reviewed.filter(p=>paidFor(state,p.id)<p.charge);
-  return <section className="td-panel receivables"><div className="panel-heading"><div><h2>Participant payments</h2><p className="panel-subtitle">Position across all trips, not limited to the cash period.</p></div><span className="badge">{reviewed.filter(p=>paidFor(state,p.id)>=p.charge).length} / {people.length} lunas</span></div><div className="receivable-totals"><div><span>Reviewed bills</span><strong>{formatRupiah(charged)}</strong></div><div><span>Already paid</span><strong>{formatRupiah(paid)}</strong></div><div><span>Outstanding payments</span><strong>{formatRupiah(outstanding)}</strong></div></div>{people.length>reviewed.length&&<p className="inline-warning">{people.length-reviewed.length} bills not yet reviewed and not counted in this summary.</p>}<details className="receivable-list"><summary>{due.length} participants with outstanding payments</summary><div className="table-wrap"><table className="td-table"><thead><tr><th>Participants</th><th>Bills</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{due.map(p=><tr key={p.id}><td>{p.name}</td><td>{formatRupiah(p.charge)}</td><td>{formatRupiah(paidFor(state,p.id))}</td><td>{formatRupiah(Math.max(0,p.charge-paidFor(state,p.id)))}</td></tr>)}</tbody></table></div></details></section>;
+  return <section className="td-panel receivables"><div className="panel-heading"><div><h2>Participant payments</h2></div><span className="badge">{reviewed.filter(p=>paidFor(state,p.id)>=p.charge).length} / {people.length} lunas</span></div><div className="receivable-totals"><div><span>Reviewed bills</span><strong>{formatRupiah(charged)}</strong></div><div><span>Already paid</span><strong>{formatRupiah(paid)}</strong></div><div><span>Outstanding payments</span><strong>{formatRupiah(outstanding)}</strong></div></div>{people.length>reviewed.length&&<p className="inline-warning">{people.length-reviewed.length} bills not yet reviewed and not counted in this summary.</p>}<details className="receivable-list"><summary>{due.length} participants with outstanding payments</summary><div className="table-wrap"><table className="td-table"><thead><tr><th>Participants</th><th>Bills</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{due.map(p=><tr key={p.id}><td>{p.name}</td><td>{formatRupiah(p.charge)}</td><td>{formatRupiah(paidFor(state,p.id))}</td><td>{formatRupiah(Math.max(0,p.charge-paidFor(state,p.id)))}</td></tr>)}</tbody></table></div></details></section>;
 }

@@ -10,6 +10,9 @@ import {
   RotateCcw,
   ArrowUpRight,
   AlertTriangle,
+  Boxes,
+  Tent,
+  Wrench,
 } from "lucide-react";
 import { availableStock, type Inventory as Item } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
@@ -24,6 +27,9 @@ import {
   Select,
 } from "./ui";
 import { InventoryEditor } from "./inventory-editor";
+import { Dropdown } from "./dropdown";
+
+const TYPE_OPTIONS = [{ value: "", label: "All types", icon: Boxes }, { value: "operational", label: "Operational", icon: Wrench }, { value: "rental", label: "Rental", icon: Tent }];
 
 export function Inventory() {
   const { state, mutate, run, busy } = useWorkspace();
@@ -56,41 +62,18 @@ export function Inventory() {
     )
     .sort((a, b) => availableStock(a) - availableStock(b));
   return (
+    <div className="ov inv-page">
+    <div className="page-heading ov-heading"><h1>Inventory</h1><button className="ts-primary" onClick={() => setEditing("new")}><Plus size={16}/> Add item</button></div>
     <div className="inventory-layout inventory-v2">
       <section className="inventory-list-panel">
-        <div className="inventory-list-toolbar">
-          <label className="search-field">
-            <Search size={16} />
-            <input
-              aria-label="Search items"
-              placeholder="Search items"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-            />
-          </label>
-          <Select
-            label="Item type"
-            value={kind}
-            onChange={(value) => {
-              setKind(value);
-              setPage(0);
-            }}
-          >
-            <option value="">All types</option>
-            <option value="operational">Operational</option>
-            <option value="rental">Rental</option>
-          </Select>
-          <button className="td-button" onClick={() => setEditing("new")}>
-            <Plus size={16} /> Add item
-          </button>
+        <div className="ov-card ts-filters inv-filters">
+          <label className="ts-field ts-field-search"><span className="ts-field-label">Search</span><span className="ts-control"><Search size={16}/><input placeholder="Search items" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}/></span></label>
+          <div className="ts-field inv-field-type"><span className="ts-field-label">Type</span><Dropdown label="Item type" value={kind} options={TYPE_OPTIONS} onChange={(value) => { setKind(value); setPage(0); }}/></div>
         </div>
         <div className="inventory-list-head" aria-hidden="true">
           <span>Item</span>
           <span>Available / total</span>
-          <span>Tindakan</span>
+          <span>Actions</span>
         </div>
         <div className="inventory-list">
           {items.slice(current * 8, current * 8 + 8).map((item) => {
@@ -189,7 +172,7 @@ export function Inventory() {
             <p>Change your search or add an item.</p>
           </div>
         )}
-        <div className="table-foot">
+        {items.length > 8 && <div className="table-foot">
           <span>
             {items.length ? current * 8 + 1 : 0}–
             {Math.min((current + 1) * 8, items.length)} of {items.length}{" "}
@@ -210,7 +193,7 @@ export function Inventory() {
               Next
             </button>
           </div>
-        </div>
+        </div>}
       </section>
       <aside className="stock-reminders">
         <h2>
@@ -519,6 +502,7 @@ export function Inventory() {
           </Form>
         </Modal>
       )}
+    </div>
     </div>
   );
 }
