@@ -1,4 +1,4 @@
-// Seeds Aug–Oct 2026 demo trips (with participants and payments) into one workspace.
+// Seeds demo trips from Jan 2025 to the 3rd week of Oct 2026 (8 per month) with participants and payments.
 // Usage: npm run seed -- <owner-email>   (defaults to OWNER_EMAIL)
 // Re-running replaces only seed trips (ids starting with "5eed5eed"); ids are stable, so other data is kept.
 import { createClient } from "@supabase/supabase-js";
@@ -20,37 +20,54 @@ const uuid = (prefix = "") => {
   return `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20)}`;
 };
 
-type Plan = { title: string; volume: string; date: string; full: number; location?: string; cancelled?: boolean };
-const plans: Plan[] = [
-  { title: "Mt Tambak Ruyung", volume: "Vol 1", date: "2026-08-01", full: 175000 },
-  { title: "Mt Papandayan", volume: "Vol 4", date: "2026-08-02", full: 200000, location: "Garut" },
-  { title: "Mt Sagara", volume: "Vol 3", date: "2026-08-08", full: 185000, location: "Garut", cancelled: true },
-  { title: "Puncak Junghuhn", volume: "Vol 1", date: "2026-08-09", full: 165000 },
-  { title: "Lembah Tengkorak", volume: "Vol 5", date: "2026-08-15", full: 150000 },
-  { title: "Mt Pangparang", volume: "Vol 3", date: "2026-08-16", full: 190000 },
-  { title: "Mt Prau", volume: "Vol 1", date: "2026-08-22", full: 450000, location: "Wonosobo" },
-  { title: "Mt Artapela", volume: "Vol 2", date: "2026-08-29", full: 180000, location: "Bandung" },
-  { title: "Mt Burangrang", volume: "Vol 1", date: "2026-09-05", full: 180000, location: "Bandung Barat" },
-  { title: "Mt Sangar", volume: "Vol 1", date: "2026-09-06", full: 170000, cancelled: true },
-  { title: "Mt Lembu", volume: "Vol 2", date: "2026-09-12", full: 160000, location: "Purwakarta" },
-  { title: "Mt Cikuray", volume: "Vol 3", date: "2026-09-13", full: 250000, location: "Garut" },
-  { title: "Mt Canar", volume: "Vol 1", date: "2026-09-19", full: 170000 },
-  { title: "Mt Galunggung", volume: "Vol 2", date: "2026-09-20", full: 220000, location: "Tasikmalaya", cancelled: true },
-  { title: "Mt Papandayan", volume: "Vol 5", date: "2026-09-26", full: 200000, location: "Garut" },
-  { title: "Kawah Galunggung", volume: "Vol 1", date: "2026-09-27", full: 160000, location: "Tasikmalaya" },
-  { title: "Sanghyang Heuleut", volume: "Vol 4", date: "2026-10-03", full: 150000, location: "Bandung Barat" },
-  { title: "Mt Lawu", volume: "Vol 2", date: "2026-10-04", full: 550000, location: "Karanganyar" },
-  { title: "Mt Gede", volume: "Vol 6", date: "2026-10-10", full: 350000, location: "Cianjur" },
-  { title: "Mt Ciremai", volume: "Vol 3", date: "2026-10-11", full: 300000, location: "Kuningan", cancelled: true },
-  { title: "Mt Pangrango", volume: "Vol 2", date: "2026-10-17", full: 350000, location: "Cianjur" },
-  { title: "Mt Patuha", volume: "Vol 1", date: "2026-10-18", full: 180000, location: "Bandung" },
-  { title: "Mt Prau", volume: "Vol 2", date: "2026-10-24", full: 450000, location: "Wonosobo" },
-  { title: "Mt Artapela", volume: "Vol 3", date: "2026-10-25", full: 180000, location: "Bandung" },
+type Plan = { title: string; volume: string; date: string; full: number; location?: string; cancelled?: boolean; done?: boolean };
+
+// Mountain catalogue: [name, starting volume, Full Transport price, location].
+const MOUNTAINS: [string, number, number, string?][] = [
+  ["Mt Tambak Ruyung", 1, 175000], ["Mt Papandayan", 4, 200000, "Garut"], ["Mt Sagara", 3, 185000, "Garut"], ["Puncak Junghuhn", 1, 165000],
+  ["Lembah Tengkorak", 5, 150000], ["Mt Pangparang", 3, 190000], ["Mt Prau", 1, 450000, "Wonosobo"], ["Mt Artapela", 2, 180000, "Bandung"],
+  ["Mt Burangrang", 1, 180000, "Bandung Barat"], ["Mt Sangar", 1, 170000], ["Mt Lembu", 1, 160000, "Purwakarta"], ["Mt Cikuray", 1, 250000, "Garut"],
+  ["Mt Canar", 1, 170000], ["Mt Galunggung", 1, 220000, "Tasikmalaya"], ["Kawah Galunggung", 1, 160000, "Tasikmalaya"], ["Sanghyang Heuleut", 1, 150000, "Bandung Barat"],
+  ["Mt Lawu", 1, 550000, "Karanganyar"], ["Mt Gede", 1, 350000, "Cianjur"], ["Mt Ciremai", 1, 300000, "Kuningan"], ["Mt Pangrango", 1, 350000, "Cianjur"],
+  ["Mt Patuha", 1, 180000, "Bandung"],
 ];
+const TRIPS_PER_MONTH = 8;
+
+// Eight departure dates in a month, weekends first; October stops after its third week (the 18th).
+function departures(year: number, month: number) {
+  const last = month === 10 && year === 2026 ? 18 : new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const days = Array.from({ length: last }, (_, i) => i + 1);
+  const weekday = (day: number) => new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  const weekends = days.filter(day => [0, 6].includes(weekday(day)));
+  const fridays = days.filter(day => weekday(day) === 5);
+  const chosen = [...weekends];
+  for (const day of fridays) if (chosen.length < TRIPS_PER_MONTH) chosen.push(day);
+  while (chosen.length < TRIPS_PER_MONTH) chosen.push(weekends[chosen.length % weekends.length]);
+  // More weekend days than slots: keep them spread across the month.
+  const picked = chosen.length > TRIPS_PER_MONTH ? Array.from({ length: TRIPS_PER_MONTH }, (_, i) => chosen.sort((x, y) => x - y)[Math.floor(i * chosen.length / TRIPS_PER_MONTH)]) : chosen;
+  return picked.sort((x, y) => x - y).map(day => `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+}
+
+const plans: Plan[] = (() => {
+  const volumes = new Map(MOUNTAINS.map(([name, start]) => [name, start]));
+  const list: Plan[] = [];
+  let next = 0;
+  for (let year = 2025, month = 1; year < 2026 || month <= 10; month === 12 ? (year++, month = 1) : month++) {
+    const october = year === 2026 && month === 10;
+    for (const date of departures(year, month)) {
+      const [title, , full, location] = MOUNTAINS[next++ % MOUNTAINS.length];
+      const volume = volumes.get(title)!;
+      volumes.set(title, volume + 1);
+      // Roughly one cancellation a month; October 2026 trips are all treated as done.
+      list.push({ title, volume: `Vol ${volume}`, date, full, location, cancelled: !october && rand() < 0.12, done: october });
+    }
+  }
+  return list;
+})();
 
 const firstNames = ["Andi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gilang", "Hana", "Indra", "Joko", "Kevin", "Laras", "Maya", "Nadia", "Oki", "Putri", "Rizky", "Sari", "Tegar", "Umar", "Vina", "Wulan", "Yoga", "Zahra", "Aldi", "Bella", "Dimas", "Fitri", "Hendra", "Intan", "Raka", "Salsa"];
 const lastNames = ["Pratama", "Saputra", "Wijaya", "Hidayat", "Nugraha", "Permana", "Lestari", "Rahmawati", "Kurniawan", "Santoso", "Setiawan", "Maulana", "Ramadhan", "Anggraini", "Firmansyah", "Puspita"];
-const meetingPoints = ["Bandung - Cileunyi", "Jakarta - Kp. Rambutan", "Bekasi - Summarecon", "Bogor - Baranangsiang"];
+const meetingPoints = ["St. Bandung", "Basecamp"];
 const RAINCOAT = 15000;
 
 const NOW = Date.now();
@@ -60,7 +77,7 @@ const addDays = (date: string, days: number, hour = 9) => new Date(Math.min(NOW 
 function buildSeed() {
   const trips: Trip[] = [], bookings: Booking[] = [], participants: Person[] = [], payments: Payment[] = [], cash: Cash[] = [];
   for (const plan of plans) {
-    const past = plan.date < TODAY;
+    const past = plan.done || plan.date < TODAY;
     const trip: Trip = {
       id: uuid(SEED_PREFIX), title: plan.title, volume: plan.volume, departureDate: plan.date,
       status: plan.cancelled ? "cancelled" : past ? "completed" : "active",
@@ -77,7 +94,7 @@ function buildSeed() {
       const charge = (facility === "Full Transport" ? trip.fullPrice : trip.nonPrice) + raincoats * RAINCOAT;
       const registeredAt = addDays(plan.date, -int(5, 30), int(7, 22));
       const booking: Booking = { id: uuid(), tripId: trip.id, sourceId, fingerprint: hex(16), registeredAt, rawName: name, proof: "", phone: `08${int(1, 9)}${int(10000000, 99999999)}` };
-      const person: Person = { id: uuid(), bookingId: booking.id, tripId: trip.id, name, meetingPoint: facility === "Full Transport" ? pick(meetingPoints) : "Basecamp", facility, raincoats, charge, reviewed: true, status: "active" };
+      const person: Person = { id: uuid(), bookingId: booking.id, tripId: trip.id, name, meetingPoint: facility === "Full Transport" ? "St. Bandung" : "Basecamp", facility, raincoats, charge, reviewed: true, status: "active" };
       bookings.push(booking); participants.push(person);
       if (plan.cancelled) continue;
       // Finished trips are fully paid; upcoming trips mix full, deposit, and unpaid.
@@ -100,6 +117,12 @@ async function main() {
       const paid = people.filter(p => seed.payments.some(x => x.allocations[0].participantId === p.id && x.amount >= p.charge)).length;
       console.log(`${t.departureDate}  ${t.status.padEnd(9)}  ${`${t.title} ${t.volume}`.padEnd(26)}  ${String(people.length).padStart(2)} people, ${paid} paid`);
     }
+    const perMonth = new Map<string, number>();
+    for (const t of seed.trips) perMonth.set(t.departureDate.slice(0, 7), (perMonth.get(t.departureDate.slice(0, 7)) ?? 0) + 1);
+    const names = seed.trips.map(t => `${t.title} ${t.volume}`);
+    console.log(`
+${seed.trips.length} trips over ${perMonth.size} months (${[...new Set(perMonth.values())].join("/")} per month), ${seed.trips.filter(t => t.status === "cancelled").length} cancelled, ${seed.participants.length} participants, ${seed.payments.length} payments`);
+    console.log(`duplicate trip names: ${names.length - new Set(names).size}; meeting points: ${[...new Set(seed.participants.map(p => p.meetingPoint))].join(", ")}; seed size ≈ ${(JSON.stringify(seed).length / 1024 / 1024).toFixed(2)} MB`);
     return;
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
