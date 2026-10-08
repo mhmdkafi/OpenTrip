@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
@@ -13,16 +13,18 @@ const lastAccess = (value:string|null) => value
   ? `${new Date(value).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Jakarta"})} WIB`
   : "Never";
 
-export function UsersPage() {
-  const [page,setPage]=useState(1), [result,setResult]=useState<Result|null>(null);
-  const [loading,setLoading]=useState(true), [error,setError]=useState(""), [notice,setNotice]=useState("");
+export function UsersPage({initial}:{initial:Result|null}) {
+  const [page,setPage]=useState(1), [result,setResult]=useState<Result|null>(initial);
+  const [loading,setLoading]=useState(!initial), [error,setError]=useState(""), [notice,setNotice]=useState("");
   const [editing,setEditing]=useState<Member|"new"|null>(null), [deleting,setDeleting]=useState<Member|null>(null);
   const [busy,setBusy]=useState(false), [formError,setFormError]=useState("");
   const [refresh,setRefresh]=useState(0);
   useAutoDismiss(notice,()=>setNotice(""));
   useAutoDismiss(formError,()=>setFormError(""));
   const reload=useCallback(()=>setRefresh(n=>n+1),[]);
+  const serverRendered=useRef(Boolean(initial));
   useEffect(()=>{
+    if(serverRendered.current){serverRendered.current=false;return;}
     let active=true;
     requestJson(`/api/users?page=${page}`).then(data=>{if(active){setResult(data);setError("");}})
       .catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});

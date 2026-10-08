@@ -2,13 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireMembership } from "./membership";
 import { DomainError } from "@/lib/workspace/commands";
+import { FORWARDED, signIdentity } from "./forwarded";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === "/api/auth/register") return NextResponse.json({error:"Public registration is disabled. Contact the owner."},{status:410});
   const headers = new Headers(request.headers);
-  headers.delete("x-workspace-id");
-  headers.delete("x-user-id");
+  Object.values(FORWARDED).forEach(name => headers.delete(name));
   let response = NextResponse.next({ request: { headers } });
   if (!["GET", "HEAD"].includes(request.method)) {
     const origin = request.headers.get("origin");
@@ -27,22 +27,28 @@ export async function middleware(request: NextRequest) {
       values.forEach(({name,value,options})=>response.cookies.set(name,value,options));
     },
   }});
-  const {data:{user}} = await client.auth.getUser();
+  // getClaims verifies the JWT locally when the project uses asymmetric signing keys.
+  const {data:claimsData} = await client.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
   function deny(status:number) {
     const result = path.startsWith("/dashboard") ? NextResponse.redirect(new URL("/login",request.url)) : NextResponse.json({error:"Workspace access denied."},{status});
     response.cookies.getAll().forEach(c=>result.cookies.set(c));
     return result;
   }
-  if (!user) return deny(401);
-  const {data:activeProfile}=await client.from("users").select("status").eq("id",user.id).maybeSingle();
-  if (activeProfile?.status !== "active") return deny(403);
-  if (!path.startsWith("/api/auth/")) {
+  if (!userId) return deny(401);
+  if (path.startsWith("/api/auth/")) {
+    const {data:activeProfile}=await client.from("users").select("status").eq("id",userId).maybeSingle();
+    if (activeProfile?.status !== "active") return deny(403);
+  } else {
     const tenant = request.cookies.get("tenant-id")?.value;
     if (!tenant) return deny(403);
-    try { await requireMembership(client, user.id, tenant); }
+    let role: "owner" | "admin";
+    try { role = await requireMembership(client, userId, tenant); }
     catch (error) { return deny(error instanceof DomainError ? error.status : 503); }
-    headers.set("x-workspace-id",tenant);
-    headers.set("x-user-id",user.id);
+    headers.set(FORWARDED.user,userId);
+    headers.set(FORWARDED.tenant,tenant);
+    headers.set(FORWARDED.role,role);
+    headers.set(FORWARDED.signature,signIdentity({userId,tenantId:tenant,role}));
   }
   const result = NextResponse.next({request:{headers}});
   response.cookies.getAll().forEach(c=>result.cookies.set(c));

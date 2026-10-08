@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -29,12 +29,9 @@ function LoginForm() {
   const [error, setError] = useState(() => { const base = callbackErrors[params.get("error") ?? ""] ?? ""; const detail = params.get("detail"); return base && detail ? `${base} (${detail})` : base; });
   const [busy, setBusy] = useState(false);
   useAutoDismiss(error, () => setError(""));
-  const { login, session, isLoading } = useAuth();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  useEffect(() => {
-    if (!isLoading && session) router.replace("/dashboard");
-  }, [isLoading, session, router]);
 
   async function signIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +46,6 @@ function LoginForm() {
     if (error) { setError(callbackErrors.oauth); setBusy(false); }
   }
 
-  if (isLoading || session) return <p role="status">Checking session…</p>;
   return <div className="login-layout">
     <section className="login-story" aria-label="About TripDash">
       <div className="login-story-copy"><h1>One workspace for every trip.</h1><p>Manage trips and business data in a single workspace.</p></div>
