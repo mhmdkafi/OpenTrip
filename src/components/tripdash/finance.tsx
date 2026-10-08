@@ -2,11 +2,10 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
-import { attributeToTrips, cashDate, cashTotals, filterPeriod, previousReference, recordedTime } from "@/lib/workspace/finance-view";
+import { attributeToTrips, cashDate, filterPeriod, previousReference, recordedTime } from "@/lib/workspace/finance-view";
 import { dateLabel, todayWib, weekKey } from "@/lib/workspace/presentation";
-import { periodBounds } from "@/lib/workspace/period";
 import type { Cash } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
 import { Field, Form, Modal, Submit, text } from "./ui";
@@ -25,6 +24,8 @@ function FinanceView() {
   const { state, mutate } = useWorkspace();
   const params = useSearchParams();
   const [period,setPeriod] = useState("month");
+  // The compared period follows "previous period" until someone picks one explicitly.
+  const [customCompare,setCustomCompare] = useState<string|null>(null);
   const [reference,setReference] = useState(todayWib);
   const [tripId,setTripId] = useState<string|null>(params.get("trip"));
   const [detailWeek,setDetailWeek] = useState<string|null>(null);
@@ -34,10 +35,9 @@ function FinanceView() {
 
   const cash = useMemo(()=>attributeToTrips(state.cash,state.trips),[state.cash,state.trips]);
   const entries = filterPeriod(cash,period,reference);
-  const previous = filterPeriod(cash,period,previousReference(period,reference));
-  const [start,end] = periodBounds(period,reference);
-  const opening = cashTotals(cash.filter(c=>Date.parse(c.occurredAt)<start)).net;
-  const closing = cashTotals(cash.filter(c=>Date.parse(c.occurredAt)<end)).net;
+  const compare = customCompare ?? previousReference(period,reference);
+  const previous = filterPeriod(cash,period,compare);
+  const compareLabel = customCompare ? new Date(`${compare}T12:00:00Z`).toLocaleDateString("en-GB",{year:"numeric",...(period==="year"?{}:{month:"short" as const}),timeZone:"UTC"}) : undefined;
   const selectedTrip = state.trips.find(t=>t.id===tripId);
   // A trip's own page shows its whole history: payments are dated at registration,
   // which can fall months before departure. A week drill-down stays period-scoped.
@@ -49,6 +49,7 @@ function FinanceView() {
     setTripId(id); setDetailWeek(week??null); setTab("transactions");
   }
   function changePeriod(value: string, date: string) {
+    if (value !== period) setCustomCompare(null);
     setPeriod(value); setReference(date); setDetailWeek(null);
   }
   const expenseDate = detailWeek
@@ -60,17 +61,21 @@ function FinanceView() {
     { id:"categories", label:"Expense categories", count:undefined },
   ];
 
-  return <div className="cashflow-workspace">
-    {(tripId===null||detailWeek)&&<FinancePeriod period={period} reference={reference} onChange={changePeriod}/>}
+  const years = useMemo(()=>{
+    const now = Number(todayWib().slice(0,4));
+    const seen = [...cash.map(c=>Number(cashDate(c).slice(0,4))), ...state.trips.map(t=>Number(t.departureDate.slice(0,4))).filter(Boolean)];
+    const first = Math.min(now - 1, ...seen), last = Math.max(now + 1, ...seen);
+    return Array.from({ length: last - first + 1 }, (_, i) => String(last - i));
+  },[cash,state.trips]);
+  return <div className="cashflow-workspace ov cf-v2">
+    <div className="page-heading ov-heading"><h1>Cashflow</h1>{(tripId===null||detailWeek)&&<FinancePeriod period={period} reference={reference} years={years} onChange={changePeriod}/>}</div>
     {tripId===null ? <>
-      <FinanceSummary entries={entries} previous={previous} period={period}/>
-      <div className={`cf-analysis ${period==="week" ? "is-weekly" : ""}`}>
+      <FinanceSummary entries={entries} previous={previous} period={period} compareLabel={compareLabel}/>
+      {(period==="month"||period==="year")&&<div className="cf-analysis">
         <div className="cf-panel cf-chart-panel">
-          {(period==="month"||period==="year")&&<CashGraph key={period+reference} entries={cash} period={period} reference={reference}/>}
-          <div className="cash-balance" aria-label="Recorded cash balance"><div><span>Recorded opening balance</span><strong>{formatRupiah(opening)}</strong></div><ArrowRight size={16}/><div><span>Recorded closing balance</span><strong>{formatRupiah(closing)}</strong></div><small>Based on transactions in the app</small></div>
+          <CashGraph key={period} entries={cash} period={period} reference={reference} compare={compare} years={years} onReference={date=>changePeriod(period,date)} onCompare={setCustomCompare}/>
         </div>
-        <ExpenseBreakdown entries={entries}/>
-      </div>
+      </div>}
       <FinanceRecap entries={entries} trips={state.trips} period={period} reference={reference} onOpen={openTrip}/>
     </> : <>
       <section className="cf-detail-heading detail-finance-heading">

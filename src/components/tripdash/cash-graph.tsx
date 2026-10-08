@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { cumulativeProfitComparison, type ProfitPeriod } from "@/lib/workspace/profit-comparison";
+import { Dropdown } from "./dropdown";
 import type { Cash } from "@/lib/workspace/types";
 import { formatRupiah } from "@/lib/money";
 
@@ -13,14 +14,26 @@ const compact = (value: number) => {
   return `${(value / unit).toLocaleString("en-US", { maximumFractionDigits: 1 })}${unit === 1_000_000 ? "M" : unit === 1_000 ? "K" : ""}`;
 };
 
-export function CashGraph({ entries, period, reference }: { entries: Cash[]; period: ProfitPeriod; reference: string }) {
+const MONTHS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1).padStart(2, "0"), label: new Date(Date.UTC(2000, i, 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) }));
+
+// Picks one compared period: month + year for a monthly chart, year only for a yearly chart.
+function PeriodPicker({ value, period, years, tone, onChange }: { value: string; period: ProfitPeriod; years: string[]; tone: "current" | "previous"; onChange: (value: string) => void }) {
+  const yearOptions = years.map(year => ({ value: year, label: year }));
+  return <span className={`cf-compare-period is-${tone}`}><i aria-hidden="true"/>
+    {period === "month" && <Dropdown label={tone === "current" ? "Main month" : "Compared month"} value={value.slice(5, 7)} options={MONTHS} onChange={month => onChange(`${value.slice(0, 4)}-${month}-01`)}/>}
+    <Dropdown label={tone === "current" ? "Main year" : "Compared year"} value={value.slice(0, 4)} options={yearOptions} onChange={year => onChange(`${year}-${period === "month" ? value.slice(5, 7) : "01"}-01`)}/>
+  </span>;
+}
+
+export function CashGraph({ entries, period, reference, compare, years, onReference, onCompare }: { entries: Cash[]; period: ProfitPeriod; reference: string; compare: string; years: string[]; onReference: (date: string) => void; onCompare: (date: string) => void }) {
   const id = useId();
-  const { points, currentLabel, previousLabel, hasTransactions } = cumulativeProfitComparison(entries, period, reference);
+  const { points, currentLabel, previousLabel, hasTransactions } = cumulativeProfitComparison(entries, period, reference, compare);
   const [selected, setSelected] = useState(() => {
     let index = 0;
     points.forEach((point, position) => { if (point.currentChange || point.previousChange) index = position; });
     return index;
   });
+  const [hovering, setHovering] = useState(false);
   const point = points[selected] ?? points[0];
   const latest = (key: "current" | "previous") => {
     for (let index = points.length - 1; index >= 0; index--) if (points[index][key] !== null) return points[index][key] ?? 0;
@@ -50,50 +63,48 @@ export function CashGraph({ entries, period, reference }: { entries: Cash[]; per
     const index = Math.round(((clientX - left) / width * WIDTH - INSET) / (WIDTH - INSET * 2) * (points.length - 1));
     setSelected(Math.max(0, Math.min(points.length - 1, index)));
   };
-  const unit = period === "month" ? "date" : "month";
 
   return <section className="cash-graph cf-graph" aria-labelledby={`${id}-title`}>
     <header className="cf-panel-heading cf-profit-heading">
-      <div><span className="cf-profit-eyebrow">PERIOD COMPARISON</span><h2 id={`${id}-title`}>Net profit trend</h2><p>Cumulative income minus expenses.</p></div>
+      <div><h2 id={`${id}-title`}>Net profit trend</h2></div>
+      <div className="cf-compare" role="group" aria-label="Compared periods"><PeriodPicker value={reference} period={period} years={years} tone="current" onChange={onReference}/><span className="cf-compare-vs">vs</span><PeriodPicker value={compare} period={period} years={years} tone="previous" onChange={onCompare}/></div>
     </header>
-    <div className="cf-profit-periods" aria-label="Final result of both periods">
-      <div className="is-current"><span><i/>{currentLabel}</span><strong>{formatRupiah(currentTotal)}</strong></div>
-      <div className="is-previous"><span><i/>{previousLabel}</span><strong>{formatRupiah(previousTotal)}</strong></div>
-    </div>
-    <p className="cf-profit-delta">{currentTotal === previousTotal ? "Both periods ended the same" : `${currentTotal > previousTotal ? "Up" : "Down"} ${formatRupiah(Math.abs(currentTotal - previousTotal))} from the previous period`}</p>
     {hasTransactions ? <>
       <div className="cf-profit-plot">
+        <span className="cf-axis-title cf-axis-y" aria-hidden="true">Cumulative net profit (Rp)</span>
         <div className="cf-profit-yaxis" aria-hidden="true">{ticks.map(tick => <span key={tick} style={{ top: `${y(tick) / HEIGHT * 100}%` }}>{compact(tick)}</span>)}</div>
         <div className="cf-profit-canvas">
-          <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`Cumulative net profit chart for ${currentLabel} and ${previousLabel}. Full figures are in the table below.`}
-            onPointerMove={event => { if (event.pointerType === "mouse") { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); } }}
-            onClick={event => { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); }}>
+          <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`Cumulative net profit chart for ${currentLabel} and ${previousLabel}. Hover the chart to see the values for each point.`}
+            onPointerMove={event => { if (event.pointerType === "mouse") { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); setHovering(true); } }}
+            onPointerLeave={event => { if (event.pointerType === "mouse") setHovering(false); }}
+            onClick={event => { const box = event.currentTarget.getBoundingClientRect(); selectAt(event.clientX, box.width, box.left); setHovering(true); }}>
             {ticks.map(tick => <line key={tick} className={tick === 0 ? "cf-profit-zero" : "cf-profit-grid"} x1={INSET} x2={WIDTH - INSET} y1={y(tick)} y2={y(tick)}/>)}
-            <line className="cf-profit-cursor" x1={x(selected)} x2={x(selected)} y1={INSET} y2={HEIGHT - INSET}/>
+            {hovering && <line className="cf-profit-cursor" x1={x(selected)} x2={x(selected)} y1={INSET} y2={HEIGHT - INSET}/>}
             <path className="cf-profit-line is-previous" d={line("previous")}/>
             <path className="cf-profit-line is-current" d={line("current")}/>
-            {(["previous", "current"] as const).map(key => point[key] !== null && <circle key={key} className={`cf-profit-dot is-${key}`} cx={x(selected)} cy={y(point[key])} r={5}/>)}
+            {hovering && (["previous", "current"] as const).map(key => point[key] !== null && <circle key={key} className={`cf-profit-dot is-${key}`} cx={x(selected)} cy={y(point[key])} r={5}/>)}
           </svg>
+          {hovering && (() => {
+            const left = x(selected) / WIDTH * 100;
+            const top = Math.min(...(["current", "previous"] as const).map(key => point[key] === null ? HEIGHT : y(point[key]!))) / HEIGHT * 100;
+            const side = left > 70 ? "is-left" : left < 30 ? "is-right" : "";
+            return <div className={`cf-profit-tooltip ${side}`} style={{ left: `${left}%`, top: `${top}%` }} aria-live="polite" aria-atomic="true">
+              <span className="cf-tooltip-label">{period === "month" ? `Date ${point.label}` : point.label}</span>
+              <span className="is-current"><i/>{currentLabel}<strong>{amount(point.current)}</strong></span>
+              <span className="is-previous"><i/>{previousLabel}<strong>{amount(point.previous)}</strong></span>
+            </div>;
+          })()}
           <div className="cf-profit-xaxis" aria-hidden="true">{points.map((item, index) => {
             const visible = period === "year" ? index % 2 === 0 || index === 11 : index === 0 || (index + 1) % 5 === 0 && index < points.length - 3 || index === points.length - 1;
             return visible && <span key={index} style={{ left: `${x(index) / WIDTH * 100}%` }}>{item.label}</span>;
           })}</div>
+          <span className="cf-axis-title cf-axis-x" aria-hidden="true">{period === "year" ? "Month" : "Date"}</span>
         </div>
       </div>
-      <div className="cf-profit-detail" aria-live="polite" aria-atomic="true">
-        <label htmlFor={`${id}-point`}>Lihat {unit}</label>
-        <select id={`${id}-point`} value={selected} onChange={event => setSelected(Number(event.target.value))}>
-          {points.map((item, index) => <option key={index} value={index}>{period === "month" ? `Date ${item.label}` : item.label}</option>)}
-        </select>
-        <div><span>{currentLabel}</span><strong>{amount(point.current)}</strong></div>
-        <div><span>{previousLabel}</span><strong>{amount(point.previous)}</strong></div>
-      </div>
     </> : <p className="cf-chart-empty">No transactions in either period yet.</p>}
-    <details className="graph-data"><summary>View figures by {period === "year" ? "month" : "date"}</summary>
-      <div className="table-wrap"><table className="td-table"><caption className="sr-only">Akumulasi profit bersih {currentLabel} dan {previousLabel}</caption>
-        <thead><tr><th>{period === "year" ? "Month" : "Date"}</th><th>{currentLabel}</th><th>{previousLabel}</th><th>Difference</th></tr></thead>
-        <tbody>{points.map(item => <tr key={item.label}><td>{item.label}</td><td>{amount(item.current)}</td><td>{amount(item.previous)}</td><td>{item.current !== null && item.previous !== null ? formatRupiah(item.current - item.previous) : "—"}</td></tr>)}</tbody>
-      </table></div>
-    </details>
+    <div className="cf-profit-periods" aria-label="Final result of both periods">
+      <div className="is-current"><span><i/>{currentLabel}</span><strong>{formatRupiah(currentTotal)}</strong></div>
+      <div className="is-previous"><span><i/>{previousLabel}</span><strong>{formatRupiah(previousTotal)}</strong></div>
+    </div>
   </section>;
 }

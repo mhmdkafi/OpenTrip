@@ -35,7 +35,7 @@ export function FinanceLedger({ entries, allEntries, trips, tripId, onEdit, onDe
       <td className="cf-cell-balance"><span>Balance </span>{formatRupiah(balances.get(c.id)??0)}</td>
       <td className="cf-cell-actions">{c.direction==="out"?<div className="row-actions"><button className="table-icon" aria-label={`Edit ${c.description}`} onClick={()=>onEdit(c)}><Pencil size={15}/></button><button className="table-icon danger-button" aria-label={`Delete ${c.description}`} onClick={()=>onDelete(c)}><Trash2 size={15}/></button></div>:<span className="cf-verified"><Check size={13}/> Verified</span>}</td>
     </tr>)}</tbody></table>{!visible.length&&<div className="cf-empty"><Search size={26}/><h3>No matching transactions</h3><p>Try another search, transaction type, or period.</p></div>}</div>
-    <div className="table-foot"><span>{visible.length?current*10+1:0}–{Math.min((current+1)*10,visible.length)} of {visible.length} transactions</span><div className="pagination"><button disabled={current===0} onClick={()=>setPage(current-1)}>Previous</button><span>{current+1}</span><button disabled={(current+1)*10>=visible.length} onClick={()=>setPage(current+1)}>Next</button></div></div>
-    <p className="finance-note">The running balance covers all trip transactions. Participant payments count toward their trip’s departure date; the Date column shows when the transfer was made.</p>
+    {visible.length>10&&<div className="table-foot"><span>{visible.length?current*10+1:0}–{Math.min((current+1)*10,visible.length)} of {visible.length} transactions</span><div className="pagination"><button disabled={current===0} onClick={()=>setPage(current-1)}>Previous</button><span>{current+1}</span><button disabled={(current+1)*10>=visible.length} onClick={()=>setPage(current+1)}>Next</button></div></div>}
+    
   </div>;
 }

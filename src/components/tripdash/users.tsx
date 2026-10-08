@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
 import { useAutoDismiss } from "./use-auto-dismiss";
@@ -37,21 +37,21 @@ export function UsersPage({initial}:{initial:Result|null}) {
     catch(e){setFormError(e instanceof Error?e.message:"Something went wrong.");}
     finally{setBusy(false);}
   }
-  return <>
-    <div className="page-heading"><div><h1>Users</h1></div>
-      {owner && <button className="td-button" onClick={()=>{setFormError("");setEditing("new");}}><Plus size={16} aria-hidden="true"/>Add admin</button>}
+  return <div className="ov users-page">
+    <div className="page-heading ov-heading"><h1>Users</h1>
+      {owner && <button className="ts-primary" onClick={()=>{setFormError("");setEditing("new");}}><Plus size={16} aria-hidden="true"/>Add admin</button>}
     </div>
     {notice&&<p className="notice" role="status">{notice}</p>}
     {error&&<p className="notice error" role="alert">{error}</p>}
-    <section className="td-panel">
-      <div className="panel-heading"><h2><Users size={18} className="inline mr-2" aria-hidden="true"/>User list{result?` (${result.total})`:""}</h2></div>
+    <section className="ov-card">
+      <div className="ov-card-head"><h2>User list</h2>{result&&<span className="ts-count">{result.total} {result.total===1?"user":"users"}</span>}</div>
       {result?.role==="admin"&&<p className="empty-note mb-4">You can view all users. Only the owner can manage admins.</p>}
       {loading?<p role="status">Loading users…</p>:<>
         <div className="table-wrap"><table className="td-table"><thead><tr><th scope="col">Name / email</th><th scope="col">Role</th><th scope="col">Last access</th>{owner&&<th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
-          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`badge ${user.role==="owner"?"":"gray"}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{lastAccess(user.lastSignInAt)}</td>
+          <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`pt-status pt-role-${user.role}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{lastAccess(user.lastSignInAt)}</td>
             {owner&&<td>{user.role==="admin"&&<div className="flex gap-2 justify-end"><button className="table-icon" aria-label={`Edit ${user.email}`} onClick={()=>{setFormError("");setEditing(user);}}><Pencil size={15}/></button><button className="table-icon danger-button" aria-label={`Remove ${user.email}`} onClick={()=>{setFormError("");setDeleting(user);}}><Trash2 size={15}/></button></div>}</td>}</tr>)}</tbody></table></div>
         {result?.total===0&&<p className="empty-note mt-4">No users yet.</p>}
-        <div className="table-foot"><span>Page {page} of {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Previous</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Next</button></div></div>
+        {(result?.total??0)>20&&<div className="table-foot"><span>Page {page} of {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Previous</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Next</button></div></div>}
       </>}
     </section>
     {editing&&<Modal title={editing==="new"?"Add admin":"Edit admin"} onClose={()=>{if(!busy)setEditing(null);}}>
@@ -75,5 +75,5 @@ export function UsersPage({initial}:{initial:Result|null}) {
       {formError&&<p className="notice error" role="alert">{formError}</p>}
       <div className="confirm-actions"><button className="td-secondary" disabled={busy} onClick={()=>setDeleting(null)}>Cancel</button><button className="td-button danger-solid" disabled={busy} onClick={()=>void submit(()=>requestJson(`/api/users?id=${deleting.id}`,{},"DELETE"),"Admin removed.",()=>setDeleting(null))}>{busy?"Removing…":"Remove admin"}</button></div>
     </Modal>}
-  </>;
+  </div>;
 }
