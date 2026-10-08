@@ -139,15 +139,8 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 /* Trip Schedule: shares the overview surfaces, tones, and list rows. */
 .ts-primary { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; background: var(--ov-accent); color: #fff; font-size: 14px; font-weight: 500; }
 .ts-primary:hover { background: #0f4224; }
-.ts-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; }
-.ts-range { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 6px 0 12px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; color: var(--ov-muted); }
-.ts-range input { border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ov-ink); outline: none; }
-.ts-range:focus-within, .ts-search:focus-within { border-color: var(--ov-accent); box-shadow: 0 0 0 3px #14532d1f; }
 .ts-clear { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--ov-muted); }
 .ts-clear:hover { background: var(--ov-soft); color: var(--ov-ink); }
-.ts-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; color: var(--ov-muted); }
-.ts-search input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ov-ink); outline: none; }
-.ts-caption { margin: -6px 0 -6px 4px; font-size: 13px; color: var(--ov-muted); }
 .ts-count { padding: 4px 10px; border-radius: 999px; background: var(--ov-soft); border: 1px solid var(--ov-line); font-size: 12px; font-weight: 500; color: #344054; }
 .ts-month .ov-card-head { margin-bottom: 8px; }
 .ts-week + .ts-week { margin-top: 14px; }
@@ -164,13 +157,67 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 .ts-empty p { font-size: 13px; }
 @media (max-width: 767px) {
   .ts-filters { padding: 10px; }
-  .ts-filters .ov-toolbar { width: 100%; overflow-x: auto; }
-  .ts-range { width: 100%; }
-  .ts-range input { flex: 1; min-width: 0; }
-  .ts-people, .ts-chevron { display: none; }
+      .ts-people, .ts-chevron { display: none; }
 }
 
 .cal-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* Trip Schedule filters: labelled fields in one card. */
+.ts-field { display: grid; gap: 6px; min-width: 0; }
+.ts-field-label { font-size: 12px; font-weight: 500; color: var(--ov-muted); }
+.ts-control { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border: 1px solid var(--ov-line); border-radius: 12px; background: #fff; color: var(--ov-muted); min-width: 0; }
+.ts-control:focus-within { border-color: var(--ov-accent); box-shadow: 0 0 0 3px #14532d1f; }
+.ts-control input, .ts-control select { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ov-ink); outline: none; }
+.ts-select { position: relative; padding-right: 10px; }
+.ts-select select { appearance: none; padding-right: 22px; cursor: pointer; }
+.ts-select svg { position: absolute; right: 12px; pointer-events: none; }
+@media (max-width: 767px) {
+  }
+
+/* Filters: search on the left, date range on the right, open space between. */
+.ts-filters { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 14px; }
+.ts-field-search { flex: 0 1 340px; }
+.ts-field-range { flex: 0 1 560px; }
+.ts-date { flex: 1; min-width: 0; }
+.ts-date .ts-clear { margin-left: auto; }
+.ts-date input { flex: 0 0 auto; width: auto; field-sizing: content; }
+.ts-date input::-webkit-calendar-picker-indicator { margin: 0 0 0 4px; padding: 0; cursor: pointer; opacity: .6; }
+.ts-date input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+.ts-date input::-webkit-datetime-edit, .ts-date input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+@media (max-width: 900px) {
+  .ts-field-search, .ts-field-range { flex: 1 1 100%; }
+}
+.ts-range-pair { display: flex; align-items: center; gap: 8px; }
+.ts-range-sep { color: var(--ov-muted); }
+
+/* Search left, View + Date range grouped right, open space between. */
+.ts-field-search { flex: 0 1 300px; }
+.ts-filter-group { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.ts-field-view { width: 150px; }
+.ts-field-range { flex: 0 0 auto; }
+.ts-date { flex: 0 0 auto; padding: 0 10px 0 12px; }
+@media (max-width: 900px) {
+  .ts-filter-group { flex: 1 1 100%; }
+  .ts-field-view { flex: 1 1 140px; width: auto; }
+}
+
+
+/* Styled dropdown (replaces native select menus). */
+.dd { position: relative; }
+.dd-trigger { width: 100%; display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #e6e8ec; border-radius: 12px; background: #fff; font-size: 13px; font-weight: 500; color: #101828; text-align: left; }
+.dd-trigger > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-trigger:hover { border-color: #d0d5dd; }
+.dd-trigger[aria-expanded="true"], .dd-trigger:focus-visible { border-color: #14532d; box-shadow: 0 0 0 3px #14532d1f; outline: none; }
+.dd-icon { flex-shrink: 0; color: #667085; }
+.dd-chevron { flex-shrink: 0; color: #667085; transition: transform .15s; }
+.dd-trigger[aria-expanded="true"] .dd-chevron { transform: rotate(180deg); }
+.dd-menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; padding: 6px; background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; box-shadow: 0 12px 32px #1018281f; outline: none; animation: dd-in .12s ease-out; }
+.dd-option { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #344054; cursor: pointer; white-space: nowrap; }
+.dd-option > span { flex: 1; }
+.dd-option.is-active { background: #f6f7f9; color: #101828; }
+.dd-option.is-selected { background: #e8f3ec; color: #14532d; }
+.dd-option.is-selected .dd-icon, .dd-check { color: #14532d; }
+@keyframes dd-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
 /* Trip detail actions and participant table emphasis. */
 .detail-actions .td-secondary { display: inline-flex; align-items: center; gap: 6px; }
@@ -186,3 +233,18 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 .pt-status-dp { background: #d97706; }
 .pt-status-unpaid { background: #dc2626; }
 .pt-status-review { background: #2563eb; }
+
+/* Long dropdown menus scroll. */
+.dd-menu { max-height: 288px; overflow-y: auto; }
+
+/* Trip list card: the heading itself picks the month / year / week. */
+.ts-list { padding-top: 14px; }
+.ts-list-head { margin-bottom: 12px; }
+.ts-period { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.dd-inline .dd-trigger { width: auto; height: 38px; padding: 0 8px 0 10px; gap: 4px; border-color: transparent; background: transparent; font-size: 20px; font-weight: 600; letter-spacing: -.3px; color: #101828; }
+.dd-inline .dd-trigger:hover { background: #f6f7f9; border-color: #e6e8ec; }
+.dd-inline .dd-chevron { color: #98a2b3; }
+.dd-inline .dd-menu { min-width: 180px; }
+.ts-month + .ts-month { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e6e8ec; }
+.ts-month-label { margin: 0 0 10px 2px; font-size: 15px; font-weight: 600; color: #101828; }
+.ts-list .ts-empty { padding: 36px 16px; border: 0; }
