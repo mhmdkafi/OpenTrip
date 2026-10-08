@@ -17,11 +17,9 @@ export function TripCalendar({ state, trips, today, month, onMonth, selected, on
   const move = (amount: number) => { const next = new Date(year, index + amount, 1); onMonth(dateKey(next.getFullYear(), next.getMonth(), 1).slice(0, 7)); };
   return <section className="ov-card cal" aria-label="Departure calendar">
     <div className="ov-card-head">
-      <div><h2 aria-live="polite">{monthLabel}</h2><p className="cal-sub">{trips.length} trips this month</p></div>
+      <div className="cal-title"><button className="cal-nav" aria-label="Previous month" onClick={() => move(-1)}><ChevronLeft size={18}/></button><h2 aria-live="polite">{monthLabel}</h2></div>
       <div className="cal-controls">
         {selected && <button className="cal-clear" onClick={() => onSelect("")}><X size={14}/> Clear date</button>}
-        <button className="cal-today" onClick={() => onMonth(today.slice(0, 7))}>Today</button>
-        <button className="cal-nav" aria-label="Previous month" onClick={() => move(-1)}><ChevronLeft size={18}/></button>
         <button className="cal-nav" aria-label="Next month" onClick={() => move(1)}><ChevronRight size={18}/></button>
       </div>
     </div>

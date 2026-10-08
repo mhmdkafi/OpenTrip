@@ -169,3 +169,5 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
   .ts-range input { flex: 1; min-width: 0; }
   .ts-people, .ts-chevron { display: none; }
 }
+
+.cal-title { display: flex; align-items: center; gap: 12px; min-width: 0; }

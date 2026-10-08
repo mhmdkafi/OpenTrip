@@ -76,10 +76,8 @@ function TilePreview({ title, tone, onClose, children }: { title: string; tone: 
 function YearGrid({ year, today, trips, statusOf, onYear, onOpen }: { year: string; today: string; trips: Trip[]; statusOf: (trip: Trip) => ReturnType<typeof tripStatus>; onYear: (year: string) => void; onOpen: (month: string) => void }) {
   return <section className="ov-card" aria-label="Yearly overview">
     <div className="ov-card-head">
-      <div><h2 aria-live="polite">{year}</h2><p className="cal-sub">{trips.length} trips this year</p></div>
+      <div className="cal-title"><button className="cal-nav" aria-label="Previous year" onClick={() => onYear(String(Number(year) - 1))}><ChevronLeft size={18}/></button><h2 aria-live="polite">{year}</h2></div>
       <div className="cal-controls">
-        <button className="cal-today" onClick={() => onYear(today.slice(0, 4))}>This year</button>
-        <button className="cal-nav" aria-label="Previous year" onClick={() => onYear(String(Number(year) - 1))}><ChevronLeft size={18}/></button>
         <button className="cal-nav" aria-label="Next year" onClick={() => onYear(String(Number(year) + 1))}><ChevronRight size={18}/></button>
       </div>
     </div>
