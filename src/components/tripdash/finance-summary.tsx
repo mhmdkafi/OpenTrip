@@ -16,7 +16,7 @@ export function FinancePeriod({ period, reference, onChange }: { period: string;
   }
   return <div className="cf-period finance-period-bar">
     <div className="cf-period-title"><span>Report period</span><div><h2>{title}</h2><button aria-label="Previous period" onClick={()=>onChange(period,previousReference(period,reference))}><ChevronLeft size={17}/></button><button aria-label="Next period" onClick={next}><ChevronRight size={17}/></button></div></div>
-    <div className="cf-period-inputs"><div className="status-tabs" role="group" aria-label="Cashflow period">{[["month","Monthly"],["week","Weekly"],["year","Yearly"]].map(([value,label])=><button key={value} aria-pressed={period===value} className={period===value?"active":""} onClick={()=>onChange(value,reference)}>{label}</button>)}</div><Field label="Tanggal acuan (WIB)" type="date" value={reference} onChange={e=>{if(e.target.value)onChange(period,e.target.value);}}/></div>
+    <div className="cf-period-inputs"><div className="status-tabs" role="group" aria-label="Cashflow period">{[["month","Monthly"],["week","Weekly"],["year","Yearly"]].map(([value,label])=><button key={value} aria-pressed={period===value} className={period===value?"active":""} onClick={()=>onChange(value,reference)}>{label}</button>)}</div><Field label="Reference date (WIB)" type="date" value={reference} onChange={e=>{if(e.target.value)onChange(period,e.target.value);}}/></div>
   </div>;
 }
 
