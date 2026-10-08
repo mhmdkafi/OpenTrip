@@ -14,11 +14,6 @@ export type SheetMetadata = {
   sheets: Array<{ sheetId: number; title: string; rowCount?: number; columnCount?: number }>;
 };
 
-export type SheetRows = {
-  headers: string[];
-  rows: string[][];
-};
-
 export type HeaderField = "registered_at" | "raw_name" | "facility" | "meeting_point" | "raincoat_option" | "proof_refs" | "contact_phone";
 
 export type HeaderSuggestion = {
@@ -53,7 +48,6 @@ const sheetAliases: Record<HeaderField, string[]> = {
 };
 
 const requiredFields = new Set<HeaderField>(["registered_at", "raw_name", "facility", "meeting_point"]);
-let lastRequestAt = 0;
 
 export function parseGoogleSheetsUrl(input: string): GoogleSheetUrl {
   const value = input.trim();
@@ -123,57 +117,6 @@ export function suggestHeaderMappings(headers: string[], sampleRows: string[][] 
   });
 }
 
-export async function fetchSheetMetadata(spreadsheetId: string, accessToken: string): Promise<SheetMetadata> {
-  const data = await googleFetch<{ properties?: { title?: string; locale?: string }; sheets?: Array<{ properties?: { sheetId?: number; title?: string; gridProperties?: { rowCount?: number; columnCount?: number } } }> }>(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=spreadsheetId,properties.title,properties.locale,sheets.properties`, accessToken);
-  return {
-    spreadsheetId,
-    title: data.properties?.title ?? spreadsheetId,
-    locale: data.properties?.locale,
-    sheets: (data.sheets ?? []).map((sheet) => ({
-      sheetId: sheet.properties?.sheetId ?? 0,
-      title: sheet.properties?.title ?? "Sheet",
-      rowCount: sheet.properties?.gridProperties?.rowCount,
-      columnCount: sheet.properties?.gridProperties?.columnCount,
-    })),
-  };
-}
-
-export async function fetchSheetRows(spreadsheetId: string, sheetTitle: string, accessToken: string, headerRow = 1, maxRows = 500): Promise<SheetRows> {
-  const range = `${escapeSheetTitle(sheetTitle)}!A${headerRow}:ZZ${headerRow + maxRows}`;
-  const data = await googleFetch<{ values?: string[][] }>(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, accessToken);
-  const values = data.values ?? [];
-  return { headers: values[0] ?? [], rows: values.slice(1) };
-}
-
-export async function verifyDriveEvidence(input: string, accessToken: string) {
-  const { fileId } = parseGoogleDriveUrl(input);
-  const data = await googleFetch<{ id: string; name?: string; mimeType?: string; webViewLink?: string; size?: string }>(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType,webViewLink,size`, accessToken);
-  return { fileId: data.id, name: data.name ?? data.id, mimeType: data.mimeType, webViewLink: data.webViewLink, size: data.size ? Number(data.size) : undefined, accessible: true };
-}
-
-async function googleFetch<T>(url: string, accessToken: string, attempt = 0): Promise<T> {
-  await throttle();
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
-  if (response.status === 429 && attempt < 4) {
-    await sleep(2 ** attempt * 500);
-    return googleFetch<T>(url, accessToken, attempt + 1);
-  }
-  if (!response.ok) {
-    throw new GoogleApiError(resolveGoogleErrorMessage(response.status), response.status, "google_request_failed");
-  }
-  return response.json() as Promise<T>;
-}
-
-async function throttle() {
-  const elapsed = Date.now() - lastRequestAt;
-  if (elapsed < 250) await sleep(250 - elapsed);
-  lastRequestAt = Date.now();
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function normalizeHeader(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 +]/g, "").trim();
 }
@@ -196,16 +139,4 @@ function matchesFieldShape(field: HeaderField, value: string) {
   if (field === "proof_refs") return /https?:\/\//.test(value) || /^[a-zA-Z0-9-_]{20,}$/.test(value.trim());
   if (field === "raincoat_option") return /ya|tidak|yes|no|jas|raincoat/i.test(value);
   return false;
-}
-
-function escapeSheetTitle(title: string) {
-  return `'${title.replace(/'/g, "''")}'`;
-}
-
-function resolveGoogleErrorMessage(status: number) {
-  if (status === 401) return "The Google token is invalid or was revoked.";
-  if (status === 403) return "The Google account is not allowed to read this file.";
-  if (status === 404) return "Google file or tab not found.";
-  if (status === 429) return "Kuota Google API terlampaui. Coba lagi nanti.";
-  return "The Google API call failed.";
 }

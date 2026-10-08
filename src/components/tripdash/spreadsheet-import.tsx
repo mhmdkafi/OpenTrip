@@ -12,7 +12,7 @@ export function SpreadsheetImport({ initialTripId = "" }: { initialTripId?: stri
   const source = state.sources.find(s => s.tripId === initialTripId);
   const [result, setResult] = useState<{ tripId: string; stats: { added: number; unchanged: number; review: number } } | null>(null);
   return <div className="link-import">
-    {initialTripId && <p className="empty-note">Paste a spreadsheet link to update this trip&apos;s participants.</p>}
+    <p className="empty-note">{initialTripId ? "Paste a spreadsheet link to update this trip’s participants. " : ""}Share the spreadsheet as “Anyone with the link: Viewer” before importing.</p>
     <Form onSave={async data => {
       const spreadsheetUrl = text(data,"url");
       const departureDate = initialTripId ? undefined : text(data,"departureDate");
