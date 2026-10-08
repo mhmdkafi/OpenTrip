@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
@@ -22,9 +22,7 @@ export function UsersPage({initial}:{initial:Result|null}) {
   useAutoDismiss(notice,()=>setNotice(""));
   useAutoDismiss(formError,()=>setFormError(""));
   const reload=useCallback(()=>setRefresh(n=>n+1),[]);
-  const serverRendered=useRef(Boolean(initial));
   useEffect(()=>{
-    if(serverRendered.current){serverRendered.current=false;return;}
     let active=true;
     requestJson(`/api/users?page=${page}`).then(data=>{if(active){setResult(data);setError("");}})
       .catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});

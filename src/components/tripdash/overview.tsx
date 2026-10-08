@@ -55,7 +55,7 @@ export function Overview() {
 
 function AgendaItem({ trip, href, count, status }: { trip: Trip; href: string; count: number; status: ReturnType<typeof tripStatus> }) {
   const date = new Date(`${trip.departureDate}T12:00:00`);
-  return <Link className={`ov-agenda-item ov-tone-${status}`} href={href}>
+  return <Link className={`ov-agenda-item ov-tone-${status}`} href={href} prefetch={true}>
     <div className="ov-date"><strong>{date.getDate()}</strong><span>{date.toLocaleDateString("en-GB", { month: "short" })}</span></div>
     <div className="ov-agenda-body"><h3>{trip.title}{trip.volume ? <small> · {trip.volume}</small> : null}</h3><p>{count} participants · min. {trip.minimumParticipants ?? 7}</p></div>
     <span className="ov-badge">{statusLabel[status]}</span>

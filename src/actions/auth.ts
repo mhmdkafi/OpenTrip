@@ -105,6 +105,7 @@ export async function logout() {
 
     const cookieStore = await cookies();
     cookieStore.delete("tenant-id");
+    cookieStore.delete("ws-member");
 
     revalidatePath("/");
 

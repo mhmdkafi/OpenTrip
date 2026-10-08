@@ -44,7 +44,7 @@ export function Sidebar() {
       <nav aria-label="Main navigation">{navigation.map(item => {
         const Icon = item.icon;
         const active = item.slug ? pathname.startsWith(basePath + item.slug) : pathname === basePath;
-        return <Link key={item.slug} href={basePath + item.slug} title={item.label} aria-label={item.label} onClick={() => setOpen(false)} className={`forest-nav-link ${active ? "active" : ""}`} aria-current={active ? "page" : undefined}><Icon size={19} aria-hidden="true"/><span>{item.label}</span></Link>;
+        return <Link key={item.slug} href={basePath + item.slug} prefetch={true} title={item.label} aria-label={item.label} onClick={() => setOpen(false)} className={`forest-nav-link ${active ? "active" : ""}`} aria-current={active ? "page" : undefined}><Icon size={19} aria-hidden="true"/><span>{item.label}</span></Link>;
       })}</nav>
       <div className="sidebar-bottom"><button className="sidebar-collapse sidebar-edge-toggle" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} title={collapsed ? "Expand navigation" : "Collapse navigation"} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}</button><div className="sidebar-admin"><UserMenu/></div></div>
     </aside>
