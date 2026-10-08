@@ -6,7 +6,7 @@ const name = z.string().trim().min(1).max(200);
 const id = z.string().uuid();
 const date = z.iso.date();
 const tripDetails = { title: name, departureDate: date, fullPrice: money, nonPrice: money, raincoatPrice: money, volume: z.string().max(80).optional(), location: z.string().max(200).optional(), bankAccount: z.string().max(300).optional(), meetingPoints: z.array(name).max(30).optional(), minimumParticipants: z.number().int().min(1).max(1000).optional(), riskDays: z.number().int().min(1).max(60).optional() };
-const inventoryDetails = { name, kind: z.enum(["operational", "rental"]), total: z.number().int().min(0).max(100000), consumable: z.boolean().optional(), stockTracked: z.boolean().optional(), reorderLevel: z.number().int().min(0).max(100000).optional(), imageUrl: z.string().max(400000).refine(value => !value || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value), "Gunakan gambar PNG, JPEG, atau WebP.").optional() };
+const inventoryDetails = { name, kind: z.enum(["operational", "rental"]), total: z.number().int().min(0).max(100000), consumable: z.boolean().optional(), stockTracked: z.boolean().optional(), reorderLevel: z.number().int().min(0).max(100000).optional(), imageUrl: z.string().max(400000).refine(value => !value || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value) || /^\/api\/inventory\/[0-9a-f-]{36}\/photo\?v=[0-9a-f]{12}$/.test(value), "Use a PNG, JPEG, or WebP image.").optional() };
 export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("trip.create"), ...tripDetails }),
   z.object({ action: z.literal("trip.update"), tripId: id, ...tripDetails }),
@@ -114,12 +114,14 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
     case "inventory.create": {
       if (command.stockTracked !== false && command.total < 1) throw new DomainError("Starting stock must be at least 1.");
       const { action: _action, ...fields } = command;
+      if (fields.imageUrl?.startsWith("/api/inventory/")) delete fields.imageUrl;
       state.inventory.push({ ...fields, id: crypto.randomUUID(), damaged: 0, loans: [] }); detail = command.name; break;
     }
     case "inventory.update": {
       const item = found(state.inventory.find(i => i.id === command.itemId), "Item");
       if (item.loans.some(l => !l.returned) && (command.consumable || command.stockTracked === false)) throw new DomainError("Finish active loans before changing how this item is tracked.");
       const { action: _action, itemId: _id, reason, ...fields } = command;
+      if (fields.imageUrl?.startsWith("/api/inventory/")) delete fields.imageUrl;
       Object.assign(item, fields);
       if (availableStock(item) < 0) throw new DomainError("Total stock can't be less than damaged items plus items on loan.");
       detail = `${item.name}: total ${item.total}, damaged ${item.damaged}; ${reason}`; break;

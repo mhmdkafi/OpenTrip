@@ -8,5 +8,15 @@ export type Source = { dateOrder?: "dmy" | "mdy"; id: string; tripId: string; sp
 export type Audit = { id: string; userId: string; at: string; action: string; detail: string };
 export type Workspace = { trips: Trip[]; bookings: Booking[]; participants: Person[]; payments: Payment[]; cash: Cash[]; inventory: Inventory[]; sources: Source[]; audit: Audit[]; requests: string[] };
 export const emptyWorkspace = (): Workspace => ({ trips: [], bookings: [], participants: [], payments: [], cash: [], inventory: [], sources: [], audit: [], requests: [] });
-export const paidFor = (state: Workspace, personId: string) => state.payments.reduce((sum, p) => sum + p.allocations.filter(a => a.participantId === personId).reduce((s, a) => s + a.amount, 0), 0);
+const paidIndex = new WeakMap<Payment[], { length: number; totals: Map<string, number> }>();
+export function paidFor(state: Workspace, personId: string) {
+  let index = paidIndex.get(state.payments);
+  if (!index || index.length !== state.payments.length) {
+    const totals = new Map<string, number>();
+    for (const payment of state.payments) for (const a of payment.allocations) totals.set(a.participantId, (totals.get(a.participantId) ?? 0) + a.amount);
+    index = { length: state.payments.length, totals };
+    paidIndex.set(state.payments, index);
+  }
+  return index.totals.get(personId) ?? 0;
+}
 export const availableStock = (item: Inventory) => item.total - item.damaged - item.loans.filter(l => !l.returned).reduce((sum, l) => sum + l.quantity, 0);

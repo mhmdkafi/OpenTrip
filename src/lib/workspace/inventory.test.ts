@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applyCommand, DomainError } from "./commands";
-import { emptyWorkspace, availableStock, type Workspace, type Inventory } from "./types";
+import { emptyWorkspace, availableStock, paidFor, type Workspace, type Inventory } from "./types";
 
 const userId = "tester";
 let seq = 0;
@@ -252,4 +252,19 @@ test("applyCommand is idempotent for a repeated request id", () => {
 test("DomainError carries the expected default status", () => {
   const error = new DomainError("contoh");
   assert.equal(error.status, 400);
+});
+
+test("inventory.update keeps the stored photo when the client echoes its photo URL", () => {
+  const photo = "data:image/png;base64,iVBORw0KGgo=";
+  const state = applyCommand(withItem({ imageUrl: photo }), { action: "inventory.update", itemId, name: "Tenda dome", kind: "rental", total: 10, damaged: 0, reason: "", imageUrl: `/api/inventory/${itemId}/photo?v=0123456789ab` }, userId, reqId());
+  assert.equal(state.inventory[0].imageUrl, photo);
+});
+
+test("paidFor stays correct after new payments are added", () => {
+  const state = baseState();
+  state.payments.push({ id: reqId(), tripId, amount: 50000, method: "transfer", notes: "", verifiedAt: "", allocations: [{ participantId: "p1", amount: 50000 }], proof: "" });
+  assert.equal(paidFor(state, "p1"), 50000);
+  state.payments.push({ id: reqId(), tripId, amount: 25000, method: "transfer", notes: "", verifiedAt: "", allocations: [{ participantId: "p1", amount: 25000 }], proof: "" });
+  assert.equal(paidFor(state, "p1"), 75000);
+  assert.equal(paidFor(state, "p2"), 0);
 });
