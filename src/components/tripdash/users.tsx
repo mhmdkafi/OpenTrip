@@ -38,7 +38,7 @@ export function UsersPage({initial}:{initial:Result|null}) {
     finally{setBusy(false);}
   }
   return <>
-    <div className="page-heading"><div><h1>Users</h1><p>Owners and admins in this workspace.</p></div>
+    <div className="page-heading"><div><h1>Users</h1></div>
       {owner && <button className="td-button" onClick={()=>{setFormError("");setEditing("new");}}><Plus size={16} aria-hidden="true"/>Add admin</button>}
     </div>
     {notice&&<p className="notice" role="status">{notice}</p>}
