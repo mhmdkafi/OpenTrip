@@ -3,6 +3,11 @@ import { DomainError } from "./commands";
 
 export const USERS_PAGE_SIZE = 20;
 
+// Latest of the dashboard heartbeat and the last sign-in.
+function presence(lastSeen?: string, lastSignIn?: string) {
+  return { lastActiveAt: [lastSeen, lastSignIn].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null };
+}
+
 export async function listUsers(tenantId: string, role: "owner" | "admin", page = 1) {
   const admin = createAdminClient();
   const { data, count, error } = await admin.from("user_memberships")
@@ -14,7 +19,7 @@ export async function listUsers(tenantId: string, role: "owner" | "admin", page 
     const { data: account, error: accountError } = await admin.auth.admin.getUserById(member.user_id);
     if (accountError) throw new DomainError("Could not load user profiles. Try again.", 503);
     return { id: member.user_id, name: (account.user?.user_metadata?.name as string) || "", email: profile.email as string,
-      role: member.role as "owner" | "admin", lastSignInAt: account.user?.last_sign_in_at ?? null };
+      role: member.role as "owner" | "admin", ...presence(account.user?.app_metadata?.last_seen_at as string | undefined, account.user?.last_sign_in_at) };
   }));
   return { users, total: count || 0, page, role };
 }
