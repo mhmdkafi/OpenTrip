@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
-import { cashDate, cashTotals, filterPeriod, previousReference } from "@/lib/workspace/finance-view";
+import { attributeToTrips, cashDate, cashTotals, filterPeriod, previousReference, recordedTime } from "@/lib/workspace/finance-view";
 import { dateLabel, todayWib, weekKey } from "@/lib/workspace/presentation";
 import { periodBounds } from "@/lib/workspace/period";
 import type { Cash } from "@/lib/workspace/types";
@@ -32,15 +32,18 @@ function FinanceView() {
   const [editing,setEditing] = useState<Cash|"new"|null>(null);
   const [deleting,setDeleting] = useState<Cash|null>(null);
 
-  const entries = filterPeriod(state.cash,period,reference);
-  const previous = filterPeriod(state.cash,period,previousReference(period,reference));
+  const cash = useMemo(()=>attributeToTrips(state.cash,state.trips),[state.cash,state.trips]);
+  const entries = filterPeriod(cash,period,reference);
+  const previous = filterPeriod(cash,period,previousReference(period,reference));
   const [start,end] = periodBounds(period,reference);
-  const opening = cashTotals(state.cash.filter(c=>Date.parse(c.occurredAt)<start)).net;
-  const closing = cashTotals(state.cash.filter(c=>Date.parse(c.occurredAt)<end)).net;
+  const opening = cashTotals(cash.filter(c=>Date.parse(c.occurredAt)<start)).net;
+  const closing = cashTotals(cash.filter(c=>Date.parse(c.occurredAt)<end)).net;
   const selectedTrip = state.trips.find(t=>t.id===tripId);
-  const detailEntries = entries
+  // A trip's own page shows its whole history: payments are dated at registration,
+  // which can fall months before departure. A week drill-down stays period-scoped.
+  const detailEntries = (detailWeek ? entries : cash)
     .filter(c=>c.tripId===tripId&&(!detailWeek||weekKey(cashDate(c))===detailWeek))
-    .sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
+    .sort((a,b)=>recordedTime(b).localeCompare(recordedTime(a)));
 
   function openTrip(id: string, week?: string) {
     setTripId(id); setDetailWeek(week??null); setTab("transactions");
@@ -58,12 +61,12 @@ function FinanceView() {
   ];
 
   return <div className="cashflow-workspace">
-    <FinancePeriod period={period} reference={reference} onChange={changePeriod}/>
+    {(tripId===null||detailWeek)&&<FinancePeriod period={period} reference={reference} onChange={changePeriod}/>}
     {tripId===null ? <>
       <FinanceSummary entries={entries} previous={previous} period={period}/>
       <div className={`cf-analysis ${period==="week" ? "is-weekly" : ""}`}>
         <div className="cf-panel cf-chart-panel">
-          {(period==="month"||period==="year")&&<CashGraph key={period+reference} entries={state.cash} period={period} reference={reference}/>}
+          {(period==="month"||period==="year")&&<CashGraph key={period+reference} entries={cash} period={period} reference={reference}/>}
           <div className="cash-balance" aria-label="Recorded cash balance"><div><span>Recorded opening balance</span><strong>{formatRupiah(opening)}</strong></div><ArrowRight size={16}/><div><span>Recorded closing balance</span><strong>{formatRupiah(closing)}</strong></div><small>Based on transactions in the app</small></div>
         </div>
         <ExpenseBreakdown entries={entries}/>
@@ -71,7 +74,7 @@ function FinanceView() {
       <FinanceRecap entries={entries} trips={state.trips} period={period} reference={reference} onOpen={openTrip}/>
     </> : <>
       <section className="cf-detail-heading detail-finance-heading">
-        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Back to cashflow summary</button><h2>{selectedTrip?.title??(tripId===""?"General business":"Trip not found")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transactions for the week of "+dateLabel(detailWeek) : "Transactions in the selected period"}</p></div>
+        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Back to cashflow summary</button><h2>{selectedTrip?.title??(tripId===""?"General business":"Trip not found")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transactions for the week of "+dateLabel(detailWeek) : "All transactions for this trip"}</p></div>
         {(selectedTrip||tripId==="")&&<button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Record expense</button>}
       </section>
       <FinanceSummary entries={detailEntries} period={period}/>
@@ -85,7 +88,7 @@ function FinanceView() {
           }}>{item.label}{item.count!==undefined&&<span>{item.count}</span>}</button>)}
         </div>
         <div role="tabpanel" id={"cf-panel-"+tab} aria-labelledby={"cf-tab-"+tab} tabIndex={0}>
-          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={state.cash} trips={state.trips} tripId={tripId} onEdit={setEditing} onDelete={setDeleting}/>}
+          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={cash} trips={state.trips} tripId={tripId} onEdit={setEditing} onDelete={setDeleting}/>}
           {tab==="participants"&&selectedTrip&&<TripReceivables state={state} tripId={tripId}/>}
           {tab==="categories"&&<ExpenseBreakdown entries={detailEntries}/>}
         </div>
