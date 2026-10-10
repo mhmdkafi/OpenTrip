@@ -181,3 +181,46 @@
 .cf-compare .dd-trigger { height: 36px; padding: 0 10px; font-size: 13px; }
 .cf-compare .dd { min-width: 0; }
 
+/* Transfer proof preview inside the payment proof card. */
+.proof-image { display: block; margin-top: 16px; border: 1px solid #e6e8ec; border-radius: 12px; overflow: hidden; background: #f6f7f9; }
+.proof-image img { display: block; width: 100%; max-height: 420px; object-fit: contain; }
+.proof-note { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #fefbe8; color: #854d0e; font-size: 12px; }
+
+/* Payment review: proof photo beside the amount, one-click approve. */
+.td-modal:has(.pr-layout), .td-modal:has(.pr-done) { width: min(980px, calc(100vw - 32px)); max-width: 980px; }
+.pr-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); gap: 24px; align-items: start; }
+.pr-proof { display: grid; gap: 10px; }
+.pr-proof .proof-image { margin-top: 0; min-height: 280px; display: grid; place-items: center; }
+.pr-proof .proof-image img { max-height: 560px; }
+.pr-proof .td-secondary { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 13px; }
+.pr-details { display: grid; gap: 14px; }
+.pr-progress { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #667085; }
+.pr-progress .cal-nav:disabled { opacity: .4; }
+.pr-details h3 { font-size: 18px; font-weight: 600; color: #101828; }
+.pr-people { display: grid; border: 1px solid #e6e8ec; border-radius: 12px; overflow: hidden; }
+.pr-people > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: 14px; }
+.pr-people > div:nth-child(even) { background: #f6f7f9; }
+.pr-people span { display: grid; gap: 2px; font-weight: 500; color: #101828; }
+.pr-people small { font-size: 12px; font-weight: 400; color: #667085; }
+.pr-people strong { font-weight: 600; white-space: nowrap; }
+.pr-total { display: flex; align-items: baseline; justify-content: space-between; padding: 14px; border-radius: 12px; background: #e8f3ec; color: #14532d; }
+.pr-total span { font-size: 13px; font-weight: 500; }
+.pr-total strong { font-size: 24px; font-weight: 700; letter-spacing: -.5px; }
+.pr-bank, .pr-meta { font-size: 13px; color: #667085; }
+.pr-bank strong { color: #101828; }
+.pr-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+.pr-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 999px; font-size: 15px; font-weight: 600; }
+.pr-approve { background: #15803d; color: #fff; border: 0; }
+.pr-approve:hover:not(:disabled) { background: #116b33; }
+.pr-reject { border: 1px solid #fbd5d5; background: #fff; color: #dc2626; }
+.pr-reject:hover:not(:disabled) { background: #fef4f4; }
+.pr-partial-link { justify-self: start; font-size: 13px; font-weight: 500; color: #667085; text-decoration: underline; }
+.pr-partial { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.pr-warning { display: grid; gap: 10px; padding: 14px; border-radius: 12px; background: #fefbe8; color: #854d0e; font-size: 13px; }
+.pr-warning .td-secondary { justify-self: start; }
+.pr-done { display: grid; justify-items: center; gap: 8px; padding: 40px 20px; text-align: center; color: #667085; }
+.pr-done svg { color: #15803d; }
+.pr-done h3 { font-size: 18px; font-weight: 600; color: #101828; }
+.pr-heading-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+@media (max-width: 860px) { .pr-layout { grid-template-columns: minmax(0, 1fr); } .pr-actions { grid-template-columns: 1fr; } }
+

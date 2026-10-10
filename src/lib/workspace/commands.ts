@@ -15,6 +15,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: name }),
   z.object({ action: z.literal("participant.cancel"), participantId: id, reason: name }),
   z.object({ action: z.literal("payment.verify"), participantIds: z.array(id).min(1).max(500), amount: money.positive(), method: z.enum(["transfer", "cash", "other"]), notes: z.string().max(500).default(""), fullyPaid: z.boolean().default(false) }),
+  z.object({ action: z.literal("payment.reject"), participantIds: z.array(id).min(1).max(500), reason: z.string().trim().max(200).default("") }),
   z.object({ action: z.literal("expense.create"), tripId: z.union([id, z.literal("")]), amount: money.positive(), date, category: name, description: name }),
   z.object({ action: z.literal("expense.update"), expenseId: id, amount: money.positive(), date, category: name, description: name }),
   z.object({ action: z.literal("expense.delete"), expenseId: id, reason: name }),
@@ -89,6 +90,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       if (command.fullyPaid && command.amount < total) throw new DomainError("The transfer amount doesn't cover full payment.");
       let left = command.amount;
       const allocations = people.map((p, i) => { const amount = Math.min(left, remainder[i]); left -= amount; return { participantId: p.id, amount }; });
+      for (const booking of bookings) if (booking.proof) booking.proofStatus = "approved";
       const paymentId = crypto.randomUUID();
       state.payments.push({ id: paymentId, tripId, amount: command.amount, method: command.method, notes: command.notes, verifiedAt: now, allocations, proof: bookings[0].proof });
       // One transfer = one cash entry. For groups use earliest source timestamp,
@@ -96,6 +98,11 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       const occurredAt = bookings.map(b => b.registeredAt).sort()[0];
       state.cash.push({ id: crypto.randomUUID(), tripId, direction: "in", amount: command.amount, occurredAt, description: `Payment from ${people.map(p => p.name).join(", ")}`, category: "Participant payment", sourceId: paymentId, dateSource: "registration" });
       detail = `${command.amount} rupiah; ${people.length} participants; cash date ${occurredAt}`; break;
+    }
+    case "payment.reject": {
+      const people = command.participantIds.map(id => found(state.participants.find(p => p.id === id), "Participant"));
+      for (const booking of new Set(people.map(p => found(state.bookings.find(b => b.id === p.bookingId), "Booking")))) booking.proofStatus = "rejected";
+      detail = `Rejected proof: ${people.map(p => p.name).join(", ")}${command.reason ? `; ${command.reason}` : ""}`; break;
     }
     case "expense.create": {
       if (command.tripId) found(state.trips.find(t => t.id === command.tripId), "Trip");
