@@ -33,12 +33,14 @@ const MOUNTAINS: [string, number, number, string?][] = [
 ];
 const TRIPS_PER_MONTH = 8;
 
-// Eight departure dates in a month, weekends first; October stops after its third week (the 18th).
+// Eight departure dates in a month, weekends first; October 2026 stops after its third week (the 18th) with weekends only.
 function departures(year: number, month: number) {
   const last = month === 10 && year === 2026 ? 18 : new Date(Date.UTC(year, month, 0)).getUTCDate();
   const days = Array.from({ length: last }, (_, i) => i + 1);
   const weekday = (day: number) => new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   const weekends = days.filter(day => [0, 6].includes(weekday(day)));
+  // October 2026 keeps only its weekend trips (6), leaving no Friday departures.
+  if (year === 2026 && month === 10) return weekends.map(day => `${year}-10-${String(day).padStart(2, "0")}`);
   const fridays = days.filter(day => weekday(day) === 5);
   const chosen = [...weekends];
   for (const day of fridays) if (chosen.length < TRIPS_PER_MONTH) chosen.push(day);
