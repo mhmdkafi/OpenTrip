@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applyCommand, DomainError } from "./commands";
 import { emptyWorkspace, availableStock, paidFor, type Workspace, type Inventory } from "./types";
+import { pendingProofs } from "./payment-queue";
 
 const userId = "tester";
 let seq = 0;
@@ -267,4 +268,31 @@ test("paidFor stays correct after new payments are added", () => {
   state.payments.push({ id: reqId(), tripId, amount: 25000, method: "transfer", notes: "", verifiedAt: "", allocations: [{ participantId: "p1", amount: 25000 }], proof: "" });
   assert.equal(paidFor(state, "p1"), 75000);
   assert.equal(paidFor(state, "p2"), 0);
+});
+
+test("payment review groups a shared proof, skips rejected and fully paid, and reject marks the proof", () => {
+  const state = baseState();
+  const booking = (id: string, proof: string) => ({ id, tripId, sourceId: "s", fingerprint: id, registeredAt: "2026-10-01T00:00:00Z", rawName: id, proof, phone: "" });
+  const person = (id: string, bookingId: string) => ({ id, bookingId, tripId, name: id, meetingPoint: "St. Bandung", facility: "Full Transport", raincoats: 0, charge: 100000, reviewed: true, status: "active" as const });
+  const ids = ["11111111-1111-4111-8111-1111111111a1", "11111111-1111-4111-8111-1111111111a2", "11111111-1111-4111-8111-1111111111a3"];
+  state.bookings.push(booking("b1", "https://drive.google.com/file/d/shared_proof_123456789012/view"), booking("b2", "https://drive.google.com/file/d/shared_proof_123456789012/view"), booking("b3", "https://drive.google.com/file/d/other_proof_1234567890123/view"));
+  state.participants.push(person(ids[0], "b1"), person(ids[1], "b2"), person(ids[2], "b3"));
+  const queue = pendingProofs(state);
+  assert.equal(queue.length, 2);
+  assert.equal(queue.find(g => g.people.length === 2)?.due, 200000);
+  const rejected = applyCommand(state, { action: "payment.reject", participantIds: [ids[2]], reason: "" }, userId, reqId());
+  assert.equal(rejected.bookings.find(b => b.id === "b3")?.proofStatus, "rejected");
+  assert.equal(pendingProofs(rejected).length, 1);
+  const approved = applyCommand(rejected, { action: "payment.verify", participantIds: [ids[0], ids[1]], amount: 200000, method: "transfer", notes: "", fullyPaid: true }, userId, reqId());
+  assert.equal(pendingProofs(approved).length, 0);
+});
+
+test("a proof approved as a partial payment does not return to the review queue", () => {
+  const state = baseState();
+  const pid = "11111111-1111-4111-8111-1111111111b1";
+  state.bookings.push({ id: "b9", tripId, sourceId: "s", fingerprint: "b9", registeredAt: "2026-10-01T00:00:00Z", rawName: "x", proof: "https://drive.google.com/file/d/deposit_proof_123456789012/view", phone: "" });
+  state.participants.push({ id: pid, bookingId: "b9", tripId, name: "x", meetingPoint: "Basecamp", facility: "Non Transport", raincoats: 0, charge: 100000, reviewed: true, status: "active" });
+  const paid = applyCommand(state, { action: "payment.verify", participantIds: [pid], amount: 50000, method: "transfer", notes: "", fullyPaid: false }, userId, reqId());
+  assert.equal(paidFor(paid, pid), 50000);
+  assert.equal(pendingProofs(paid).length, 0);
 });
