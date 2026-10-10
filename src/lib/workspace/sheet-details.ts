@@ -33,14 +33,27 @@ export function readTripDetails(title:string,values:string[][],headerRow:number,
   }
   const titleDate=title.match(/\d{4}-\d{2}-\d{2}/)?.[0]??title.match(/\d{1,2}\s+[a-z]+\s+20\d{2}/i)?.[0]??"";
   const departureDate=date(field(["Tanggal keberangkatan","Tanggal trip","Departure date","Tanggal perjalanan"])||titleDate);
-  const volume=field(["Volume","Edisi"])||title.match(/\bvol(?:ume)?\.?\s*(\d+)/i)?.[1]||"";
+  const rawVolume=field(["Volume","Edisi"])||title.match(/\bvol(?:ume)?\.?\s*(\d+)/i)?.[1]||"";
+  const volume=/^\d+$/.test(rawVolume)?`Vol ${rawVolume}`:rawVolume;
   // Registration headers often bundle prices as free text (e.g. "175k Full Transport"),
   // not as their own labeled column — fall back to scanning the header text for them.
   const note=headers.join("\n");
   const fromNote=(regex:RegExp)=>amount(note.match(regex)?.[1]??"");
+  // Registration notes often list the account as separate lines: number, bank, "A/N", holder.
+  const bankFromNote=()=>{
+    const lines=note.split(/\n+/).map(line=>line.trim()).filter(Boolean);
+    const at=lines.findIndex(line=>/^\d[\d\s.-]{6,20}\d$/.test(line));
+    if(at<0)return "";
+    const number=lines[at].replace(/[\s.-]/g,"");
+    const bank=lines.slice(Math.max(0,at-1),at+3).find(line=>/^(bca|bri|bni|mandiri|bsi|btn|cimb|cimb niaga|permata|danamon|jago|seabank|dana|ovo|gopay)$/i.test(line))??"";
+    const marker=lines.findIndex((line,index)=>index>at&&/^a\.?\s*\/?\s*n\.?$/i.test(line));
+    const inline=lines.slice(at+1).find(line=>/^a\.?\s*\/?\s*n\.?\s+\S/i.test(line));
+    const holder=marker>0?lines[marker+1]??"":inline?.replace(/^a\.?\s*\/?\s*n\.?\s+/i,"")??"";
+    return [bank.toUpperCase(),number,holder&&`a.n. ${holder}`].filter(Boolean).join(" ").slice(0,300);
+  };
   const fields:Omit<Trip,"id"|"status">={
     title:(field(["Nama perjalanan","Nama trip","Trip name"])||title.replace(/\s*\((?:Responses|Respons|Jawaban)\)\s*$/i,"").replace(/\s*\bvol(?:ume)?\.?\s*\d+/i,"")).trim().slice(0,200),
-    departureDate,volume,location:field(["Lokasi","Destinasi","Location"]),bankAccount:field(["Rekening","Informasi rekening","Bank account"]),
+    departureDate,volume,location:field(["Lokasi","Destinasi","Location"]),bankAccount:field(["Rekening","Informasi rekening","Bank account"])||bankFromNote(),
     fullPrice:amount(field(["Tarif Full","Harga Full","Tarif Full Transport","Harga Full Transport","Full Transport (Rp)"]))||fromNote(/(\d[\d.,]*\s*k?)\s*full\s*transport/i),
     nonPrice:amount(field(["Tarif Non","Harga Non","Tarif Non Transport","Harga Non Transport","Non Transport (Rp)"]))||fromNote(/(\d[\d.,]*\s*k?)\s*non\s*transport/i),
     raincoatPrice:amount(field(["Tarif jas hujan","Harga jas hujan"])||headers.find(h=>/jas hujan/i.test(h))?.match(/\+\s*([\d.,]+\s*k?)/i)?.[1]||"")||fromNote(/jas\s*hujan[^\d]*?\+\s*(\d[\d.,]*\s*k?)/i),
