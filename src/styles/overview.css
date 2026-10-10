@@ -248,3 +248,9 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 .ts-month + .ts-month { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e6e8ec; }
 .ts-month-label { margin: 0 0 10px 2px; font-size: 15px; font-weight: 600; color: #101828; }
 .ts-list .ts-empty { padding: 36px 16px; border: 0; }
+
+/* Past days recede so upcoming dates stand out; their trips stay readable. */
+.cal-cell.is-past { background: #fafbfc; border-color: #eef0f3; }
+.cal-cell.is-past .cal-number { color: #98a2b3; font-weight: 400; }
+.cal-cell.is-past.has-trips { opacity: .7; }
+button.cal-cell.is-past:hover { opacity: 1; }

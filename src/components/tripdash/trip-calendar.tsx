@@ -31,7 +31,7 @@ export function TripCalendar({ state, trips, today, month, onMonth, selected, on
       const statuses = events.map(t => tripStatus(t, state, today));
       const tone = PRIORITY.find(s => statuses.includes(s));
       const label = new Date(year, index, day).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-      return <button key={date} className={`cal-cell ${date === today ? "is-today" : ""} ${selected === date ? "is-selected" : ""} ${tone ? `has-trips ov-tone-${tone}` : ""}`} aria-label={`${label}, ${events.length} trip${events.length ? `: ${events.map((t, n) => `${t.title} (${statusLabel[statuses[n]]})`).join(", ")}` : ""}`} aria-pressed={selected === date} aria-current={date === today ? "date" : undefined} onClick={() => onSelect(selected === date ? "" : date)}>
+      return <button key={date} className={`cal-cell ${date === today ? "is-today" : date < today ? "is-past" : ""} ${selected === date ? "is-selected" : ""} ${tone ? `has-trips ov-tone-${tone}` : ""}`} aria-label={`${label}, ${events.length} trip${events.length ? `: ${events.map((t, n) => `${t.title} (${statusLabel[statuses[n]]})`).join(", ")}` : ""}`} aria-pressed={selected === date} aria-current={date === today ? "date" : undefined} onClick={() => onSelect(selected === date ? "" : date)}>
         <span className="cal-number">{day}</span>
         {events.slice(0, 2).map(trip => <span className="cal-event" key={trip.id}>{trip.title}</span>)}
         {events.length > 2 && <small className="cal-more">+{events.length - 2} more</small>}
