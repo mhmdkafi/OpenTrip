@@ -10,7 +10,7 @@ export async function requestJson(url: string, body?: unknown, method = "POST") 
   return result;
 }
 type Snapshot = { state: Workspace; revision: number };
-type Context = Snapshot & { basePath: string; busy: boolean; loading: boolean; loadError: string; error: string; notice: string; reload: () => Promise<void>; run: (fn: () => Promise<void>) => Promise<void>; mutate: (command: Command) => Promise<void>; replace: (data: Snapshot) => void };
+type Context = Snapshot & { basePath: string; busy: boolean; loading: boolean; loadError: string; error: string; notice: string; reload: () => Promise<void>; run: (fn: () => Promise<void>) => Promise<void>; mutate: (command: Command) => Promise<void>; replace: (data: Snapshot) => void; patchState: (fn: (state: Workspace) => Workspace) => void };
 const Store = createContext<Context | null>(null);
 
 export function WorkspaceProvider({ children, initial }: { children: ReactNode; initial?: Snapshot | null }) {
@@ -28,6 +28,8 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
     
     setData({ state: next.state, revision: next.revision });
   }
+  // Local-only update that keeps the revision, for results the server saves later.
+  const patchState = useCallback((fn: (state: Workspace) => Workspace) => setData(current => ({ ...current, state: fn(current.state) })), []);
   const reload = useCallback(async () => {
     try {
       setData(await requestJson("/api/workspace"));
@@ -53,6 +55,6 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
     replace(await requestJson("/api/workspace", { revision: data.revision, requestId: pending.current.id, command }));
     pending.current = null;
   }
-  return <Store.Provider value={{ ...data, basePath: "/dashboard", loading, busy, loadError, error, notice, reload, run, mutate, replace }}>{children}</Store.Provider>;
+  return <Store.Provider value={{ ...data, basePath: "/dashboard", loading, busy, loadError, error, notice, reload, run, mutate, replace, patchState }}>{children}</Store.Provider>;
 }
 export function useWorkspace() { const store = useContext(Store); if (!store) throw new Error("Workspace provider missing"); return store; }
