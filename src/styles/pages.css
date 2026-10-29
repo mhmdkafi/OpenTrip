@@ -279,8 +279,6 @@
 
 /* Payment review: proof on the left with in-image navigation, decision column on the right. */
 .pr-proof { position: relative; display: grid; place-items: center; min-height: 320px; border-radius: 14px; background: #f2f4f7; overflow: hidden; }
-.pr-proof .proof-image { margin: 0; width: 100%; display: grid; place-items: center; background: transparent; border: 0; }
-.pr-proof .proof-image img { width: 100%; max-height: 600px; object-fit: contain; }
 .pr-proof .proof-note { padding: 24px; text-align: center; }
 .pr-nav { position: absolute; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid #e6e8ec; background: #ffffffeb; color: #101828; box-shadow: 0 4px 14px #1018281f; transition: background .15s ease, opacity .15s ease, scale .15s ease; }
 .pr-nav:hover:not(:disabled) { background: #fff; scale: 1.06; }
@@ -304,7 +302,7 @@
 .pr-approve:hover:not(:disabled) { background: #116b33; }
 .pr-reject { border: 0; background: #dc2626; color: #fff; }
 .pr-reject:hover:not(:disabled) { background: #b91c1c; }
-@media (max-width: 860px) { .pr-proof { min-height: 240px; } .pr-proof .proof-image img { max-height: 420px; } }
+@media (max-width: 860px) { .pr-proof { min-height: 240px; } }
 
 /* Proof images keep a fixed frame and show a skeleton until loaded, so stepping between proofs never resizes the modal. */
 .proof-image { position: relative; }
@@ -315,10 +313,8 @@
 .money-skeleton { display: inline-block; width: 86px; height: 14px; border-radius: 6px; vertical-align: middle; }
 @keyframes td-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { .proof-skeleton, .money-skeleton { animation: none; } }
-.pr-proof { height: min(600px, 68vh); min-height: 0; }
-.pr-proof .proof-image { height: 100%; }
-.pr-proof .proof-image img { height: 100%; max-height: none; }
-@media (max-width: 860px) { .pr-proof { height: min(420px, 55vh); } .pr-proof .proof-image img { max-height: none; } }
+.pr-proof { display: flex; align-items: center; justify-content: center; height: min(600px, 68vh); min-height: 0; }
+@media (max-width: 860px) { .pr-proof { height: min(420px, 55vh); } }
 /* One action per row: Review opens the proof queue at this participant; Record payment covers transfers without a proof. */
 .row-review, .row-record { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; transition: background .15s ease; }
 .row-review { border: 0; background: #14532d; color: #fff; }
@@ -326,3 +322,6 @@
 .row-record { border: 1px solid #e6e8ec; background: #fff; color: #344054; }
 .row-record:hover { background: #f6f7f9; }
 .proof-image.is-loading { min-height: 240px; }
+/* Fit the whole proof inside the fixed frame: never crop, never upscale past the frame. */
+.pr-proof .proof-image { margin: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; }
+.pr-proof .proof-image img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
