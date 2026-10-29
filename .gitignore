@@ -21,3 +21,6 @@
 Thumbs.db
 .idea/
 .vscode/
+
+# OCR language data cached by tesseract.js
+*.traineddata

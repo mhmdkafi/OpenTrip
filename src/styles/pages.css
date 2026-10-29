@@ -279,3 +279,18 @@
   .pager-step span { display: none; }
   .pager-pages button { min-width: 32px; height: 32px; padding: 0 8px; }
 }
+/* Proof submitted but not verified: show the expected amount in amber. */
+.pending-money { color: #b45309; }
+.pending-money small { color: #b45309; opacity: .8; font-size: 11px; }
+.pt-status-verify { background: #b45309; }
+
+/* Amounts read from transfer proofs. */
+.scan-note { margin-top: 4px; font-size: 12px; color: #667085; }
+.reading-money { color: #98a2b3; font-weight: 400; }
+.pr-detected { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline; padding: 12px 14px; border-radius: 12px; border: 1px solid #e6e8ec; background: #f6f7f9; font-size: 13px; color: #667085; }
+.pr-detected strong { font-size: 16px; color: #101828; }
+.pr-detected small { grid-column: 1 / -1; font-size: 12px; }
+.pr-detected.is-match { border-color: #c9ecd6; background: #effaf3; }
+.pr-detected.is-match strong { color: #15803d; }
+.pr-detected.is-short { border-color: #f6e7a8; background: #fefbe8; }
+.pr-detected.is-short strong, .pr-detected.is-short small { color: #a16207; }

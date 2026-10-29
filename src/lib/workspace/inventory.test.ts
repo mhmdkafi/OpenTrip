@@ -296,3 +296,20 @@ test("a proof approved as a partial payment does not return to the review queue"
   assert.equal(paidFor(paid, pid), 50000);
   assert.equal(pendingProofs(paid).length, 0);
 });
+
+test("an amount read from a shared proof is split across its participants in order", async () => {
+  const { claimedAmounts, unscannedProofs } = await import("./payment-queue");
+  const state = baseState();
+  const proof = "https://drive.google.com/file/d/group_proof_1234567890123/view";
+  const ids = ["11111111-1111-4111-8111-1111111111c1", "11111111-1111-4111-8111-1111111111c2"];
+  for (const [i, id] of ids.entries()) {
+    state.bookings.push({ id: `bc${i}`, tripId, sourceId: "s", fingerprint: `bc${i}`, registeredAt: "2026-10-01T00:00:00Z", rawName: id, proof, phone: "" });
+    state.participants.push({ id, bookingId: `bc${i}`, tripId, name: id, meetingPoint: "Basecamp", facility: "Non Transport", raincoats: 0, charge: 100000, reviewed: true, status: "active" });
+  }
+  assert.deepEqual(unscannedProofs(state), [proof]);
+  for (const booking of state.bookings) if (booking.proof === proof) booking.proofAmount = 150000;
+  const claimed = claimedAmounts(state);
+  assert.equal(claimed.get(ids[0]), 100000);
+  assert.equal(claimed.get(ids[1]), 50000);
+  assert.deepEqual(unscannedProofs(state), []);
+});

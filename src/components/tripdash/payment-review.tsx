@@ -20,6 +20,8 @@ export function PaymentReview({ tripId, onClose, onReviewBill }: { tripId?: stri
   const ids = group?.people.map(p => p.id) ?? [];
   // After an action the group leaves the queue, so the same position shows the next one.
   const act = (action: () => Promise<void>) => void run(async () => { await action(); setPartial(null); });
+  // Approve what the proof shows when it could be read; otherwise the full amount due.
+  const received = typeof group?.detected === "number" && group.detected > 0 ? group.detected : group?.due ?? 0;
   const approve = (amount: number) => act(() => mutate({ action: "payment.verify", participantIds: ids, amount, method: "transfer", notes: amount < group.due ? "Partial payment" : "", fullyPaid: amount >= group.due }));
 
   return <Modal title="Payment review" onClose={onClose} wide>
@@ -30,16 +32,17 @@ export function PaymentReview({ tripId, onClose, onReviewBill }: { tripId?: stri
         <h3>{trip?.title}{trip?.volume ? ` ${trip.volume}` : ""}</h3>
         <div className="pr-people">{group.people.map(person => <div key={person.id}><span>{person.name}<small>{person.facility}{person.raincoats ? ` · ${person.raincoats} raincoat` : ""}</small></span><strong>{formatRupiah(person.charge - paidFor(state, person.id))}</strong></div>)}</div>
         <div className="pr-total"><span>Amount to receive</span><strong>{formatRupiah(group.due)}</strong></div>
+        <div className={`pr-detected ${group.detected == null ? "is-unknown" : group.detected >= group.due ? "is-match" : "is-short"}`}><span>Read from proof</span><strong>{group.detected === undefined ? "Reading…" : group.detected === null ? "Not readable" : formatRupiah(group.detected)}</strong>{typeof group.detected === "number" && group.detected < group.due && <small>{formatRupiah(group.due - group.detected)} short, will be recorded as a deposit</small>}{typeof group.detected === "number" && group.detected > group.due && <small>{formatRupiah(group.detected - group.due)} more than the bill</small>}</div>
         {trip?.bankAccount && <p className="pr-bank">To <strong>{trip.bankAccount}</strong></p>}
         <p className="pr-meta">Registered {new Date(group.registeredAt).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB</p>
         {needsReview.length ? <div className="pr-warning"><p>{needsReview.map(p => p.name).join(", ")} {needsReview.length === 1 ? "needs a" : "need a"} bill review before approval.</p><button className="td-secondary" onClick={() => onReviewBill(needsReview[0])}><Pencil size={14}/> Review bill</button></div> : <>
           <div className="pr-actions">
-            <button className="td-button pr-approve" disabled={busy} onClick={() => approve(group.due)}><Check size={16}/> Approve</button>
+            <button className="td-button pr-approve" disabled={busy} onClick={() => approve(received)}><Check size={16}/> Approve {formatRupiah(received)}</button>
             <button className="td-secondary pr-reject" disabled={busy} onClick={() => act(() => mutate({ action: "payment.reject", participantIds: ids, reason: "" }))}><X size={16}/> Reject</button>
           </div>
-          {partial === null ? <button className="pr-partial-link" onClick={() => setPartial(group.due)}>Partial amount</button> : <div className="pr-partial">
-            <label className="ts-field"><span className="ts-field-label">Amount received (Rp)</span><span className="ts-control"><input type="number" min={1} max={group.due} value={partial || ""} onChange={e => setPartial(Number(e.target.value))}/></span></label>
-            <button className="td-button" disabled={busy || !partial || partial <= 0} onClick={() => approve(Math.min(partial, group.due))}>Approve amount</button>
+          {partial === null ? <button className="pr-partial-link" onClick={() => setPartial(received)}>Different amount</button> : <div className="pr-partial">
+            <label className="ts-field"><span className="ts-field-label">Amount received (Rp)</span><span className="ts-control"><input type="number" min={1} value={partial || ""} onChange={e => setPartial(Number(e.target.value))}/></span></label>
+            <button className="td-button" disabled={busy || !partial || partial <= 0} onClick={() => approve(partial)}>Approve amount</button>
           </div>}
         </>}
       </div>
