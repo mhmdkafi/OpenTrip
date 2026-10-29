@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { LoginFormData } from "@/types/auth";
 import { z } from "zod";
 import { requireMembership } from "@/lib/auth/membership";
+import { MEMBERSHIP_COOKIE, MEMBERSHIP_TTL_S, signMembership } from "@/lib/auth/forwarded";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -35,7 +36,11 @@ export async function login(formData: LoginFormData) {
       return { success: false, error: "User not found" };
     }
 
-    const {data:profile,error:profileError} = await supabase.from("users").select("status").eq("id",user.id).maybeSingle();
+    // Profile and memberships are independent, so fetch them in one round trip.
+    const [{ data: profile, error: profileError }, { data: memberships, error: membershipError }] = await Promise.all([
+      supabase.from("users").select("status").eq("id", user.id).maybeSingle(),
+      supabase.from("user_memberships").select("tenant_id,role").eq("user_id", user.id).in("role", ["owner", "admin"]),
+    ]);
     if (profileError) {
       return {success:false,error:"Could not load the account profile. Please try again."};
     }
@@ -44,13 +49,7 @@ export async function login(formData: LoginFormData) {
       return {success:false,error:"This account is inactive."};
     }
 
-    const { data: memberships, error: membershipError } = await supabase
-      .from("user_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .in("role", ["owner", "admin"]);
-
-    if (membershipError) {
+    if (membershipError || !memberships) {
       return { success: false, error: "Could not load workspace data" };
     }
 
@@ -78,6 +77,9 @@ export async function login(formData: LoginFormData) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });
+    // Pre-verified membership lets the first dashboard request skip its own membership query.
+    const role = memberships.find(m => m.tenant_id === tenantId)?.role as "owner" | "admin";
+    if (tenantId) cookieStore.set(MEMBERSHIP_COOKIE, signMembership({ userId: user.id, tenantId, role }), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MEMBERSHIP_TTL_S });
 
     revalidatePath("/dashboard");
 

@@ -15,12 +15,12 @@ const GEAR: Gear[] = [
   { name: "Sleeping Mat", kind: "rental", total: 25, damaged: 2, photo: "File:Self-inflating mat.jpg", credit: "Pierrelagrange, CC BY 3.0" },
   { name: "Trekking Pole (pair)", kind: "rental", total: 16, photo: "File:Retracted trekking poles.jpg", credit: "Sarang, public domain" },
   { name: "Headlamp", kind: "rental", total: 30, damaged: 2, photo: "File:Zebralight H600Fc Mk IV headlamp in a GITD silicone holder.jpg", credit: "Siarhei Besarab, CC BY-SA 4.0" },
-  { name: "Rain Poncho", kind: "rental", total: 40, photo: "File:Julie a mis son poncho (2848363220).jpg", credit: "peupleloup, CC BY-SA 2.0" },
+  { name: "Rain Poncho", kind: "operational", total: 40, consumable: true, reorderLevel: 10, photo: "File:Julie a mis son poncho (2848363220).jpg", credit: "peupleloup, CC BY-SA 2.0" },
   { name: "Portable Stove", kind: "operational", total: 8, photo: "File:Primus stove.jpg", credit: "Mikael Korpela, CC BY-SA 3.0" },
-  { name: "Gas Canister", kind: "operational", total: 24, consumable: true, reorderLevel: 10, photo: "File:Butane Canister Valve Connection.jpg", credit: "Jan van Bekkum, CC BY-SA 4.0" },
+  { name: "Gas Canister", kind: "operational", total: 0, consumable: true, reorderLevel: 10, photo: "File:Butane Canister Valve Connection.jpg", credit: "Jan van Bekkum, CC BY-SA 4.0" },
   { name: "Cookset", kind: "operational", total: 8, photo: "File:Schweizer Armee - Gamelle (Feldessgeschirr).JPG", credit: "Swiss Army mess tin, public domain" },
   { name: "First Aid Kit", kind: "operational", total: 6, photo: "File:First-aid travel kit 1.jpg", credit: "Renée Kools, CC BY 4.0" },
-  { name: "Hand Warmer", kind: "operational", total: 50, consumable: true, reorderLevel: 20, photo: "File:Handwaermer11.jpg", credit: "Suricata, CC BY-SA 3.0" },
+  { name: "Hand Warmer", kind: "operational", total: 0, consumable: true, reorderLevel: 20, photo: "File:Handwaermer11.jpg", credit: "Suricata, CC BY-SA 3.0" },
   { name: "Emergency Blanket", kind: "operational", total: 30, consumable: true, reorderLevel: 10, photo: "File:Emergency blanket 20110709.jpg", credit: "Tobosha, public domain" },
 ];
 

@@ -14,6 +14,6 @@ export async function POST(request: NextRequest) {
     const { metadata, sheet, values } = await readPublicSheet(body.spreadsheetUrl);
     const result = importSpreadsheet(current.state, metadata, sheet, values, auth.userId, body.tripId, body.departureDate);
     const revision = await saveWorkspace(auth.tenantId, current.revision, result.state, current.exists);
-    return NextResponse.json({ ...result, state: clientWorkspace(result.state), revision });
+    return NextResponse.json({ ...result, state: await clientWorkspace(result.state), revision });
   } catch (error) { return apiError(error); }
 }

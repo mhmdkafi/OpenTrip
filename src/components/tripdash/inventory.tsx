@@ -20,6 +20,10 @@ import { Pagination } from "./pagination";
 
 const TYPE_OPTIONS = [{ value: "", label: "All types", icon: Boxes }, { value: "operational", label: "Operational", icon: Wrench }, { value: "rental", label: "Rental", icon: Tent }];
 
+const consumableNote = (item: Item, left: number) => left <= 0 ? "Out of stock" : item.reorderLevel !== undefined && left <= item.reorderLevel ? `Low stock · restock at ${item.reorderLevel}` : "In stock";
+// Tints the stock figure: red when nothing is left, amber when a consumable reaches its restock level.
+const stockTone = (item: Item, left: number) => left <= 0 ? " is-out" : item.consumable && item.reorderLevel !== undefined && left <= item.reorderLevel ? " is-low" : "";
+
 export function Inventory() {
   const { state, mutate, run, busy } = useWorkspace();
   const [search, setSearch] = useState(""),
@@ -79,11 +83,13 @@ export function Inventory() {
                         aria-label={`Enlarge photo of ${item.name}`}
                         onClick={() => setViewing(item)}
                       >
+                        {/* Rows show a 160px thumbnail; the full photo loads only when enlarged. */}
                         <Image
-                          src={item.imageUrl}
+                          src={item.thumbnailUrl ?? (item.imageUrl.startsWith("/api/") ? `${item.imageUrl}&w=160` : item.imageUrl)}
                           alt={item.name}
-                          width={420}
-                          height={280}
+                          width={160}
+                          height={160}
+                          decoding="async"
                           unoptimized
                         />
                         <span>Enlarge photo</span>
@@ -116,20 +122,20 @@ export function Inventory() {
                       </p>
                     </div>
                   </div>
-                  <div className="inventory-stock">
+                  <div className={`inventory-stock${item.stockTracked === false ? "" : stockTone(item, available)}`}>
                     {item.stockTracked === false ? (
                       <span className="stock-untracked">
                         Quantity not tracked
                       </span>
                     ) : (
                       <>
+                        {/* Consumables do not come back, so only what is left matters. */}
                         <strong>
                           {available}
-                          <small> / {item.total}</small>
+                          <small>{item.consumable ? " left" : ` / ${item.total}`}</small>
                         </strong>
                         <span>
-                          {used ? `${used} on loan` : "Available"}
-                          {item.damaged ? ` · ${item.damaged} damaged` : ""}
+                          {item.consumable ? consumableNote(item, available) : <>{available <= 0 ? "Out of stock" : used ? `${used} on loan` : "Available"}{available <= 0 && used ? ` · ${used} on loan` : ""}{item.damaged ? ` · ${item.damaged} damaged` : ""}</>}
                         </span>
                       </>
                     )}
@@ -211,16 +217,16 @@ export function Inventory() {
           {detail.stockTracked === false ? (
             <p className="empty-note">Quantity not tracked</p>
           ) : (
-            <div className="inventory-stock">
+            <div className={`inventory-stock${stockTone(detail, availableStock(detail))}`}>
               <strong>
                 {availableStock(detail)}
-                <small> / {detail.total}</small>
+                <small>{detail.consumable ? " left" : ` / ${detail.total}`}</small>
               </strong>
               <span>
-                {detail.total - detail.damaged - availableStock(detail)
+                {detail.consumable ? consumableNote(detail, availableStock(detail)) : <>{availableStock(detail) <= 0 ? "Out of stock" : detail.total - detail.damaged - availableStock(detail)
                   ? `${detail.total - detail.damaged - availableStock(detail)} on loan`
                   : "Available"}
-                {detail.damaged ? ` · ${detail.damaged} damaged` : ""}
+                {detail.damaged ? ` · ${detail.damaged} damaged` : ""}</>}
               </span>
             </div>
           )}
@@ -372,7 +378,7 @@ export function Inventory() {
             >
               <option value="note">Note only</option>
               <option value="lost">Item lost</option>
-              <option value="damaged">Item damaged</option>
+              {!incident.consumable && <option value="damaged">Item damaged</option>}
             </Select>
             {incidentKind !== "note" && (
               <>

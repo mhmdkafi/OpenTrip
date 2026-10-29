@@ -4,8 +4,8 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
-import { attributeToTrips, cashDate, filterPeriod, previousReference, recordedTime } from "@/lib/workspace/finance-view";
-import { dateLabel, todayWib, weekKey } from "@/lib/workspace/presentation";
+import { attributeToTrips, filterPeriod, previousReference, recordedTime } from "@/lib/workspace/finance-view";
+import { dateLabel, todayWib } from "@/lib/workspace/presentation";
 import type { Cash } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
 import { Field, Form, Modal, Submit, text } from "./ui";
@@ -29,7 +29,6 @@ function FinanceView() {
   const [customCompare,setCustomCompare] = useState<string|null>(null);
   const [reference,setReference] = useState(todayWib);
   const [tripId,setTripId] = useState<string|null>(params.get("trip"));
-  const [detailWeek,setDetailWeek] = useState<string|null>(null);
   const [tab,setTab] = useState("transactions");
   const [editing,setEditing] = useState<Cash|"new"|null>(null);
   const [deleting,setDeleting] = useState<Cash|null>(null);
@@ -41,21 +40,18 @@ function FinanceView() {
   const compareLabel = periodLabel(period==="year"?"year":"month",compare,true);
   const selectedTrip = state.trips.find(t=>t.id===tripId);
   // A trip's own page shows its whole history: payments are dated at registration,
-  // which can fall months before departure. A week drill-down stays period-scoped.
-  const detailEntries = (detailWeek ? entries : cash)
-    .filter(c=>c.tripId===tripId&&(!detailWeek||weekKey(cashDate(c))===detailWeek))
+  // which can fall months before departure.
+  const detailEntries = cash
+    .filter(c=>c.tripId===tripId)
     .sort((a,b)=>recordedTime(b).localeCompare(recordedTime(a)));
 
-  function openTrip(id: string, week?: string) {
-    setTripId(id); setDetailWeek(week??null); setTab("transactions");
+  function openTrip(id: string) {
+    setTripId(id); setTab("transactions");
   }
   function changePeriod(value: string, date: string) {
     if (value !== period) setCustomCompare(null);
-    setPeriod(value); setReference(date); setDetailWeek(null);
+    setPeriod(value); setReference(date);
   }
-  const expenseDate = detailWeek
-    ? (period==="month"&&detailWeek<reference.slice(0,7)+"-01" ? reference.slice(0,7)+"-01" : detailWeek)
-    : reference;
   const tabs = [
     { id:"transactions", label:"Transactions", count:detailEntries.length },
     ...(selectedTrip ? [{ id:"participants", label:"Participant payments", count:state.participants.filter(p=>p.tripId===tripId&&p.status==="active").length }] : []),
@@ -63,7 +59,7 @@ function FinanceView() {
   ];
 
   return <div className="cashflow-workspace ov cf-v2">
-    <div className="page-heading ov-heading"><h1>Cashflow</h1>{(tripId===null||detailWeek)&&<div className="cf-heading-tools"><FinancePeriod period={period} reference={reference} onChange={changePeriod}/>{(period!=="month"||!samePeriod("month",reference,todayWib())||customCompare!==null)&&<button type="button" className="filter-reset" onClick={()=>{setPeriod("month");setReference(todayWib());setCustomCompare(null);setDetailWeek(null);}}><RotateCcw size={14}/> Reset</button>}</div>}</div>
+    <div className="page-heading ov-heading"><h1>Cashflow</h1>{tripId===null&&<div className="cf-heading-tools"><FinancePeriod period={period} reference={reference} onChange={changePeriod}/>{(period!=="month"||!samePeriod("month",reference,todayWib())||customCompare!==null)&&<button type="button" className="filter-reset" onClick={()=>{setPeriod("month");setReference(todayWib());setCustomCompare(null);}}><RotateCcw size={14}/> Reset</button>}</div>}</div>
     {tripId===null ? <>
       <FinanceSummary entries={entries} previous={previous} period={period} compareLabel={compareLabel}/>
       {(period==="month"||period==="year")&&<div className="cf-analysis">
@@ -74,7 +70,7 @@ function FinanceView() {
       <FinanceRecap entries={entries} trips={state.trips} period={period} reference={reference} onOpen={openTrip}/>
     </> : <>
       <section className="cf-detail-heading detail-finance-heading">
-        <div><button className="text-link" onClick={()=>setTripId(null)}><ArrowLeft size={15}/> Back to cashflow summary</button><h2>{selectedTrip?.title??(tripId===""?"General business":"Trip not found")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true)+" · " : ""}{detailWeek ? "Transactions for the week of "+dateLabel(detailWeek) : "All transactions for this trip"}</p></div>
+        <button type="button" className="back-button" onClick={()=>setTripId(null)} aria-label="Back to cashflow summary" title="Back to cashflow summary"><ArrowLeft size={18}/></button><div className="cf-detail-title"><h2>{selectedTrip?.title??(tripId===""?"General business":"Trip not found")}</h2><p>{selectedTrip ? dateLabel(selectedTrip.departureDate,true) : "Transactions not tied to a trip"}</p></div>
         {(selectedTrip||tripId==="")&&<button className="td-button" onClick={()=>setEditing("new")}><Plus size={16}/> Record expense</button>}
       </section>
       <FinanceSummary entries={detailEntries} period={period}/>
@@ -88,13 +84,13 @@ function FinanceView() {
           }}>{item.label}{item.count!==undefined&&<span>{item.count}</span>}</button>)}
         </div>
         <div role="tabpanel" id={"cf-panel-"+tab} aria-labelledby={"cf-tab-"+tab} tabIndex={0}>
-          {tab==="transactions"&&<FinanceLedger key={tripId+period+reference+(detailWeek??"")} entries={detailEntries} allEntries={cash} trips={state.trips} tripId={tripId} onEdit={setEditing} onDelete={setDeleting}/>}
+          {tab==="transactions"&&<FinanceLedger key={tripId??""} entries={detailEntries} allEntries={cash} trips={state.trips} tripId={tripId} onEdit={setEditing} onDelete={setDeleting}/>}
           {tab==="participants"&&selectedTrip&&<TripReceivables state={state} tripId={tripId}/>}
           {tab==="categories"&&<ExpenseBreakdown entries={detailEntries}/>}
         </div>
       </section>
     </>}
-    {editing&&tripId!==null&&<ExpenseForm tripId={tripId} expense={editing==="new"?undefined:editing} date={expenseDate} onClose={()=>setEditing(null)}/>}
+    {editing&&tripId!==null&&<ExpenseForm tripId={tripId} expense={editing==="new"?undefined:editing} date={reference} onClose={()=>setEditing(null)}/>}
     {deleting&&<Modal title="Delete expense" onClose={()=>setDeleting(null)}><p className="empty-note">{deleting.description} · {formatRupiah(deleting.amount)}</p><Form onSave={async data=>{
       await mutate({action:"expense.delete",expenseId:deleting.id,reason:text(data,"reason")}); setDeleting(null);
     }}><Field label="Reason for deletion" name="reason" required/><Submit>Delete expense</Submit></Form></Modal>}

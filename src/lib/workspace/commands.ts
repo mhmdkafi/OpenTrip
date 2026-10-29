@@ -12,7 +12,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("trip.update"), tripId: id, ...tripDetails }),
   z.object({ action: z.literal("trip.status"), tripId: id, status: z.enum(["active", "archived", "completed", "cancelled"]) }),
   z.object({ action: z.literal("trip.delete"), tripId: id }),
-  z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: name }),
+  z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: z.string().trim().max(200).optional() }),
   z.object({ action: z.literal("participant.cancel"), participantId: id, reason: name }),
   z.object({ action: z.literal("payment.verify"), participantIds: z.array(id).min(1).max(500), amount: money.positive(), method: z.enum(["transfer", "cash", "other"]), notes: z.string().max(500).default(""), fullyPaid: z.boolean().default(false) }),
   z.object({ action: z.literal("payment.reject"), participantIds: z.array(id).min(1).max(500), reason: z.string().trim().max(200).default("") }),
@@ -71,7 +71,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       const trip = found(state.trips.find(t => t.id === p.tripId), "Trip");
       const charge = (command.facility === "Full Transport" ? trip.fullPrice : trip.nonPrice) + command.raincoats * trip.raincoatPrice;
       if (paidFor(state, p.id) > 0 && charge !== p.charge) throw new DomainError("This bill has already received payments. Reconcile the price change first.");
-      detail = `${p.name} → ${command.name}; ${command.reason}`;
+      detail = `${p.name} → ${command.name}${command.reason ? `; ${command.reason}` : ""}`;
       Object.assign(p, { name: command.name, meetingPoint: command.meetingPoint, facility: command.facility, raincoats: command.raincoats, charge, reviewed: true }); break;
     }
     case "participant.cancel": {
@@ -130,6 +130,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       const { action: _action, itemId: _id, reason, ...fields } = command;
       if (fields.imageUrl?.startsWith("/api/inventory/")) delete fields.imageUrl;
       Object.assign(item, fields);
+      if (item.consumable && item.damaged) throw new DomainError("Consumable items have no damaged count. Lower the stock instead.");
       if (availableStock(item) < 0) throw new DomainError("Total stock can't be less than damaged items plus items on loan.");
       detail = `${item.name}: total ${item.total}, damaged ${item.damaged}; ${reason}`; break;
     }
@@ -146,6 +147,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
     }
     case "inventory.adjust": {
       const item = found(state.inventory.find(i => i.id === command.itemId), "Item");
+      if (item.consumable && command.damaged) throw new DomainError("Consumable items have no damaged count. Lower the stock instead.");
       item.total = command.total; item.damaged = command.damaged;
       if (availableStock(item) < 0) throw new DomainError("Total stock can't be less than damaged items plus items on loan.");
       detail = `${item.name}: total ${item.total}, damaged ${item.damaged}; ${command.reason}`; break;
@@ -160,6 +162,7 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
     case "inventory.incident": {
       const item = found(state.inventory.find(i => i.id === command.itemId), "Item");
       const loan = command.loanId ? found(item.loans.find(l => l.id === command.loanId && !l.returned), "Active loan") : undefined;
+      if (command.kind === "damaged" && item.consumable) throw new DomainError("Consumable items can't be marked damaged. Record them as lost instead.");
       if (command.kind !== "note") {
         if (item.stockTracked === false || command.quantity < 1) throw new DomainError("The affected quantity must be above zero and stock must be tracked.");
         if (command.quantity > (loan ? loan.quantity : availableStock(item))) throw new DomainError("Quantity exceeds the items at the selected location.");

@@ -27,7 +27,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const params = useSearchParams();
   const [error, setError] = useState(() => { const base = callbackErrors[params.get("error") ?? ""] ?? ""; const detail = params.get("detail"); return base && detail ? `${base} (${detail})` : base; });
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false), [opening, setOpening] = useState(false);
   useAutoDismiss(error, () => setError(""));
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +36,10 @@ function LoginForm() {
   async function signIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true); setError("");
-    try { const result = await login(email, password); if (!result.success) setError(result.error || "Sign-in failed."); else { router.replace("/dashboard"); router.refresh(); } }
-    finally { setBusy(false); }
+    // On success the button stays busy until the dashboard replaces this page.
+    const result = await login(email, password).catch(() => ({ success: false, error: "Sign-in failed." }));
+    if (result.success) { setOpening(true); router.replace("/dashboard"); return; }
+    setError(result.error || "Sign-in failed."); setBusy(false);
   }
 
   async function signInWithGoogle() {
@@ -59,7 +61,7 @@ function LoginForm() {
         <form onSubmit={signIn}>
           <input type="email" className="td-input" aria-label="Email" placeholder="Email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required/>
           <div className="password-input"><input className="td-input" aria-label="Password" placeholder="Password" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={event => setPassword(event.target.value)} required/><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18} aria-hidden="true"/> : <Eye size={18} aria-hidden="true"/>}</button></div>
-          <button className="td-button" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
+          <button className="td-button" type="submit" disabled={busy}>{busy && <span className="btn-spinner" aria-hidden="true"/>}{opening ? "Opening your workspace…" : busy ? "Signing in…" : "Sign in"}</button>
         </form>
         <div className="login-divider"><span>or</span></div>
         <button type="button" className="td-secondary login-google" disabled={busy} onClick={() => void signInWithGoogle()}><GoogleIcon/>Continue with Google</button>

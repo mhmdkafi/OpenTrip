@@ -313,3 +313,15 @@ test("an amount read from a shared proof is split across its participants in ord
   assert.equal(claimed.get(ids[1]), 50000);
   assert.deepEqual(unscannedProofs(state), []);
 });
+
+test("consumable items cannot carry a damaged count", () => {
+  const state = withItem({ consumable: true, stockTracked: true, reorderLevel: 5 });
+  assert.throws(
+    () => applyCommand(state, { action: "inventory.update", itemId, name: "Rain poncho", kind: "operational", total: 10, consumable: true, stockTracked: true, reorderLevel: 5, damaged: 1, reason: "" }, userId, reqId()),
+    /no damaged count/,
+  );
+  assert.throws(
+    () => applyCommand(state, { action: "inventory.incident", itemId, kind: "damaged", quantity: 1, description: "torn" }, userId, reqId()),
+    /can't be marked damaged/,
+  );
+});

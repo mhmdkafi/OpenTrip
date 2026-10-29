@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
             for (const booking of current.state.bookings) if (amounts.has(booking.proof) && booking.proofAmount === undefined) booking.proofAmount = amounts.get(booking.proof);
             try {
               const revision = amounts.size ? await saveWorkspace(auth.tenantId, current.revision, current.state, current.exists) : current.revision;
-              send({ done: true, state: clientWorkspace(current.state), revision, remaining: unscannedProofs(current.state, tripId).length });
+              send({ done: true, state: await clientWorkspace(current.state), revision, remaining: unscannedProofs(current.state, tripId).length });
               break;
             } catch (error) { if (!(error instanceof DomainError && error.status === 409) || attempt) throw error; }
           }

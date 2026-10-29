@@ -157,3 +157,19 @@ textarea.td-input { padding: 10px 12px; }
 .forest-sidebar.is-collapsed .sidebar-toggle { justify-content: center; padding-inline: 0; }
 @media (max-width: 767px) { .forest-sidebar .sidebar-toggle { display: none; } }
 .ps-label.is-placeholder { color: var(--text-muted); font-weight: 500; }
+/* Reserve the scrollbar's width so filtering a list short enough to drop the scrollbar never shifts the layout. */
+html { scrollbar-gutter: stable; }
+
+/* Dashboard loading skeleton and the inline button spinner. */
+.sk { display: block; border-radius: var(--radius-lg); background: linear-gradient(90deg, var(--gray-100) 0%, var(--canvas) 50%, var(--gray-100) 100%); background-size: 200% 100%; animation: td-shimmer 1.2s ease-in-out infinite; }
+.sk-page { display: grid; gap: 20px; }
+.sk-title { width: 220px; height: 34px; border-radius: var(--radius-md); }
+.sk-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.sk-card { height: 112px; }
+.sk-panel { height: 420px; }
+.sk-nav { display: grid; gap: 14px; margin-top: 36px; padding: 0 12px; }
+.sk-nav i { display: block; height: 22px; border-radius: var(--radius-md); background: rgb(255 255 255 / .08); }
+@media (max-width: 767px) { .sk-row { grid-template-columns: 1fr 1fr; } .sk-panel { height: 300px; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+.btn-spinner { display: inline-block; width: 15px; height: 15px; margin-right: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: td-spin .7s linear infinite; }
+@keyframes td-spin { to { transform: rotate(360deg); } }

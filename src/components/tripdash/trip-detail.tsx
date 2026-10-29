@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Trash2, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, MapPin, MoreHorizontal, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWorkspace } from "./context";
 import { Modal } from "./ui";
@@ -48,13 +48,9 @@ export function TripDetail({ tripId }: { tripId: string }) {
     });
   }
   const status = tripStatus(trip, state, todayWib());
-  const facts: [string, string][] = [
-    ["Full Transport", formatRupiah(trip.fullPrice)], ["Non Transport", formatRupiah(trip.nonPrice)], ["Raincoat", formatRupiah(trip.raincoatPrice)],
-    ["Min. participants", `${trip.minimumParticipants ?? 7} · warning D-${trip.riskDays ?? 7}`], ["Meeting points", trip.meetingPoints?.join(", ") || "From registrations"], ["Bank account", trip.bankAccount || "Not set"],
-  ];
   return <div className="ov td2">
-    <Link className="td2-back" href={`${basePath}/trips`}><ArrowLeft size={16}/> Trip Schedule</Link>
     <header className="td2-heading">
+      <Link className="back-button" href={`${basePath}/trips`} aria-label="Back to Trip Schedule" title="Back to Trip Schedule"><ArrowLeft size={18}/></Link>
       <div className="td2-title">
         <div className="td2-name"><h1>{trip.title}{trip.volume ? ` ${trip.volume}` : ""}</h1><span className={`ov-badge ov-tone-${status}`}>{statusLabel[status]}</span></div>
         <p>{trip.departureDate && `${new Date(`${trip.departureDate}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long" })}, `}{dateLabel(trip.departureDate, true)}<span>·</span>{people.length} participants{trip.location && <><span>·</span>{trip.location}</>}</p>
@@ -67,9 +63,33 @@ export function TripDetail({ tripId }: { tripId: string }) {
     </header>
     {(!people.length || missing) && <p className="inline-warning">{!people.length ? "Import participants before printing attendance." : "Fill in every participant's name and meeting point before printing attendance."}</p>}
     {(!trip.departureDate || (!trip.fullPrice && !trip.nonPrice)) && <p className="inline-warning">Add the departure date and prices via Edit trip before reviewing participant bills.</p>}
-    <section className="ov-card td2-facts" aria-label="Trip details">
-      {facts.map(([label, value]) => <div key={label}><span>{label}</span><strong title={value}>{value}</strong></div>)}
-      <div className="td2-status"><span>Operational status</span><Dropdown label="Operational status" value={trip.status} options={STATUS_OPTIONS} onChange={value => void run(() => mutate({ action: "trip.status", tripId, status: value as Trip["status"] }))}/></div>
+    <section className="ov-card td2-info" aria-label="Trip details">
+      <div className="td2-group">
+        <h2>Prices</h2>
+        <dl className="td2-list">
+          <div><dt>Full Transport</dt><dd>{formatRupiah(trip.fullPrice)}</dd></div>
+          <div><dt>Non Transport</dt><dd>{formatRupiah(trip.nonPrice)}</dd></div>
+          <div><dt>Raincoat</dt><dd>+{formatRupiah(trip.raincoatPrice)}</dd></div>
+        </dl>
+      </div>
+      <div className="td2-group td2-stack">
+        <div>
+          <h2>Meeting points</h2>
+          {trip.meetingPoints?.length ? <ul className="td2-chips">{trip.meetingPoints.map(point => <li key={point}><MapPin size={13} aria-hidden="true"/>{point}</li>)}</ul> : <p className="td2-muted">Taken from registrations</p>}
+        </div>
+        <div>
+          <h2>Transfer to</h2>
+          <p className="td2-value">{trip.bankAccount || <span className="td2-muted">Not set · add it via Edit trip</span>}</p>
+        </div>
+      </div>
+      <div className="td2-group">
+        <h2>Settings</h2>
+        <dl className="td2-list">
+          <div><dt>Min. participants</dt><dd>{trip.minimumParticipants ?? 7}</dd></div>
+          <div><dt>At-risk warning</dt><dd>D-{trip.riskDays ?? 7}</dd></div>
+          <div className="td2-status-row"><dt>Status</dt><dd className={`td2-status is-${trip.status}`}><Dropdown label="Operational status" value={trip.status} options={STATUS_OPTIONS} onChange={value => void run(() => mutate({ action: "trip.status", tripId, status: value as Trip["status"] }))}/></dd></div>
+        </dl>
+      </div>
     </section>
     <Participants key={tripId} fixedTripId={tripId}/>
     {editing && <TripForm trip={trip} onClose={() => setEditing(false)}/>}
