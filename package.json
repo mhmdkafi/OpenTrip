@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "check:integration": "node scripts/check-auth-import.mjs",
-    "seed": "tsx --env-file=.env scripts/seed-trips.ts"
+    "seed": "tsx --env-file=.env scripts/seed-trips.ts",
+    "seed:inventory": "tsx --env-file=.env scripts/seed-inventory.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
