@@ -6,7 +6,7 @@ import { useWorkspace } from "./context";
 import { Modal } from "./ui";
 import { SpreadsheetImport } from "./spreadsheet-import";
 import { Dropdown } from "./dropdown";
-import { dateLabel, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
+import { activeParticipants, dateLabel, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
 
 const PERIODS = [{ value: "month", label: "Monthly", icon: CalendarDays }, { value: "week", label: "Weekly", icon: CalendarRange }, { value: "year", label: "Yearly", icon: Calendar }] as const;
 
@@ -41,7 +41,7 @@ export function Trips() {
     && (!t.departureDate || (!rangeFrom || t.departureDate >= rangeFrom) && (!rangeTo || t.departureDate <= rangeTo))
   ).sort((a,b) => a.departureDate.localeCompare(b.departureDate));
   const months = [...new Set(trips.map(t => t.departureDate.slice(0,7)))];
-  const participants = (tripId: string) => state.participants.filter(p => p.tripId === tripId && p.status === "active").length;
+  const participants = (tripId: string) => activeParticipants(state, tripId).length;
   return <div className="ov ts">
     <div className="page-heading ov-heading"><h1>Trip Schedule</h1><button className="ts-primary" onClick={() => setImporting(true)}><FileSpreadsheet size={16}/> Import spreadsheet</button></div>
 
