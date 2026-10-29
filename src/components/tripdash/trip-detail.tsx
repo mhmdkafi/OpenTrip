@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Trash2, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWorkspace } from "./context";
 import { Modal } from "./ui";
@@ -61,7 +61,6 @@ export function TripDetail({ tripId }: { tripId: string }) {
       </div>
       <div className="td2-actions">
         <button className="td-secondary" onClick={() => setEditing(true)}><Pencil size={15}/> Edit trip</button>
-        <Link href={`${basePath}/finance?trip=${tripId}`} className="td-secondary"><Wallet size={15}/> Trip finances</Link>
         <button className="td-button" disabled={busy || !people.length || missing} onClick={() => void print()}><FileDown size={15}/> Download attendance PDF</button>
         <MoreMenu items={[...(trip.status !== "cancelled" ? [{ label: "Cancel trip", icon: Ban, tone: "warn", onSelect: () => setCancelling(true) } satisfies MenuItem] : []), { label: "Delete trip", icon: Trash2, tone: "danger", onSelect: () => setDeleting(true) }]}/>
       </div>
