@@ -314,3 +314,75 @@
 /* Fit the whole proof inside the fixed frame: never crop, never upscale past the frame. */
 .pr-proof .proof-image { margin: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; }
 .pr-proof .proof-image img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+
+/* Participant list: dropdown toolbar, and on phones each row becomes a card instead of a sideways-scrolling table. */
+.participants-panel .table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+.participants-panel .search-field { flex: 1 1 260px; max-width: 420px; }
+.participants-panel .sort-select { margin-left: auto; min-width: 210px; }
+.participants-panel .filter-expand { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 260px)); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 767px) {
+  .participants-panel .search-field { flex-basis: 100%; max-width: none; }
+  .participants-panel .sort-select { flex: 1; margin-left: 0; min-width: 0; }
+  .participants-panel .table-wrap { overflow: visible; border: 0; }
+  .pt-table, .pt-table tbody { display: block; min-width: 0; }
+  .pt-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .pt-table tbody { display: grid; gap: 10px; }
+  .ov .pt-table tbody tr, .pt-table tbody tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "name name state" "pkg pkg pkg" "bill paid out" "act act act"; gap: 10px 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+  /* Selectors match the .ov table rules so zebra stripes and the number column stay off the cards. */
+  .ov .td-table.pt-table tbody tr td, .ov .td-table.pt-table tbody tr:nth-child(even) td, .ov .td-table.pt-table tbody tr:hover td { display: block; padding: 0; border: 0; min-width: 0; background: none; }
+  .ov .td-table.pt-table tbody tr:nth-child(n) td.row-number { display: none; }
+  .ov .td-table.pt-table [data-label] { padding-top: 10px; border-top: 1px solid var(--divider); }
+  .pt-table .pt-name { grid-area: name; }
+  .pt-table .pt-state { grid-area: state; justify-self: end; }
+  .pt-table .pt-pkg { grid-area: pkg; font-size: 13px; color: var(--text-secondary); }
+  .pt-table .pt-pkg small { display: inline; margin: 0; }
+  .pt-table .pt-pkg small::before { content: " · "; }
+  .pt-table .pt-bill { grid-area: bill; }
+  .pt-table .pt-paid { grid-area: paid; }
+  .pt-table .pt-out { grid-area: out; }
+  .pt-table [data-label] { padding-top: 10px; border-top: 1px solid var(--divider); font-size: 14px; font-weight: 600; }
+  .pt-table [data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .pt-table [data-label] small { font-size: 11px; font-weight: 400; }
+  .pt-table .pt-act { grid-area: act; }
+  .pt-table .pt-act .row-actions { justify-content: flex-end; }
+  .pt-table .pt-act .row-review, .pt-table .pt-act .row-record { flex: 1; justify-content: center; min-height: 44px; font-size: 14px; }
+}
+
+/* Inventory rows: fixed 56px thumbnail (48px on phones). Overrides the old card-layout heights. */
+.inv-page .inventory-v2 .inventory-row-main { grid-template-columns: minmax(0, 1fr) auto auto; gap: 20px; padding: 14px 20px; }
+.inv-page .inventory-v2 .inventory-product { gap: 14px; }
+.inv-page .inventory-v2 .product-placeholder, .inv-page .inventory-v2 .inventory-photo-button, .inv-page .inventory-v2 .inventory-product img { flex-shrink: 0; width: 56px; height: 56px; border-radius: var(--radius-md); }
+.inv-page .inventory-v2 .product-placeholder { display: grid; place-items: center; border: 1px dashed var(--border-strong); background: var(--surface-muted); color: var(--text-subtle); transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
+.inv-page .inventory-v2 .product-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+.inv-page .inventory-v2 .product-placeholder svg { width: 22px; height: 22px; }
+.inv-page .inventory-v2 .product-placeholder span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.inv-page .inventory-v2 .inventory-product h2 { font-size: 15px; }
+.inv-page .inventory-v2 .inventory-product p { font-size: 13px; }
+.inv-page .inventory-v2 .inventory-stock { min-width: 120px; }
+.inv-page .inventory-v2 .inventory-stock strong { font-variant-numeric: tabular-nums; }
+.inv-page .inventory-v2 .inventory-stock > span { display: block; margin-top: 2px; font-size: 12px; }
+.inv-page .inventory-v2 .inventory-row-actions .table-icon { min-height: 38px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 13px; }
+.inv-page .inventory-v2 .inventory-row-actions .table-icon.danger-button { width: 38px; padding: 0; justify-content: center; }
+@media (max-width: 1200px) {
+  .inv-page .inventory-v2 .product-placeholder, .inv-page .inventory-v2 .inventory-photo-button, .inv-page .inventory-v2 .inventory-product img { width: 48px; height: 48px; }
+}
+@media (max-width: 767px) {
+  .inv-page .inventory-v2 .inventory-row-main { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "product stock" "actions actions"; gap: 12px; padding: 14px 16px; }
+  .inv-page .inventory-v2 .inventory-product { grid-area: product; grid-column: auto; }
+  .inv-page .inventory-v2 .inventory-stock { grid-area: stock; min-width: 0; padding-left: 0; }
+  .inv-page .inventory-v2 .inventory-stock strong { font-size: 22px; }
+  .inv-page .inventory-v2 .inventory-row-actions { grid-area: actions; justify-content: flex-end; }
+  .inv-page .inventory-v2 .inventory-row-actions .table-icon { min-height: 44px; }
+  .inv-page .inventory-v2 .inventory-row-actions .table-icon.danger-button { width: 44px; }
+}
+@media (max-width: 767px) {
+  /* Low stock needs action, so it comes before the list on phones. */
+  .inv-page .inventory-layout { display: flex; flex-direction: column; }
+  .inv-page .inventory-layout .stock-reminders { order: -1; align-self: stretch; }
+  .inv-page .inventory-layout > * { width: 100%; }
+  .inv-page .inv-filters .ts-field-search { flex: 1 1 auto; width: 100%; }
+  .inv-page .inv-filters .ts-field-search .ts-control { width: 100%; }
+}
+
+/* The rotated axis title collides with the tick labels on narrow screens; the ticks already read as rupiah. */
+@media (max-width: 767px) { .cf-axis-title.cf-axis-y { display: none; } .cf-profit-yaxis { width: 40px; } }

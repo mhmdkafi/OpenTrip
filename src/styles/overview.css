@@ -243,3 +243,10 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 .cal-cell.is-past .cal-number { color: var(--gray-400); font-weight: 400; }
 .cal-cell.is-past.has-trips { opacity: .7; }
 button.cal-cell.is-past:hover { opacity: 1; }
+
+/* Days with trips keep their status tint even when past; on phones, where titles are hidden, a dot marks them. */
+.cal-cell.is-past.has-trips { background: var(--tone-soft); border-color: var(--tone-line); }
+@media (max-width: 767px) {
+  .cal-cell.has-trips { position: relative; }
+  .cal-cell.has-trips::after { content: ""; position: absolute; bottom: 6px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: var(--tone); transform: translateX(-50%); }
+}
