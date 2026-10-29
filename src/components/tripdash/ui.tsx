@@ -17,5 +17,5 @@ export function Modal({title,children,onClose,wide=false}:{title:string;children
   const ref=useRef<HTMLDialogElement>(null); const headingId=useId();
   const {error}=useWorkspace();
   useEffect(()=>{const dialog=ref.current;dialog?.showModal();return()=>dialog?.close();},[]);
-  return <dialog ref={ref} aria-labelledby={headingId} className={`td-modal ${wide?"wide":""}`} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="modal-inner"><div className="modal-heading"><div><span className="eyebrow">RIMBALOKA WORKSPACE</span><h2 id={headingId}>{title}</h2></div><button type="button" className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={18}/></button></div>{error&&<p role="alert" className="notice error">{error}</p>}{children}</div></dialog>;
+  return <dialog ref={ref} aria-labelledby={headingId} className={`td-modal ${wide?"wide":""}`} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="modal-inner"><div className="modal-heading"><h2 id={headingId}>{title}</h2><button type="button" className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={18}/></button></div>{error&&<p role="alert" className="notice error">{error}</p>}{children}</div></dialog>;
 }

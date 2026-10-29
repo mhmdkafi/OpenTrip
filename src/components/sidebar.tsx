@@ -38,7 +38,10 @@ export function Sidebar() {
     return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", keyboard); };
   }, [open]);
   return <>
-    <button ref={trigger} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="workspace-navigation" onClick={() => setOpen(!open)} className="mobile-menu">{open ? <X size={20}/> : <Menu size={20}/>}</button>
+    <header className="mobile-bar">
+      <button ref={trigger} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="workspace-navigation" onClick={() => setOpen(!open)} className="mobile-menu">{open ? <X size={20}/> : <Menu size={20}/>}</button>
+      <Link href={basePath} className="mobile-brand"><Image src="/brand/rimbaloka-logo.jpeg" alt="" width={32} height={32}/>TripDash</Link>
+    </header>
     <aside ref={aside} id="workspace-navigation" className={`forest-sidebar ${open ? "is-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
       <Link href={basePath} aria-label="TripDash — Overview" onClick={() => setOpen(false)} className="brand-lockup"><Image src="/brand/rimbaloka-logo.jpeg" alt="Rimbaloka Trip logo" width={43} height={43}/><div><strong>TripDash</strong><small>Rimbaloka Trip</small></div></Link>
       <nav aria-label="Main navigation">{navigation.map(item => {

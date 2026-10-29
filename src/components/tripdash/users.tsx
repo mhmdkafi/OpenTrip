@@ -40,8 +40,7 @@ export function UsersPage({initial}:{initial:Result|null}) {
     <div className="page-heading ov-heading"><h1>Users</h1>
       {owner && <button className="ts-primary" onClick={()=>{setFormError("");setEditing("new");}}><Plus size={16} aria-hidden="true"/>Add admin</button>}
     </div>
-    {notice&&<p className="notice" role="status">{notice}</p>}
-    {error&&<p className="notice error" role="alert">{error}</p>}
+    <div className="toast-stack" aria-live="polite">{notice&&<p className="notice" role="status">{notice}</p>}{error&&<p className="notice error" role="alert">{error}</p>}</div>
     <section className="ov-card">
       <div className="ov-card-head"><h2>User list</h2>{result&&<span className="ts-count">{result.total} {result.total===1?"user":"users"}</span>}</div>
       {result?.role==="admin"&&<p className="empty-note mb-4">You can view all users. Only the owner can manage admins.</p>}

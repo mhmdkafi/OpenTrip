@@ -2,16 +2,7 @@
    white 16px cards, one solid green accent, pill buttons, green table headers, zebra rows. */
 
 /* Shared controls inside redesigned pages */
-.ov .td-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--forest-700); color: var(--white); font-size: 14px; font-weight: 500; }
-.ov .td-button:hover:not(:disabled) { background: var(--forest-800); }
-.ov .td-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1px solid var(--gray-150); border-radius: 999px; background: var(--white); color: var(--gray-700); font-size: 13px; font-weight: 500; }
-.ov .td-secondary:hover:not(:disabled) { background: var(--canvas); border-color: var(--gray-200); }
-.ov .table-icon { display: inline-grid; place-items: center; min-width: 34px; min-height: 34px; border: 1px solid var(--gray-150); border-radius: 10px; background: var(--white); color: var(--gray-700); }
-.ov .table-icon:hover { background: var(--canvas); }
-.ov .table-icon.danger-button { color: var(--danger-600); }
-.ov .table-icon.danger-button:hover { background: var(--gray-50); border-color: var(--gray-150); }
-.ov .td-panel, .ov .cf-panel { background: var(--white); border: 1px solid var(--gray-150); border-radius: 16px; box-shadow: none; }
-.ov .td-panel { padding: 20px; }
+.ov .cf-panel { background: var(--white); border: 1px solid var(--gray-150); border-radius: 16px; box-shadow: none; }
 .ov .panel-heading h2, .ov .cf-panel-heading h2 { font-size: 18px; font-weight: 600; letter-spacing: -.3px; color: var(--gray-900); }
 .ov .cf-panel-heading p { color: var(--gray-500); }
 .ov .search-field { height: 42px; border: 1px solid var(--gray-150); border-radius: 12px; background: var(--white); }

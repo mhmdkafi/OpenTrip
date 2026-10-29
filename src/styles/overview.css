@@ -136,8 +136,6 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 }
 
 /* Trip Schedule: shares the overview surfaces, tones, and list rows. */
-.ts-primary { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; background: var(--ov-accent); color: var(--white); font-size: 14px; font-weight: 500; }
-.ts-primary:hover { background: var(--forest-800); }
 .ts-clear { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--ov-muted); }
 .ts-clear:hover { background: var(--ov-soft); color: var(--ov-ink); }
 .ts-count { padding: 4px 10px; border-radius: 999px; background: var(--ov-soft); border: 1px solid var(--ov-line); font-size: 12px; font-weight: 500; color: var(--gray-700); }
