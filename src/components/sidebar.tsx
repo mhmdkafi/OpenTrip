@@ -18,6 +18,9 @@ export function Sidebar() {
   const { basePath } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  // Remember the collapsed sidebar per browser; storage can be unavailable (private mode).
+  useEffect(() => { try { if (localStorage.getItem("td-sidebar") === "collapsed") queueMicrotask(() => setCollapsed(true)); } catch {} }, []);
+  const toggleCollapsed = () => setCollapsed(value => { try { localStorage.setItem("td-sidebar", value ? "open" : "collapsed"); } catch {} return !value; });
   const aside = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -49,7 +52,7 @@ export function Sidebar() {
         const active = item.slug ? pathname.startsWith(basePath + item.slug) : pathname === basePath;
         return <Link key={item.slug} href={basePath + item.slug} prefetch={true} title={item.label} aria-label={item.label} onClick={() => setOpen(false)} className={`forest-nav-link ${active ? "active" : ""}`} aria-current={active ? "page" : undefined}><Icon size={19} aria-hidden="true"/><span>{item.label}</span></Link>;
       })}</nav>
-      <div className="sidebar-bottom"><button className="sidebar-collapse sidebar-edge-toggle" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} title={collapsed ? "Expand navigation" : "Collapse navigation"} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}</button><div className="sidebar-admin"><UserMenu/></div></div>
+      <div className="sidebar-bottom"><button className="forest-nav-link sidebar-toggle" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} title={collapsed ? "Expand navigation" : "Collapse navigation"} onClick={toggleCollapsed}>{collapsed ? <PanelLeftOpen size={19} aria-hidden="true"/> : <PanelLeftClose size={19} aria-hidden="true"/>}<span>Collapse</span></button><div className="sidebar-admin"><UserMenu/></div></div>
     </aside>
     {open && <button aria-label="Close navigation menu" className="sidebar-scrim" onClick={() => setOpen(false)}/>}
   </>;

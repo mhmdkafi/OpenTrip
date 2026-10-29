@@ -165,9 +165,6 @@
 .cf-v2 .cf-profit-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .cf-compare { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .cf-compare-vs { font-size: 12px; font-weight: 600; color: var(--gray-400); }
-.cf-compare-period { display: inline-flex; align-items: center; gap: 6px; }
-.cf-compare-period > i { width: 16px; flex-shrink: 0; border-top: 3px solid var(--forest-600); }
-.cf-compare-period.is-previous > i { border-top: 2px dashed var(--sand-700); }
 .cf-compare .dd-trigger { height: 36px; padding: 0 10px; font-size: 13px; }
 .cf-compare .dd { min-width: 0; }
 
@@ -386,3 +383,55 @@
 
 /* The rotated axis title collides with the tick labels on narrow screens; the ticks already read as rupiah. */
 @media (max-width: 767px) { .cf-axis-title.cf-axis-y { display: none; } .cf-profit-yaxis { width: 40px; } }
+
+/* Trip schedule list header: period stepper on the left, view toggle and count on the right. */
+.ts .ts-list-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.ts .ts-list-tools { display: flex; align-items: center; gap: 12px; }
+@media (max-width: 767px) { .ts .ts-list-head .ps { width: 100%; } .ts .ts-list-head .ps-label { flex: 1; justify-content: center; } .ts .ts-list-tools { width: 100%; justify-content: space-between; } }
+
+/* Cashflow header: period stepper + Monthly/Yearly toggle. */
+.cf-v2 .page-heading { align-items: center; }
+.cf-v2 .cf-period-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+@media (max-width: 767px) {
+  .cf-v2 .cf-period-picker { width: 100%; justify-content: space-between; }
+  .cf-v2 .cf-period-picker .ps { flex: 1; }
+  .cf-v2 .cf-period-picker .ps-label { flex: 1; justify-content: center; }
+}
+/* Chart header: "● October 2026 vs - - ‹ Sep 2026 ›" */
+.cf-v2 .cf-profit-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.cf-v2 .cf-compare { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
+.cf-compare-key { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text); }
+.cf-compare-key i { display: block; width: 18px; height: 0; border-top: 3px solid var(--forest-600); border-radius: 2px; }
+.cf-compare-key.is-previous i { border-top: 3px dashed var(--sand-500); }
+.cf-v2 .cf-compare-vs { color: var(--text-muted); font-size: 13px; }
+/* Tiles: every figure carries its change against the compared period. */
+.cf-v2 .cf-metric .cf-comparison { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--text-muted); }
+.cf-v2 .cf-metric .cf-comparison b { padding: 2px 8px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; }
+.cf-v2 .cf-metric .cf-comparison.is-up b { background: var(--success-50); color: var(--success-700); }
+.cf-v2 .cf-metric .cf-comparison.is-down b { background: var(--danger-50); color: var(--danger-700); }
+.cf-v2 .cf-metric strong.is-negative { color: var(--danger-600); }
+/* All three tiles share one stacked layout: label, figure, change. */
+.cf-v2 .cf-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cf-v2 .cf-metric, .cf-v2 .cf-metric-net { display: flex; flex-direction: column; align-items: flex-start; }
+.cf-v2 .cf-metric > .cf-metric-label { width: 100%; }
+.cf-v2 .cf-metric > strong { margin: 10px 0 0; font-size: clamp(22px, 2vw, 28px); font-variant-numeric: tabular-nums; }
+@media (max-width: 1000px) { .cf-v2 .cf-metrics { grid-template-columns: 1fr 1fr; } .cf-v2 .cf-metric-net { grid-column: 1 / -1; } }
+@media (max-width: 1000px) { .cf-v2 .cf-metric-net .cf-comparison { justify-content: flex-start; text-align: left; } }
+.cf-v2 .cf-metric, .cf-v2 .cf-metric-net { flex-wrap: nowrap; }
+.cf-v2 .cf-metric > strong { overflow-wrap: normal; white-space: nowrap; }
+@media (max-width: 640px) { .cf-v2 .cf-metrics { grid-template-columns: 1fr; } .cf-v2 .cf-metric > strong { font-size: 24px; } }
+
+/* Reset appears only while a filter differs from its default. */
+.filter-reset { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 500; color: var(--text-muted); white-space: nowrap; transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.filter-reset:hover { background: var(--surface-muted); color: var(--text); }
+.ts-filters .filter-reset, .inv-filters .filter-reset { align-self: flex-end; margin-bottom: 3px; }
+.cf-heading-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (pointer: coarse) { .filter-reset { min-height: 44px; } }
+@media (max-width: 767px) { .cf-heading-tools { width: 100%; } }
+/* Chart: "+ Compare" adds the second line; the cross removes it. */
+.cf-compare-add { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 1px dashed var(--border-strong); border-radius: var(--radius-pill); font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.cf-compare-add:hover { border-color: var(--primary); color: var(--primary); }
+.cf-compare-remove { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--text-muted); }
+.cf-compare-remove:hover { background: var(--danger-50); color: var(--danger-600); }
+@media (pointer: coarse) { .cf-compare-add { min-height: 40px; } .cf-compare-remove { width: 40px; height: 40px; } }
+.cf-compare-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }

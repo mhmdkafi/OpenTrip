@@ -185,12 +185,10 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 /* Search left, View + Date range grouped right, open space between. */
 .ts-field-search { flex: 0 1 300px; }
 .ts-filter-group { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
-.ts-field-view { width: 150px; }
 .ts-field-range { flex: 0 0 auto; }
 .ts-date { flex: 0 0 auto; padding: 0 10px 0 12px; }
 @media (max-width: 900px) {
   .ts-filter-group { flex: 1 1 100%; }
-  .ts-field-view { flex: 1 1 140px; width: auto; }
 }
 
 
@@ -229,7 +227,6 @@ button.cal-cell.has-trips:hover { border-color: var(--tone); }
 /* Trip list card: the heading itself picks the month / year / week. */
 .ts-list { padding-top: 14px; }
 .ts-list-head { margin-bottom: 12px; }
-.ts-period { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
 .dd-inline .dd-trigger { width: auto; height: 38px; padding: 0 8px 0 10px; gap: 4px; border-color: transparent; background: transparent; font-size: 20px; font-weight: 600; letter-spacing: -.3px; color: var(--gray-900); }
 .dd-inline .dd-trigger:hover { background: var(--canvas); border-color: var(--gray-150); }
 .dd-inline .dd-chevron { color: var(--gray-400); }

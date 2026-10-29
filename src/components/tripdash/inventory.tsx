@@ -1,19 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import {
-  Plus,
-  Search,
-  Package,
-  Pencil,
-  Trash2,
-  RotateCcw,
-  ArrowUpRight,
-  AlertTriangle,
-  Boxes,
-  Tent,
-  Wrench,
-} from "lucide-react";
+import { Plus, Search, Package, Pencil, Trash2, RotateCcw, ArrowUpRight, AlertTriangle, Boxes, Tent, Wrench } from "lucide-react";
 import { availableStock, type Inventory as Item } from "@/lib/workspace/types";
 import { useWorkspace } from "./context";
 import {
@@ -70,6 +58,7 @@ export function Inventory() {
         <div className="ov-card ts-filters inv-filters">
           <label className="ts-field ts-field-search"><span className="ts-field-label">Search</span><span className="ts-control"><Search size={16}/><input placeholder="Search items" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}/></span></label>
           <div className="ts-field inv-field-type"><span className="ts-field-label">Type</span><Dropdown label="Item type" value={kind} options={TYPE_OPTIONS} onChange={(value) => { setKind(value); setPage(0); }}/></div>
+          {(search || kind) && <button type="button" className="filter-reset" onClick={() => { setSearch(""); setKind(""); setPage(0); }}><RotateCcw size={14}/> Reset</button>}
         </div>
         <div className="inventory-list-head" aria-hidden="true">
           <span>Item</span>

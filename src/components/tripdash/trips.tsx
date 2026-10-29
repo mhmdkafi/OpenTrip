@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, CalendarDays, CalendarRange, CalendarX2, ChevronRight, FileSpreadsheet, MapPin, Search, Users, X } from "lucide-react";
+import { CalendarX2, ChevronRight, FileSpreadsheet, MapPin, RotateCcw, Search, Users, X } from "lucide-react";
 import { useWorkspace } from "./context";
 import { Modal } from "./ui";
 import { SpreadsheetImport } from "./spreadsheet-import";
-import { Dropdown } from "./dropdown";
+import { PeriodStepper, samePeriod, type StepMode } from "./period-stepper";
 import { activeParticipants, dateLabel, monthLabel, statusLabel, todayWib, tripStatus, weekKey } from "@/lib/workspace/presentation";
 
-const PERIODS = [{ value: "month", label: "Monthly", icon: CalendarDays }, { value: "week", label: "Weekly", icon: CalendarRange }, { value: "year", label: "Yearly", icon: Calendar }] as const;
+const PERIODS: { value: StepMode; label: string }[] = [{ value: "week", label: "Week" }, { value: "month", label: "Month" }, { value: "year", label: "Year" }];
 
 // Week N of a month: week 1 is the Monday-start week containing the 1st.
 function weekOfMonth(date: string) {
@@ -16,39 +16,33 @@ function weekOfMonth(date: string) {
   const firstOffset = (new Date(`${date.slice(0, 7)}-01T12:00:00Z`).getUTCDay() + 6) % 7;
   return Math.floor((day + firstOffset - 1) / 7) + 1;
 }
-const MONTHS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1).padStart(2, "0"), label: new Date(Date.UTC(2000, i, 1)).toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" }), icon: CalendarDays }));
-const weeksIn = (year: string, month: string) => weekOfMonth(new Date(Date.UTC(Number(year), Number(month), 0)).toISOString().slice(0, 10));
 
 export function Trips() {
   const { state, basePath } = useWorkspace();
   const [importing, setImporting] = useState(false);
-  const [period, setPeriod] = useState("month");
+  const [period, setPeriod] = useState<StepMode>("month");
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
   const [search, setSearch] = useState("");
   useEffect(() => { if (window.location.hash === "#impor") queueMicrotask(() => setImporting(true)); }, []);
   const today = todayWib();
-  const [year, setYear] = useState(today.slice(0, 4));
-  const [month, setMonth] = useState(today.slice(5, 7));
-  const [week, setWeek] = useState(String(weekOfMonth(today)));
-  const tripYears = state.trips.map(t => Number(t.departureDate.slice(0, 4))).filter(Boolean);
-  const firstYear = Math.min(Number(today.slice(0, 4)), ...tripYears), lastYear = Math.max(Number(today.slice(0, 4)) + 1, ...tripYears);
-  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => ({ value: String(lastYear - i), label: String(lastYear - i), icon: Calendar }));
-  const weeks = Array.from({ length: weeksIn(year, month) }, (_, i) => ({ value: String(i + 1), label: `Week ${i + 1}`, icon: CalendarRange }));
-  const inPeriod = (date: string) => period === "year" ? date.startsWith(year) : date.startsWith(`${year}-${month}`) && (period !== "week" || String(weekOfMonth(date)) === week);
+  // One reference date drives every view: the stepper moves it by a week, month, or year.
+  const [reference, setReference] = useState(today);
+  const inPeriod = (date: string) => period === "year" ? date.startsWith(reference.slice(0, 4)) : period === "month" ? date.startsWith(reference.slice(0, 7)) : weekKey(date) === weekKey(reference);
   const trips = state.trips.filter(t => t.title.toLowerCase().includes(search.toLowerCase())
     && (!t.departureDate || inPeriod(t.departureDate))
     && (!t.departureDate || (!rangeFrom || t.departureDate >= rangeFrom) && (!rangeTo || t.departureDate <= rangeTo))
   ).sort((a,b) => a.departureDate.localeCompare(b.departureDate));
   const months = [...new Set(trips.map(t => t.departureDate.slice(0,7)))];
   const participants = (tripId: string) => activeParticipants(state, tripId).length;
+  const filtered = Boolean(search || rangeFrom || rangeTo) || period !== "month" || !samePeriod("month", reference, today);
+  const reset = () => { setSearch(""); setRangeFrom(""); setRangeTo(""); setPeriod("month"); setReference(today); };
   return <div className="ov ts">
     <div className="page-heading ov-heading"><h1>Trip Schedule</h1><button className="ts-primary" onClick={() => setImporting(true)}><FileSpreadsheet size={16}/> Import spreadsheet</button></div>
 
     <section className="ov-card ts-filters" aria-label="Filters">
       <label className="ts-field ts-field-search"><span className="ts-field-label">Search</span><span className="ts-control"><Search size={16}/><input placeholder="Search trip name" value={search} onChange={e => setSearch(e.target.value)}/></span></label>
       <div className="ts-filter-group">
-      <div className="ts-field ts-field-view"><span className="ts-field-label">View</span><Dropdown label="View" value={period} options={PERIODS} onChange={setPeriod}/></div>
       <div className="ts-field ts-field-range" role="group" aria-label="Date range"><span className="ts-field-label">Date range</span>
         <div className="ts-range-pair">
           <span className="ts-control ts-date"><input type="date" aria-label="From date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)}/></span>
@@ -56,17 +50,18 @@ export function Trips() {
           <span className="ts-control ts-date"><input type="date" aria-label="To date" value={rangeTo} onChange={e => setRangeTo(e.target.value)}/>{(rangeFrom || rangeTo) && <button className="ts-clear" aria-label="Clear date range" onClick={() => { setRangeFrom(""); setRangeTo(""); }}><X size={14}/></button>}</span>
         </div>
       </div>
+      {filtered && <button type="button" className="filter-reset" onClick={reset}><RotateCcw size={14}/> Reset</button>}
       </div>
     </section>
 
     <section className="ov-card ts-list">
       <div className="ov-card-head ts-list-head">
-        <div className="ts-period" role="heading" aria-level={2}>
-          {period !== "year" && <Dropdown variant="inline" label="Month" value={month} options={MONTHS} onChange={value => { setMonth(value); setWeek("1"); }}/>}
-          <Dropdown variant="inline" label="Year" value={year} options={years} onChange={value => { setYear(value); setWeek("1"); }}/>
-          {period === "week" && <Dropdown variant="inline" label="Week" value={week} options={weeks} onChange={setWeek}/>}
+        <h2 className="sr-only">Trips in the selected period</h2>
+        <PeriodStepper mode={period} value={reference} onChange={setReference} today={today} label="Period"/>
+        <div className="ts-list-tools">
+          <div className="ov-toolbar" role="group" aria-label="View">{PERIODS.map(option => <button key={option.value} aria-pressed={period === option.value} className={period === option.value ? "is-active" : ""} onClick={() => setPeriod(option.value)}>{option.label}</button>)}</div>
+          <span className="ts-count">{trips.length} {trips.length === 1 ? "trip" : "trips"}</span>
         </div>
-        <span className="ts-count">{trips.length} {trips.length === 1 ? "trip" : "trips"}</span>
       </div>
       {months.map(group => {
         const monthTrips = trips.filter(t => t.departureDate.slice(0,7) === group);

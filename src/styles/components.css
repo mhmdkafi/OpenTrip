@@ -38,7 +38,6 @@
 .td-button.danger-solid { background: var(--danger-600); }
 .td-button.danger-solid:hover:not(:disabled) { background: var(--danger-700); }
 .td-secondary.danger-button { color: var(--danger-600); }
-.td-secondary.warn-button { color: var(--orange-600); }
 
 .icon-button, .table-icon { display: inline-grid; place-items: center; flex-shrink: 0; min-width: 36px; min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-secondary); transition: background var(--duration-fast) var(--ease-out); }
 .icon-button:hover, .table-icon:hover { background: var(--surface-muted); }
@@ -122,3 +121,39 @@ textarea.td-input { padding: 10px 12px; }
   .forest-sidebar nav { margin-top: 0; }
   .sidebar-scrim { top: 60px; }
 }
+
+/* Period stepper: ‹ October 2026 › with a month/year grid behind the label. */
+.ps { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.ps-step { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text-secondary); transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
+.ps-step:hover { border-color: var(--border-strong); background: var(--surface-muted); }
+.ps-label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border-radius: var(--radius-md); font-size: 20px; font-weight: 600; letter-spacing: -.4px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; transition: background var(--duration-fast) var(--ease-out); }
+.ps-label:hover, .ps-label[aria-expanded="true"] { background: var(--surface-muted); }
+.ps-chevron { color: var(--text-muted); transition: transform var(--duration-fast) var(--ease-out); }
+.ps-label[aria-expanded="true"] .ps-chevron { transform: rotate(180deg); }
+.ps-today { min-height: 32px; margin-left: 6px; padding: 0 12px; border: 1px solid var(--forest-200); border-radius: var(--radius-pill); background: var(--primary-soft); color: var(--primary); font-size: 13px; font-weight: 500; }
+.ps-today:hover { background: var(--forest-100); }
+.ps-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: 280px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-lg); animation: td-toast-in var(--duration-fast) var(--ease-out); }
+.ps-pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ps-pop-head strong { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ps-pop-head .ps-step { width: 32px; height: 32px; }
+.ps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ps-cell { position: relative; min-height: 40px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-secondary); font-variant-numeric: tabular-nums; transition: background var(--duration-fast) var(--ease-out); }
+.ps-cell:hover { background: var(--surface-muted); color: var(--text); }
+.ps-cell.is-current::after { content: ""; position: absolute; bottom: 5px; left: 50%; width: 4px; height: 4px; border-radius: 50%; background: var(--primary); transform: translateX(-50%); }
+.ps-cell.is-selected { background: var(--primary); color: var(--on-primary); }
+.ps-cell.is-selected::after { background: var(--on-primary); }
+.ps-sm .ps-step { width: 30px; height: 30px; }
+.ps-sm .ps-label { min-height: 34px; padding: 0 8px; font-size: 14px; letter-spacing: 0; }
+.ps-sm .ps-pop { right: 0; left: auto; }
+@media (max-width: 767px) {
+  .ps-label { font-size: 18px; padding: 0 6px; }
+  .ps-pop { position: fixed; top: auto; right: 12px; bottom: 12px; left: 12px; width: auto; }
+}
+@media (pointer: coarse) { .ps-step { width: 44px; height: 44px; } .ps-sm .ps-step { width: 40px; height: 40px; } }
+@media (prefers-reduced-motion: reduce) { .ps-pop { animation: none; } }
+
+/* Collapse control sits with the other sidebar rows instead of floating over the page edge. */
+.forest-sidebar .sidebar-toggle { width: 100%; margin-bottom: 8px; background: none; text-align: left; }
+.forest-sidebar.is-collapsed .sidebar-toggle { justify-content: center; padding-inline: 0; }
+@media (max-width: 767px) { .forest-sidebar .sidebar-toggle { display: none; } }
+.ps-label.is-placeholder { color: var(--text-muted); font-weight: 500; }
