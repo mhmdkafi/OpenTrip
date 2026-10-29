@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "@/styles/tokens.css";
 import "@/styles/workspace.css";
 import "@/styles/cashflow.css";
 import "@/styles/inventory.css";
