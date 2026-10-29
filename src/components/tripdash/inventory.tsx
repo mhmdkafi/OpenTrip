@@ -28,6 +28,7 @@ import {
 } from "./ui";
 import { InventoryEditor } from "./inventory-editor";
 import { Dropdown } from "./dropdown";
+import { Pagination } from "./pagination";
 
 const TYPE_OPTIONS = [{ value: "", label: "All types", icon: Boxes }, { value: "operational", label: "Operational", icon: Wrench }, { value: "rental", label: "Rental", icon: Tent }];
 
@@ -172,28 +173,7 @@ export function Inventory() {
             <p>Change your search or add an item.</p>
           </div>
         )}
-        {items.length > 8 && <div className="table-foot">
-          <span>
-            {items.length ? current * 8 + 1 : 0}–
-            {Math.min((current + 1) * 8, items.length)} of {items.length}{" "}
-            items
-          </span>
-          <div className="pagination">
-            <button
-              disabled={current === 0}
-              onClick={() => setPage(current - 1)}
-            >
-              Previous
-            </button>
-            <span>{current + 1}</span>
-            <button
-              disabled={(current + 1) * 8 >= items.length}
-              onClick={() => setPage(current + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>}
+        <Pagination page={current} total={items.length} pageSize={8} unit="items" onChange={setPage}/>
       </section>
       <aside className="stock-reminders">
         <h2>

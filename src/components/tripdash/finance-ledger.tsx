@@ -6,6 +6,7 @@ import { cashDate, recordedTime } from "@/lib/workspace/finance-view";
 import { dateLabel } from "@/lib/workspace/presentation";
 import type { Cash, Trip } from "@/lib/workspace/types";
 import { Select } from "./ui";
+import { Pagination } from "./pagination";
 
 export function FinanceLedger({ entries, allEntries, trips, tripId, onEdit, onDelete }: { entries: Cash[]; allEntries: Cash[]; trips: Trip[]; tripId: string; onEdit: (cash: Cash) => void; onDelete: (cash: Cash) => void }) {
   const [search,setSearch]=useState(""), [direction,setDirection]=useState(""), [page,setPage]=useState(0);
@@ -35,7 +36,7 @@ export function FinanceLedger({ entries, allEntries, trips, tripId, onEdit, onDe
       <td className="cf-cell-balance"><span>Balance </span>{formatRupiah(balances.get(c.id)??0)}</td>
       <td className="cf-cell-actions">{c.direction==="out"?<div className="row-actions"><button className="table-icon" aria-label={`Edit ${c.description}`} onClick={()=>onEdit(c)}><Pencil size={15}/></button><button className="table-icon danger-button" aria-label={`Delete ${c.description}`} onClick={()=>onDelete(c)}><Trash2 size={15}/></button></div>:<span className="cf-verified"><Check size={13}/> Verified</span>}</td>
     </tr>)}</tbody></table>{!visible.length&&<div className="cf-empty"><Search size={26}/><h3>No matching transactions</h3><p>Try another search, transaction type, or period.</p></div>}</div>
-    {visible.length>10&&<div className="table-foot"><span>{visible.length?current*10+1:0}–{Math.min((current+1)*10,visible.length)} of {visible.length} transactions</span><div className="pagination"><button disabled={current===0} onClick={()=>setPage(current-1)}>Previous</button><span>{current+1}</span><button disabled={(current+1)*10>=visible.length} onClick={()=>setPage(current+1)}>Next</button></div></div>}
+    <Pagination page={current} total={visible.length} pageSize={10} unit="transactions" onChange={setPage}/>
     
   </div>;
 }

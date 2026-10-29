@@ -263,3 +263,19 @@
   .td2-facts > div:nth-child(-n + 4) { border-top: 1px solid #eef0f3; }
   .td2-facts > div:nth-child(-n + 2) { border-top: 0; }
 }
+
+/* Shared numbered pagination. */
+.table-foot.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; font-size: 13px; color: #667085; }
+.pager-summary b { font-weight: 600; color: #101828; }
+.pager-pages { display: flex; align-items: center; gap: 4px; }
+.pager-pages button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 36px; height: 36px; padding: 0 10px; border: 1px solid #e6e8ec; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 500; color: #344054; }
+.pager-pages button:hover:not(:disabled) { border-color: #d0d5dd; background: #f6f7f9; }
+.pager-pages button:disabled { opacity: .45; cursor: not-allowed; }
+.pager-pages .pager-number.is-current { border-color: #14532d; background: #14532d; color: #fff; }
+.pager-gap { min-width: 24px; text-align: center; color: #98a2b3; }
+@media (max-width: 767px) {
+  .table-foot.pager { justify-content: center; }
+  .pager-summary { width: 100%; text-align: center; }
+  .pager-step span { display: none; }
+  .pager-pages button { min-width: 32px; height: 32px; padding: 0 8px; }
+}

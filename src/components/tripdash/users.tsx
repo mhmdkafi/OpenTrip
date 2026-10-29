@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { requestJson } from "./context";
 import { useAutoDismiss } from "./use-auto-dismiss";
+import { Pagination } from "./pagination";
 
 type Member = { id:string; name:string; email:string; role:"owner"|"admin"; lastActiveAt:string|null };
 type Result = { users:Member[]; total:number; page:number; role:"owner"|"admin" };
@@ -49,7 +50,7 @@ export function UsersPage({initial}:{initial:Result|null}) {
           <tbody>{result?.users.map(user=><tr key={user.id}><td><strong>{user.name||"—"}</strong><div className="break-all">{user.email}</div></td><td><span className={`pt-status pt-role-${user.role}`}>{user.role==="owner"?"Owner":"Admin"}</span></td><td>{lastAccess(user.lastActiveAt)}</td>
             {owner&&<td>{user.role==="admin"&&<div className="flex gap-2 justify-end"><button className="table-icon" aria-label={`Edit ${user.email}`} onClick={()=>{setFormError("");setEditing(user);}}><Pencil size={15}/></button><button className="table-icon danger-button" aria-label={`Remove ${user.email}`} onClick={()=>{setFormError("");setDeleting(user);}}><Trash2 size={15}/></button></div>}</td>}</tr>)}</tbody></table></div>
         {result?.total===0&&<p className="empty-note mt-4">No users yet.</p>}
-        {(result?.total??0)>20&&<div className="table-foot"><span>Page {page} of {Math.max(1,Math.ceil((result?.total||0)/20))}</span><div className="flex gap-2"><button className="td-secondary" disabled={page===1} onClick={()=>{setLoading(true);setPage(p=>p-1);}}>Previous</button><button className="td-secondary" disabled={!result||page*20>=result.total} onClick={()=>{setLoading(true);setPage(p=>p+1);}}>Next</button></div></div>}
+        <Pagination page={page-1} total={result?.total??0} pageSize={20} unit="users" onChange={next=>{setLoading(true);setPage(next+1);}}/>
       </>}
     </section>
     {editing&&<Modal title={editing==="new"?"Add admin":"Edit admin"} onClose={()=>{if(!busy)setEditing(null);}}>
