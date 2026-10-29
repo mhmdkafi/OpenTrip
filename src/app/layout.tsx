@@ -13,7 +13,8 @@ import TenantProvider from "@/lib/auth/tenant-provider";
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-poppins" });
 
 export const metadata: Metadata = {
-  title: "TripDash",
+  // Each page sets its own name: "Trip Schedule - TripDash".
+  title: { default: "TripDash", template: "%s - TripDash" },
   description: "Operations and finance dashboard for open trips",
 };
 

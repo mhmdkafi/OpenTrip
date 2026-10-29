@@ -33,6 +33,9 @@ export async function requireOwner() {
   return auth;
 }
 
+// One read per page render, shared by the dashboard layout and page metadata.
+export const loadWorkspaceForRender = cache((tenantId: string) => loadWorkspace(tenantId));
+
 export async function loadWorkspace(tenantId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("tripdash_workspaces").select("revision,data").eq("tenant_id", tenantId).maybeSingle();
