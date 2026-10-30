@@ -1,4 +1,4 @@
-import { paidFor, type Trip, type Workspace } from "./types";
+import type { Trip, Workspace } from "./types";
 
 export const todayWib = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 export const dateLabel = (date: string, long = false) => !date ? "Not scheduled" : new Date(`${date.slice(0, 10)}T12:00:00+07:00`).toLocaleDateString("en-GB", { day: "numeric", month: long ? "long" : "short", year: "numeric" });
@@ -30,7 +30,3 @@ export function tripStatus(trip: Trip, state: Workspace, today: string) {
   return trip.status === "active" && days <= (trip.riskDays ?? 7) && count < (trip.minimumParticipants ?? 7) ? "risk" : "upcoming";
 }
 export const statusLabel = { upcoming: "Upcoming", done: "Done", cancelled: "Cancelled", risk: "At risk" };
-export function tripFigures(state: Workspace, tripId: string) {
-  const people = activeParticipants(state, tripId);
-  return { people, remaining: people.reduce((sum, p) => sum + Math.max(0, p.charge - paidFor(state, p.id)), 0), paid: people.filter(p => p.reviewed && paidFor(state, p.id) >= p.charge).length };
-}

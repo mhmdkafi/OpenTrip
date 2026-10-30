@@ -81,12 +81,4 @@ export function splitName(rawName: string): SplitNameResult {
   };
 }
 
-export function detectAmbiguousCommas(text: string): boolean {
-  if (!text.includes(',')) return false;
-  if (DEGREE_PATTERNS.test(text)) return false;
-  return true;
-}
 
-export function normalizeNameForComparison(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ');
-}

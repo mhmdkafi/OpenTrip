@@ -61,10 +61,6 @@ export function reconcileSourceRows(rows: SourceRow[], existing: BookingSnapshot
   });
 }
 
-export function findMissingBookings(rows: SourceRow[], existing: BookingSnapshot[]) {
-  const activeFingerprints = new Set(rows.map((row) => createSourceFingerprint(row.values)));
-  return existing.filter((booking) => !activeFingerprints.has(booking.fingerprint) && !rows.some((row) => identityScore(row.values, booking.snapshot) >= 2));
-}
 
 function identityScore(current: Record<string, string>, previous: Record<string, string>) {
   return ["registered_at", "raw_name", "contact_phone"].reduce((score, key) => score + (normalizeValue(current[key]) !== "" && normalizeValue(current[key]) === normalizeValue(previous[key]) ? 1 : 0), 0);

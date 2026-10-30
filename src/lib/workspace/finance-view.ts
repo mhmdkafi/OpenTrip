@@ -1,6 +1,5 @@
 import type { Cash, Trip } from "./types";
 import { periodBounds } from "./period";
-import { weekKey } from "./presentation";
 // Participant payments belong to the trip they paid for: in cashflow they are counted on the
 // trip's departure date, while the real transfer time is kept in recordedAt for display.
 export function attributeToTrips(cash: Cash[], trips: Trip[]): Cash[] {
@@ -31,20 +30,4 @@ export function previousReference(period: string, reference: string) {
 export function profitChange(current: number, previous: number) {
   if (previous === 0) return null;
   return (current - previous) / Math.abs(previous) * 100;
-}
-export function cashSeries(entries: Cash[], period: string, reference: string) {
-  const [start, end] = periodBounds(period, reference);
-  const groups = new Map<string, { label: string; entries: Cash[] }>();
-  const day = new Date(start + 7 * 3600000);
-  while (day.getTime() < end + 7 * 3600000) {
-    const date = day.toISOString().slice(0, 10);
-    const key = period === "year" ? date.slice(0, 7) : period === "week" ? date : weekKey(date);
-    if (!groups.has(key)) groups.set(key, { label: period === "year" ? day.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) : period === "week" ? day.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }) : `${day.getUTCDate()} ${day.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}`, entries: [] });
-    day.setUTCDate(day.getUTCDate() + 1);
-  }
-  for (const entry of filterPeriod(entries, period, reference)) {
-    const date = cashDate(entry);
-    groups.get(period === "year" ? date.slice(0, 7) : period === "week" ? date : weekKey(date))?.entries.push(entry);
-  }
-  return [...groups.entries()].map(([key, group]) => ({ key, label: group.label, ...cashTotals(group.entries) }));
 }

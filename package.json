@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test": "node --import tsx --test \"src/**/*.test.ts\" \"tests/*.test.ts\"",
     "check:integration": "node scripts/check-auth-import.mjs",
     "seed": "tsx --env-file=.env scripts/seed-trips.ts",
     "seed:inventory": "tsx --env-file=.env scripts/seed-inventory.ts"
@@ -21,6 +21,7 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "sharp": "^0.35.4",
     "tesseract.js": "^6.0.1",
     "zod": "^4.6.2"
   },

@@ -3,7 +3,6 @@ import { Children, Fragment, isValidElement, useEffect, useId, useRef, useState,
 import { X } from "lucide-react";
 import { useWorkspace } from "./context";
 import { Dropdown, type DropdownOption } from "./dropdown";
-export function Panel({ title, children }: { title: string; children: ReactNode }) { return <section className="td-panel space-y-4"><h2 className="text-lg font-semibold">{title}</h2>{children}</section>; }
 export function Field({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) { return <label className="form-label"><span>{label}</span><input className="td-input" {...props} /></label>; }
 // <option> children are read into Dropdown options, so every select shares the styled listbox.
 const textOf = (node: ReactNode): string => node == null || typeof node === "boolean" ? "" : typeof node === "string" || typeof node === "number" ? String(node) : Array.isArray(node) ? node.map(textOf).join("") : isValidElement(node) ? textOf((node.props as { children?: ReactNode }).children) : "";

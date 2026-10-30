@@ -14,8 +14,8 @@ export async function middleware(request: NextRequest) {
     const origin = request.headers.get("origin");
     if (origin && origin !== request.nextUrl.origin) return NextResponse.json({error:"Origin rejected."}, {status:403});
   }
-  // Cron authenticates its service credential in the handler, never a browser cookie.
-  if (["/api/cron/sync", "/api/health"].includes(path)) return response;
+  // The health check is public so uptime monitors can reach it without a session.
+  if (path === "/api/health") return response;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return NextResponse.json({error:"Auth is not configured."}, {status:503});
   const client = createServerClient(url, key, {cookies:{

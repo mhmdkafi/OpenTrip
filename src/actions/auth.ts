@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { LoginFormData } from "@/types/auth";
 import { z } from "zod";
-import { requireMembership } from "@/lib/auth/membership";
 import { MEMBERSHIP_COOKIE, MEMBERSHIP_TTL_S, signMembership } from "@/lib/auth/forwarded";
 
 const loginSchema = z.object({
