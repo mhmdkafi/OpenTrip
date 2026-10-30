@@ -1,20 +1,22 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, FileDown, MapPin, MoreHorizontal, Pencil, Trash2, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, MapPin, MessageCircle, MoreHorizontal, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWorkspace } from "./context";
 import { Modal } from "./ui";
 import { Dropdown } from "./dropdown";
 import { TripForm } from "./trip-form";
 import { Participants } from "./participants";
+import { ReminderPanel, TemplatesModal } from "./reminders";
+import { isReminderDay } from "@/lib/workspace/reminders";
 import { dateLabel, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
 import { formatRupiah } from "@/lib/money";
 import type { Trip } from "@/lib/workspace/types";
 
 const STATUS_OPTIONS = [{ value: "active", label: "Active" }, { value: "completed", label: "Completed" }, { value: "cancelled", label: "Cancelled" }, { value: "archived", label: "Archived" }];
 
-type MenuItem = { label: string; icon: LucideIcon; tone: "warn" | "danger"; onSelect: () => void };
+type MenuItem = { label: string; icon: LucideIcon; tone: "default" | "warn" | "danger"; onSelect: () => void };
 // Less frequent, destructive trip actions live behind a "more" button.
 function MoreMenu({ items }: { items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
@@ -35,7 +37,7 @@ function MoreMenu({ items }: { items: MenuItem[] }) {
 export function TripDetail({ tripId }: { tripId: string }) {
   const { state, basePath, run, mutate, busy } = useWorkspace();
   const router = useRouter();
-  const [editing, setEditing] = useState(false), [deleting, setDeleting] = useState(false), [cancelling, setCancelling] = useState(false);
+  const [editing, setEditing] = useState(false), [deleting, setDeleting] = useState(false), [cancelling, setCancelling] = useState(false), [templates, setTemplates] = useState(false);
   const trip = state.trips.find(t => t.id === tripId);
   const people = state.participants.filter(p => p.tripId === tripId && p.status === "active");
   const missing = people.some(p => !p.name.trim() || !p.meetingPoint.trim());
@@ -58,7 +60,7 @@ export function TripDetail({ tripId }: { tripId: string }) {
       <div className="td2-actions">
         <button className="td-secondary" onClick={() => setEditing(true)}><Pencil size={15}/> Edit trip</button>
         <button className="td-button" disabled={busy || !people.length || missing} onClick={() => void print()}><FileDown size={15}/> Download attendance PDF</button>
-        <MoreMenu items={[...(trip.status !== "cancelled" ? [{ label: "Cancel trip", icon: Ban, tone: "warn", onSelect: () => setCancelling(true) } satisfies MenuItem] : []), { label: "Delete trip", icon: Trash2, tone: "danger", onSelect: () => setDeleting(true) }]}/>
+        <MoreMenu items={[{ label: "WhatsApp templates", icon: MessageCircle, tone: "default", onSelect: () => setTemplates(true) } satisfies MenuItem, ...(trip.status !== "cancelled" ? [{ label: "Cancel trip", icon: Ban, tone: "warn", onSelect: () => setCancelling(true) } satisfies MenuItem] : []), { label: "Delete trip", icon: Trash2, tone: "danger", onSelect: () => setDeleting(true) }]}/>
       </div>
     </header>
     {(!people.length || missing) && <p className="inline-warning">{!people.length ? "Import participants before printing attendance." : "Fill in every participant's name and meeting point before printing attendance."}</p>}
@@ -91,7 +93,9 @@ export function TripDetail({ tripId }: { tripId: string }) {
         </dl>
       </div>
     </section>
+    {isReminderDay(trip, todayWib()) && <ReminderPanel tripId={tripId}/>}
     <Participants key={tripId} fixedTripId={tripId}/>
+    {templates && <TemplatesModal onClose={() => setTemplates(false)}/>}
     {editing && <TripForm trip={trip} onClose={() => setEditing(false)}/>}
     {cancelling && <Modal title="Cancel trip" onClose={() => setCancelling(false)}>
       <p className="empty-note">Mark {trip.title} as cancelled? The trip is kept and can be reactivated from its operational status.</p>

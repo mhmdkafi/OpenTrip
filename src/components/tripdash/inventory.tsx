@@ -180,11 +180,27 @@ export function Inventory() {
             className="stock-reminder"
             onClick={() => setEditing(item)}
           >
-            <strong>{item.name}</strong>
-            <span>{availableStock(item)} left</span>
-            <small>
-              Update stock <ArrowUpRight size={13} />
-            </small>
+            {/* Same inline thumbnail as the list row, so the reminder needs no extra request. */}
+            {item.imageUrl ? (
+              <Image
+                className="stock-reminder-photo"
+                src={item.thumbnailUrl ?? (item.imageUrl.startsWith("/api/") ? `${item.imageUrl}&w=160` : item.imageUrl)}
+                alt=""
+                width={56}
+                height={56}
+                decoding="async"
+                unoptimized
+              />
+            ) : (
+              <span className="stock-reminder-photo is-empty" aria-hidden="true"><Package size={20} /></span>
+            )}
+            <span className="stock-reminder-text">
+              <strong>{item.name}</strong>
+              <span>{availableStock(item) <= 0 ? "Out of stock" : `${availableStock(item)} left`}</span>
+              <small>
+                Update stock <ArrowUpRight size={13} />
+              </small>
+            </span>
           </button>
         ))}
         {!low.length && (

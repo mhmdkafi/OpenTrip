@@ -4,7 +4,10 @@ import { splitName } from "@/lib/split-name";
 import { DomainError } from "./commands";
 import type { Workspace, Source } from "./types";
 
-export const importFields = ["registered_at", "raw_name", "facility", "meeting_point", "raincoat_option", "proof_refs", "contact_phone"] as const;
+export const importFields = ["registered_at", "raw_name", "facility", "meeting_point", "raincoat_option", "proof_refs", "contact_phone", "age", "address", "emergency_phone", "medical_notes"] as const;
+// Form answers stored on each participant as given; they never change the bill, so re-imports may update them.
+const PERSON_FIELDS = { age: "age", address: "address", emergency_phone: "emergencyPhone", medical_notes: "medicalNotes" } as const;
+const personDetails = (values: Record<string, string>) => Object.fromEntries(Object.entries(PERSON_FIELDS).filter(([field]) => values[field]).map(([field, key]) => [key, values[field]]));
 export function registrationDate(value: string, dateOrder: "dmy" | "mdy" = "dmy") {
   const match = value.trim().match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ ,]+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?$/);
   let input = value.trim();
@@ -63,7 +66,7 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
           review.push(`${rowLabel}: ambiguous identity or old snapshot unavailable; database data kept.`); continue;
         }
         const changed = [...new Set([...Object.keys(previous),...Object.keys(values)])].filter(key=>previous[key]!==values[key]);
-        const safe = new Set(["contact_phone","meeting_point","proof_refs"]);
+        const safe = new Set<string>(["contact_phone","meeting_point","proof_refs",...Object.keys(PERSON_FIELDS)]);
         if (changed.some(key=>!safe.has(key))) {
           review.push(`${rowLabel}: identity/billing change (${changed.join(", ")}); database wins. Correct it from the trip details.`); continue;
         }
@@ -76,6 +79,10 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
           } else if (field === "proof_refs") {
             localConflict=booking.proof!==canonicalProof(previous.proof_refs||"");
             if (!localConflict) booking.proof=canonicalProof(values.proof_refs||"");
+          } else if (field in PERSON_FIELDS) {
+            const key = PERSON_FIELDS[field as keyof typeof PERSON_FIELDS];
+            localConflict=people.some(p=>(p[key]??"")!==(previous[field]||""));
+            if (!localConflict) people.forEach(p=>{p[key]=values[field]||undefined;});
           } else {
             localConflict=people.some(p=>p.meetingPoint!==(previous.meeting_point||""));
             if (!localConflict) people.forEach(p=>{p.meetingPoint=values.meeting_point||"";});
@@ -92,7 +99,7 @@ export function importRows(original: Workspace, source: Source, rows: string[][]
       const bookingId = crypto.randomUUID();
       state.bookings.push({ id: bookingId, tripId: trip.id, sourceId: source.id, fingerprint, registeredAt, rawName: values.raw_name, proof: canonicalProof(values.proof_refs ?? ""), phone: values.contact_phone ?? "", sourceSnapshot: values });
       const base = facility === "Full Transport" ? trip.fullPrice : facility === "Non Transport" ? trip.nonPrice : 0;
-      for (const name of names) state.participants.push({ id: crypto.randomUUID(), bookingId, tripId: trip.id, name, meetingPoint: values.meeting_point ?? "", facility, raincoats: quantity, charge: base + (quantity ?? 0) * trip.raincoatPrice, reviewed: Boolean(base && quantity !== null && names.length === 1), status: "active" });
+      for (const name of names) state.participants.push({ id: crypto.randomUUID(), bookingId, tripId: trip.id, name, ...personDetails(values), meetingPoint: values.meeting_point ?? "", facility, raincoats: quantity, charge: base + (quantity ?? 0) * trip.raincoatPrice, reviewed: Boolean(base && quantity !== null && names.length === 1), status: "active" });
       added++;
     } catch (e) { review.push(`${rowLabel}: ${e instanceof Error ? e.message : "Invalid data"}`); }
   }

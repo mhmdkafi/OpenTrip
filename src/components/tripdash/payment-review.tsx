@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Clock3, Landmark, Pencil, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock3, Landmark, Pencil, Wallet, X } from "lucide-react";
 import { formatRupiah } from "@/lib/money";
 import { paidFor, type Person } from "@/lib/workspace/types";
 import { pendingProofs } from "@/lib/workspace/payment-queue";
@@ -74,5 +74,46 @@ export function PaymentReview({ tripId, startKey, onClose, onReviewBill }: { tri
         </>}
       </div>
     </div>}
+  </Modal>;
+}
+
+const METHODS = [{ value: "transfer", label: "Bank transfer" }, { value: "cash", label: "Cash" }, { value: "other", label: "Other" }] as const;
+
+/** Records a payment for one participant in the same layout as the review queue: proof on the left, bill and amount on the right. */
+export function RecordPayment({ person, onClose }: { person: Person; onClose: () => void }) {
+  const { state, mutate, run, busy } = useWorkspace();
+  const trip = state.trips.find(t => t.id === person.tripId);
+  const booking = state.bookings.find(b => b.id === person.bookingId);
+  const due = Math.max(person.charge - paidFor(state, person.id), 0), paid = paidFor(state, person.id);
+  const [amount, setAmount] = useState(due);
+  const [method, setMethod] = useState<(typeof METHODS)[number]["value"]>("transfer");
+  const registered = booking && new Date(booking.registeredAt).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+  const save = () => void run(async () => { await mutate({ action: "payment.verify", participantIds: [person.id], amount, method, notes: amount < due ? "Partial payment" : "", fullyPaid: amount >= due }); onClose(); });
+  return <Modal title="Record payment" onClose={onClose} wide>
+    <div className="pr-layout">
+      <div className="pr-proof">
+        {booking?.proof ? <ProofImage url={booking.proof}/> : <div className="pr-noproof"><Wallet size={28} aria-hidden="true"/><h3>No transfer proof</h3><p>Record cash, or a transfer the participant sent outside the form.</p></div>}
+      </div>
+      <div className="pr-details">
+        <div className="pr-head">
+          <h3>{trip?.title}{trip?.volume ? ` ${trip.volume}` : ""}</h3>
+          <dl className="pr-facts">
+            {trip?.bankAccount && <div><dt><Landmark size={14}/> Transfer to</dt><dd>{trip.bankAccount}</dd></div>}
+            {registered && <div><dt><Clock3 size={14}/> Registered</dt><dd>{registered} WIB</dd></div>}
+          </dl>
+        </div>
+        <div className="pr-people">
+          <div><span>{person.name}<small>{person.facility}{person.raincoats ? ` + ${person.raincoats} raincoat${person.raincoats > 1 ? "s" : ""}` : ""}</small></span><strong>{formatRupiah(person.charge)}</strong></div>
+          {paid > 0 && <div className="pr-people-total"><span>Already paid</span><strong>{formatRupiah(paid)}</strong></div>}
+        </div>
+        <div className="pr-detected is-short"><span>Still to pay</span><strong>{formatRupiah(due)}</strong></div>
+        <div className="pr-record">
+          <label className="ts-field"><span className="ts-field-label">Amount received (Rp)</span><span className="ts-control"><input type="number" min={1} value={amount || ""} onChange={e => setAmount(Number(e.target.value))}/></span></label>
+          <div className="ov-toolbar pr-methods" role="group" aria-label="Payment method">{METHODS.map(m => <button key={m.value} type="button" aria-pressed={method === m.value} className={method === m.value ? "is-active" : ""} onClick={() => setMethod(m.value)}>{m.label}</button>)}</div>
+        </div>
+        <div className="pr-actions"><button className="pr-approve" disabled={busy || !amount || amount <= 0} onClick={save}><Check size={16}/> Record {formatRupiah(amount || 0)}</button></div>
+        {amount > due && <p className="pr-note">{formatRupiah(amount - due)} above the bill is kept as an overpayment.</p>}
+      </div>
+    </div>
   </Modal>;
 }

@@ -14,7 +14,7 @@ export type SheetMetadata = {
   sheets: Array<{ sheetId: number; title: string; rowCount?: number; columnCount?: number }>;
 };
 
-export type HeaderField = "registered_at" | "raw_name" | "facility" | "meeting_point" | "raincoat_option" | "proof_refs" | "contact_phone";
+export type HeaderField = "registered_at" | "raw_name" | "facility" | "meeting_point" | "raincoat_option" | "proof_refs" | "contact_phone" | "age" | "address" | "emergency_phone" | "medical_notes";
 
 export type HeaderSuggestion = {
   field: HeaderField;
@@ -45,6 +45,10 @@ const sheetAliases: Record<HeaderField, string[]> = {
   raincoat_option: ["jas hujan", "raincoat", "ponco"],
   proof_refs: ["bukti transfer", "registrasi", "upload bukti", "proof", "payment proof", "file upload"],
   contact_phone: ["no whatsapp", "whatsapp", "wa", "phone", "telepon", "nomor hp", "contact phone"],
+  age: ["usia", "umur", "age"],
+  address: ["alamat", "address", "domisili", "alamat lengkap"],
+  emergency_phone: ["no darurat", "nomor darurat", "kontak darurat", "no hp darurat", "emergency contact", "emergency"],
+  medical_notes: ["riwayat penyakit", "penyakit", "medical", "kesehatan", "alergi", "medical notes"],
 };
 
 const requiredFields = new Set<HeaderField>(["registered_at", "raw_name", "facility", "meeting_point"]);
@@ -89,16 +93,22 @@ export function parseGoogleDriveUrl(input: string): GoogleDriveUrl {
 
 export function suggestHeaderMappings(headers: string[], sampleRows: string[][] = []): HeaderSuggestion[] {
   const normalizedHeaders = headers.map(normalizeHeader);
-  return (Object.keys(sheetAliases) as HeaderField[]).map((field) => {
+  const fields = Object.keys(sheetAliases) as HeaderField[];
+  // Exact header matches are claimed first, so a looser match never takes a column another field named exactly.
+  const exact = new Map(fields.map(field => [field, normalizedHeaders.findIndex(header => sheetAliases[field].map(normalizeHeader).includes(header))]));
+  const claimed = new Set([...exact.values()].filter(index => index >= 0));
+  return fields.map((field) => {
     const aliases = sheetAliases[field].map(normalizeHeader);
-    let index = normalizedHeaders.findIndex((header) => aliases.includes(header));
+    let index = exact.get(field)!;
     let confidence = index >= 0 ? 0.95 : 0;
     let reason = index >= 0 ? "header alias matched" : "not found";
 
     if (index < 0) {
-      const partial = normalizedHeaders.findIndex((header) => header.length > 0 && aliases.some((alias) => header.includes(alias) || alias.includes(header)));
+      // Short aliases ("wa", "age") only match whole headers; inside longer text they hit unrelated words.
+      const partial = normalizedHeaders.findIndex((header, i) => header.length > 0 && !claimed.has(i) && aliases.some((alias) => alias.length >= 4 && (header.includes(alias) || (header.length >= 4 && alias.includes(header)))));
       if (partial >= 0) {
         index = partial;
+        claimed.add(partial);
         confidence = 0.7;
         reason = "header resembles alias";
       }

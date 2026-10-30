@@ -12,7 +12,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("trip.update"), tripId: id, ...tripDetails }),
   z.object({ action: z.literal("trip.status"), tripId: id, status: z.enum(["active", "archived", "completed", "cancelled"]) }),
   z.object({ action: z.literal("trip.delete"), tripId: id }),
-  z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: z.string().trim().max(200).optional() }),
+  z.object({ action: z.literal("participant.edit"), participantId: id, name, meetingPoint: name, facility: z.enum(["Full Transport", "Non Transport"]), raincoats: z.number().int().min(0).max(100), reason: z.string().trim().max(200).optional(), phone: z.string().trim().max(40).optional(), age: z.string().trim().max(20).optional(), address: z.string().trim().max(300).optional(), emergencyPhone: z.string().trim().max(40).optional(), medicalNotes: z.string().trim().max(1000).optional() }),
   z.object({ action: z.literal("participant.cancel"), participantId: id, reason: name }),
   z.object({ action: z.literal("payment.verify"), participantIds: z.array(id).min(1).max(500), amount: money.positive(), method: z.enum(["transfer", "cash", "other"]), notes: z.string().max(500).default(""), fullyPaid: z.boolean().default(false) }),
   z.object({ action: z.literal("payment.reject"), participantIds: z.array(id).min(1).max(500), reason: z.string().trim().max(200).default("") }),
@@ -27,6 +27,8 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("inventory.lend"), itemId: id, tripId: id, quantity: z.number().int().positive().max(100000), notes: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal("inventory.incident"), itemId: id, loanId: id.optional(), kind: z.enum(["lost", "damaged", "note"]), quantity: z.number().int().min(0).max(100000), description: name }),
   z.object({ action: z.literal("inventory.return"), itemId: id, loanId: id }),
+  z.object({ action: z.literal("message.templates"), reminder: z.string().trim().max(2000), overpaid: z.string().trim().max(2000) }),
+  z.object({ action: z.literal("message.sent"), participantId: id, kind: z.enum(["reminder", "overpaid"]) }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export class DomainError extends Error { constructor(message: string, public status = 400) { super(message); } }
@@ -54,6 +56,11 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       changed.forEach(({ p, charge }) => { if (["Full Transport", "Non Transport"].includes(p.facility)) p.charge = charge; });
       detail = `Trip updated: ${trip.title}`; break;
     }
+    case "message.templates": state.templates = { reminder: command.reminder, overpaid: command.overpaid }; detail = "Updated WhatsApp templates"; break;
+    case "message.sent": {
+      const p = found(state.participants.find(p => p.id === command.participantId), "Participant");
+      (p.contacted ??= {})[command.kind] = now; detail = `${p.name}: ${command.kind} sent via WhatsApp`; break;
+    }
     case "trip.status": found(state.trips.find(t => t.id === command.tripId), "Trip").status = command.status; detail = command.status; break;
     case "trip.delete": {
       const trip = found(state.trips.find(t => t.id === command.tripId), "Trip");
@@ -72,7 +79,11 @@ export function applyCommand(original: Workspace, command: Command, userId: stri
       const charge = (command.facility === "Full Transport" ? trip.fullPrice : trip.nonPrice) + command.raincoats * trip.raincoatPrice;
       if (paidFor(state, p.id) > 0 && charge !== p.charge) throw new DomainError("This bill has already received payments. Reconcile the price change first.");
       detail = `${p.name} → ${command.name}${command.reason ? `; ${command.reason}` : ""}`;
-      Object.assign(p, { name: command.name, meetingPoint: command.meetingPoint, facility: command.facility, raincoats: command.raincoats, charge, reviewed: true }); break;
+      Object.assign(p, { name: command.name, meetingPoint: command.meetingPoint, facility: command.facility, raincoats: command.raincoats, charge, reviewed: true });
+      for (const key of ["age", "address", "emergencyPhone", "medicalNotes"] as const) if (command[key] !== undefined) p[key] = command[key] || undefined;
+      // The WhatsApp number belongs to the registration, shared by everyone on the same form response.
+      if (command.phone !== undefined) found(state.bookings.find(b => b.id === p.bookingId), "Booking").phone = command.phone;
+      break;
     }
     case "participant.cancel": {
       const p = found(state.participants.find(p => p.id === command.participantId), "Participant"); p.status = "cancelled"; detail = `${p.name}: ${command.reason}`; break;

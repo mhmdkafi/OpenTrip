@@ -4,6 +4,8 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, Clock, X, XCircle, type LucideIcon } from "lucide-react";
 import { useWorkspace } from "./context";
 import { TripCalendar } from "./trip-calendar";
+import { ReminderBanner } from "./reminders";
+import { isReminderDay, reminderQueue } from "@/lib/workspace/reminders";
 import { dateLabel, statusLabel, todayWib, tripStatus } from "@/lib/workspace/presentation";
 import type { Trip } from "@/lib/workspace/types";
 
@@ -24,9 +26,11 @@ export function Overview() {
   const period = view === "month" ? month : year;
   const periodTrips = state.trips.filter(t => t.status !== "archived" && t.departureDate.startsWith(period)).sort((a, b) => a.departureDate.localeCompare(b.departureDate));
   const byTile = (tile: Tile) => tile === "total" ? periodTrips : periodTrips.filter(t => tripStatus(t, state, today) === tile);
-  const agenda = selected ? periodTrips.filter(t => t.departureDate === selected) : periodTrips;
+  // The list shows what is still ahead (upcoming or at risk); a picked calendar date shows everything on it.
+  const agenda = selected ? periodTrips.filter(t => t.departureDate === selected) : periodTrips.filter(t => ["upcoming", "risk"].includes(tripStatus(t, state, today)));
   const active = state.participants.filter(p => p.status === "active");
   const periodName = view === "month" ? new Date(`${month}-01T12:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : year;
+  const dueTomorrow = state.trips.filter(t => isReminderDay(t, today)).map(t => ({ id: t.id, title: t.title, pending: reminderQueue(state, t.id).filter(e => e.phone && !e.person.contacted?.[e.kind]).length })).filter(t => t.pending > 0);
   const changeMonth = (next: string) => { setMonth(next); setSelected(""); setPreview(null); };
   const openMonth = (next: string) => { changeMonth(next); setView("month"); };
   return <div className="ov">
@@ -41,9 +45,10 @@ export function Overview() {
         ? <TripCalendar state={state} trips={periodTrips} today={today} month={month} onMonth={changeMonth} selected={selected} onSelect={setSelected}/>
         : <YearGrid year={year} today={today} trips={periodTrips} statusOf={trip => tripStatus(trip, state, today)} onYear={next => changeMonth(`${next}${month.slice(4)}`)} onOpen={openMonth}/>}
       <section className="ov-card ov-agenda">
-        <div className="ov-card-head"><h2>{selected ? dateLabel(selected, true) : `Trips in ${periodName}`}</h2><Link className="ov-link" href={`${basePath}/trips`}>Full schedule <ArrowRight size={14}/></Link></div>
+        <div className="ov-card-head"><h2>{selected ? dateLabel(selected, true) : `Upcoming in ${periodName}`}</h2><Link className="ov-link" href={`${basePath}/trips`}>Full schedule <ArrowRight size={14}/></Link></div>
+        <ReminderBanner trips={dueTomorrow} basePath={basePath}/>
         <div className="ov-agenda-list">{agenda.map(trip => <AgendaItem key={trip.id} trip={trip} href={`${basePath}/trips/${trip.id}`} count={active.filter(p => p.tripId === trip.id).length} status={tripStatus(trip, state, today)}/>)}
-          {!agenda.length && <p className="ov-empty">No trips {selected ? "on this date" : `this ${view}`}.</p>}</div>
+          {!agenda.length && <p className="ov-empty">{selected ? "No trips on this date." : `No upcoming trips this ${view}.`}</p>}</div>
       </section>
     </div>
     {preview && <TilePreview title={`${tileLabel(preview)} · ${periodName}`} tone={preview} onClose={() => setPreview(null)}>

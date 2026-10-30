@@ -1,6 +1,9 @@
 // Seeds demo trips from Jan 2025 to the 3rd week of Oct 2026 (8 per month) with participants and payments.
-// Usage: npm run seed -- <owner-email>   (defaults to OWNER_EMAIL)
+// Usage: npm run seed -- <owner-email> [--reset] [--proofs=<file>]   (email defaults to OWNER_EMAIL)
 // Re-running replaces only seed trips (ids starting with "5eed5eed"); ids are stable, so other data is kept.
+//   --reset          also removes every non-seed trip with its participants, payments, cash and sources
+//   --proofs=<file>  attaches the Google Drive links found in the file as transfer proofs of paid participants
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { emptyWorkspace, type Booking, type Cash, type Payment, type Person, type Trip, type Workspace } from "../src/lib/workspace/types";
 
@@ -70,6 +73,14 @@ const plans: Plan[] = (() => {
 const firstNames = ["Andi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gilang", "Hana", "Indra", "Joko", "Kevin", "Laras", "Maya", "Nadia", "Oki", "Putri", "Rizky", "Sari", "Tegar", "Umar", "Vina", "Wulan", "Yoga", "Zahra", "Aldi", "Bella", "Dimas", "Fitri", "Hendra", "Intan", "Raka", "Salsa"];
 const lastNames = ["Pratama", "Saputra", "Wijaya", "Hidayat", "Nugraha", "Permana", "Lestari", "Rahmawati", "Kurniawan", "Santoso", "Setiawan", "Maulana", "Ramadhan", "Anggraini", "Firmansyah", "Puspita"];
 const meetingPoints = ["St. Bandung", "Basecamp"];
+const streets = ["Jl. Dago", "Jl. Riau", "Jl. Buah Batu", "Jl. Soekarno-Hatta", "Jl. Cihampelas", "Jl. Setiabudi", "Jl. Pasteur", "Jl. Antapani", "Jl. Kopo", "Jl. Cibaduyut", "Jl. Margahayu", "Jl. Gegerkalong"];
+const cities = ["Bandung", "Cimahi", "Bandung Barat", "Sumedang", "Jakarta Selatan", "Bekasi", "Bogor"];
+// Most participants report nothing; the rest carry the kinds of notes the field team needs to know.
+const conditions = ["Asma ringan, bawa inhaler", "Alergi udang", "Maag, bawa obat sendiri", "Darah rendah", "Pernah cedera lutut", "Alergi debu", "Migrain"];
+const phone = () => `08${int(1, 9)}${int(10000000, 99999999)}`;
+// Optional proof links (Drive), reused round-robin so every paid participant has one to open.
+const proofArg = process.argv.find(a => a.startsWith("--proofs="))?.slice(9);
+const proofLinks = proofArg ? [...new Set(readFileSync(proofArg, "utf8").match(/https:\/\/drive\.google\.com\/file\/d\/[\w-]+/g) ?? [])].map(link => `${link}/view`) : [];
 const RAINCOAT = 15000;
 
 const NOW = Date.now();
@@ -95,8 +106,8 @@ function buildSeed() {
       const raincoats = rand() < 0.3 ? 1 : 0;
       const charge = (facility === "Full Transport" ? trip.fullPrice : trip.nonPrice) + raincoats * RAINCOAT;
       const registeredAt = addDays(plan.date, -int(5, 30), int(7, 22));
-      const booking: Booking = { id: uuid(), tripId: trip.id, sourceId, fingerprint: hex(16), registeredAt, rawName: name, proof: "", phone: `08${int(1, 9)}${int(10000000, 99999999)}` };
-      const person: Person = { id: uuid(), bookingId: booking.id, tripId: trip.id, name, meetingPoint: facility === "Full Transport" ? "St. Bandung" : "Basecamp", facility, raincoats, charge, reviewed: true, status: "active" };
+      const booking: Booking = { id: uuid(), tripId: trip.id, sourceId, fingerprint: hex(16), registeredAt, rawName: name, proof: "", phone: phone() };
+      const person: Person = { id: uuid(), bookingId: booking.id, tripId: trip.id, name, age: String(int(18, 45)), address: `${pick(streets)} No. ${int(1, 220)}, ${pick(cities)}`, emergencyPhone: phone(), medicalNotes: rand() < 0.22 ? pick(conditions) : "Tidak ada", meetingPoint: facility === "Full Transport" ? "St. Bandung" : "Basecamp", facility, raincoats, charge, reviewed: true, status: "active" };
       bookings.push(booking); participants.push(person);
       if (plan.cancelled) continue;
       // Finished trips are fully paid; upcoming trips mix full, deposit, and unpaid.
@@ -104,7 +115,9 @@ function buildSeed() {
       const amount = past || roll < 0.45 ? charge : roll < 0.8 ? Math.round(charge / 2 / 1000) * 1000 : 0;
       if (!amount) continue;
       const paymentId = uuid();
-      payments.push({ id: paymentId, tripId: trip.id, amount, method: "transfer", notes: amount < charge ? "Deposit" : "", verifiedAt: addDays(registeredAt.slice(0, 10), 1), allocations: [{ participantId: person.id, amount }], proof: "" });
+      // An already reviewed proof with its amount recorded, so it is viewable but never queued for OCR.
+      if (proofLinks.length) Object.assign(booking, { proof: proofLinks[bookings.length % proofLinks.length], proofStatus: "approved", proofAmount: amount });
+      payments.push({ id: paymentId, tripId: trip.id, amount, method: "transfer", notes: amount < charge ? "Deposit" : "", verifiedAt: addDays(registeredAt.slice(0, 10), 1), allocations: [{ participantId: person.id, amount }], proof: booking.proof });
       cash.push({ id: uuid(), tripId: trip.id, direction: "in", amount, occurredAt: registeredAt, description: `Payment from ${name}`, category: "Participant payment", sourceId: paymentId, dateSource: "registration" });
     }
   }
@@ -142,7 +155,8 @@ ${seed.trips.length} trips over ${perMonth.size} months (${[...new Set(perMonth.
   const { data: row, error: rowError } = await db.from("tripdash_workspaces").select("revision,data").eq("tenant_id", tenantId).maybeSingle();
   if (rowError) throw new Error(`Could not load the workspace: ${rowError.message}`);
   const current: Workspace = { ...emptyWorkspace(), ...(row?.data ?? {}) };
-  const isSeed = (tripId: string) => tripId.startsWith(SEED_PREFIX);
+  // With --reset nothing but the seed survives in the trip data.
+  const isSeed = process.argv.includes("--reset") ? () => true : (tripId: string) => tripId.startsWith(SEED_PREFIX);
   const seed = buildSeed();
   const next: Workspace = {
     ...current,
@@ -151,6 +165,7 @@ ${seed.trips.length} trips over ${perMonth.size} months (${[...new Set(perMonth.
     participants: [...current.participants.filter(p => !isSeed(p.tripId)), ...seed.participants],
     payments: [...current.payments.filter(p => !isSeed(p.tripId)), ...seed.payments],
     cash: [...current.cash.filter(c => !isSeed(c.tripId)), ...seed.cash],
+    ...(process.argv.includes("--reset") ? { sources: [], templates: undefined } : {}),
     audit: [...current.audit, { id: crypto.randomUUID(), userId: user.id, at: new Date().toISOString(), action: "seed.trips", detail: `${seed.trips.length} demo trips` }],
   };
 

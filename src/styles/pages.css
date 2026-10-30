@@ -300,11 +300,8 @@
 /* Participant list: dropdown toolbar, and on phones each row becomes a card instead of a sideways-scrolling table. */
 .participants-panel .table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
 .participants-panel .search-field { flex: 1 1 220px; max-width: 340px; }
-.participants-panel .sort-select { margin-left: auto; min-width: 190px; }
-.participants-panel .filter-expand { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 260px)); gap: 12px; margin-bottom: 16px; }
 @media (max-width: 767px) {
   .participants-panel .search-field { flex-basis: 100%; max-width: none; }
-  .participants-panel .sort-select { flex: 1; margin-left: 0; min-width: 0; }
   .participants-panel .table-wrap { overflow: visible; border: 0; }
   .pt-table, .pt-table tbody { display: block; min-width: 0; }
   .pt-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -484,8 +481,8 @@
 
 /* Participant toolbar: search plus every filter as a dropdown, no extra panel. */
 .participants-panel .pt-filter { flex: 0 1 190px; min-width: 150px; }
-.participants-panel .pt-filter .dd-trigger, .participants-panel .sort-select .dd-trigger { height: 40px; }
-@media (max-width: 767px) { .participants-panel .pt-filter, .participants-panel .sort-select { flex: 1 1 calc(50% - 5px); min-width: 0; } }
+.participants-panel .pt-filter .dd-trigger { height: 40px; }
+@media (max-width: 767px) { .participants-panel .pt-filter { flex: 1 1 calc(50% - 5px); min-width: 0; } }
 
 /* Back as a compact icon button sitting beside the page title instead of its own row. */
 .back-button { flex-shrink: 0; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface); color: var(--text-secondary); transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
@@ -501,19 +498,10 @@
   .cashflow-workspace .cf-detail-heading.detail-finance-heading > .td-button { flex: 1 1 100%; }
 }
 
-/* Proof column: a small Drive thumbnail that opens the full proof. */
-.pt-proof { width: 64px; }
-.proof-thumb { display: block; width: 44px; height: 44px; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-muted); cursor: zoom-in; transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
-.proof-thumb:hover { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-.proof-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.proof-none { font-size: 12px; color: var(--text-subtle); white-space: nowrap; }
+/* Full transfer proof opened from a row's View proof button. */
 .proof-view { display: flex; justify-content: center; min-height: 320px; }
 .proof-view .proof-image { margin: 0; }
 .proof-view .proof-image img { max-height: 70vh; width: auto; max-width: 100%; object-fit: contain; }
-@media (max-width: 767px) {
-  .ov .pt-table tbody tr, .pt-table tbody tr { grid-template-areas: "name name state" "pkg pkg pkg" "bill paid out" "proof act act"; }
-  .pt-table .pt-proof { grid-area: proof; width: auto; align-self: center; }
-}
 
 /* Cancelling a participant is destructive, so it reads as a separate danger zone. */
 .td-modal .cancel-details { margin-top: 20px; padding: 0; border: 1px solid var(--danger-200); border-radius: var(--radius-lg); background: var(--danger-50); font-size: 13px; color: var(--danger-700); }
@@ -525,7 +513,6 @@
 .td-modal .cancel-note { line-height: 1.5; color: var(--danger-700); }
 .td-modal .cancel-details .td-button { background: var(--danger-600); border-color: var(--danger-600); }
 .td-modal .cancel-details .td-button:hover:not(:disabled) { background: var(--danger-700); }
-.ov .pt-table td.pt-proof, .ov .pt-table th:nth-child(4) { padding-left: 8px; padding-right: 8px; }
 
 /* Cashflow detail tabs: the count stays legible on both the active and idle pill. */
 .cf-v2 .cf-detail-tabs button > span { min-width: 22px; padding: 1px 7px; border-radius: var(--radius-pill); background: var(--gray-150); color: var(--gray-700); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
@@ -542,3 +529,170 @@
 .inventory-stock.is-low > span { color: var(--warning-700); }
 .inv-page .inventory-v2 .inventory-stock.is-out strong, .inv-page .inventory-v2 .inventory-stock.is-out > span, .inv-page .inventory-stock.is-out > span { color: var(--danger-600); }
 .inv-page .inventory-v2 .inventory-stock.is-low > span, .inv-page .inventory-stock.is-low > span { color: var(--warning-700); }
+
+/* WhatsApp reminders: day-before queue on the trip page, banner on Overview, and the template editor. */
+.wa-panel { padding: 0; }
+.wa-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--divider); }
+.wa-head h2 { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: var(--text); }
+.wa-head h2 svg { color: var(--success-600); }
+.wa-head p { margin-top: 2px; font-size: 13px; color: var(--text-muted); }
+.wa-list { margin: 0; padding: 0; list-style: none; }
+.wa-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; align-items: center; gap: 12px 16px; padding: 12px 18px; border-top: 1px solid var(--divider); }
+.wa-row:first-child { border-top: 0; }
+.wa-row.is-sent { background: var(--gray-25); }
+.wa-who { display: grid; min-width: 0; }
+.wa-who strong { font-size: 14px; font-weight: 600; color: var(--text); }
+.wa-who small { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.wa-badge { padding: 3px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wa-badge.is-reminder { background: var(--danger-50); color: var(--danger-700); border: 1px solid var(--danger-200); }
+.wa-badge.is-overpaid { background: var(--info-50); color: var(--info-700); border: 1px solid #bfd4f6; }
+.wa-note { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--warning-700); }
+.wa-action { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.wa-sent { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--success-700); white-space: nowrap; }
+.wa-send { min-height: 36px; padding: 0 14px; font-size: 13px; white-space: nowrap; }
+.td-button.wa-send { background: #1fa855; border-color: #1fa855; }
+.td-button.wa-send:hover { background: #178a45; }
+.wa-missing { font-size: 12px; color: var(--text-subtle); }
+@media (max-width: 767px) {
+  .wa-row { grid-template-columns: 1fr auto; padding: 12px 16px; }
+  .wa-action { grid-column: 1 / -1; justify-content: space-between; }
+  .wa-action .wa-send { flex: 1; justify-content: center; min-height: 44px; }
+}
+.wa-banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-color: #b7e4c7; background: #f0fbf4; }
+.wa-banner > svg { flex-shrink: 0; color: #1fa855; }
+.wa-banner strong { font-size: 14px; font-weight: 600; color: var(--text); }
+.wa-banner p { margin-top: 2px; font-size: 13px; color: var(--text-secondary); }
+.wa-banner a { font-weight: 600; color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.wa-tpl { display: grid; gap: 16px; }
+.wa-tpl-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+.wa-tpl-edit { display: grid; gap: 10px; align-content: start; }
+.wa-textarea { min-height: 240px; padding: 12px; line-height: 1.5; resize: vertical; font-family: inherit; }
+.wa-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.wa-fields button { padding: 3px 8px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface-muted); font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-secondary); }
+.wa-fields button:hover { border-color: var(--primary); color: var(--primary); }
+.wa-tpl-edit .filter-reset { justify-self: start; }
+.wa-preview { display: grid; gap: 6px; align-content: start; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.wa-preview p { padding: 12px 14px; border-radius: 4px 14px 14px 14px; background: #dcf8c6; color: #111b21; font-size: 14px; font-weight: 400; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px 1px rgb(0 0 0 / .08); }
+@media (max-width: 767px) { .wa-tpl-grid { grid-template-columns: 1fr; } }
+.td2-menu .is-default { color: var(--text); }
+.td2-menu .is-default:hover { background: var(--gray-50); }
+@media (min-width: 768px) {
+  .pt-table .pt-act .row-actions { flex-wrap: nowrap; }
+  .pt-table .pt-pkg { white-space: nowrap; }
+}
+@media (min-width: 768px) and (max-width: 1360px) {
+  .ov .td-table.pt-table th, .ov .td-table.pt-table td { padding-left: 9px; padding-right: 9px; }
+  .pt-table .pt-paid small { white-space: normal; max-width: 120px; }
+}
+/* Paid amount doubles as the button that opens the transfer proof. */
+.paid-proof { display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px; margin: -2px -6px; border-radius: 6px; font: inherit; font-variant-numeric: tabular-nums; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: zoom-in; transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.paid-proof svg { color: var(--text-muted); }
+.paid-proof:hover, .paid-proof:focus-visible { background: var(--primary-soft); color: var(--primary); }
+.paid-proof:hover svg, .paid-proof:focus-visible svg { color: var(--primary); }
+
+/* Proof loading state: a shimmering receipt card centred in a fixed frame. */
+.proof-skeleton { display: grid; place-items: center; background: var(--surface-muted); animation: none; }
+.proof-skel-card { display: grid; align-content: start; justify-items: center; gap: 12px; width: min(300px, 72%); height: 88%; padding: 26px 22px; border-radius: 14px; background: var(--surface); box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 6px 18px rgb(16 24 40 / .06); color: var(--gray-200); }
+.proof-skel-card svg { margin-bottom: 4px; }
+.proof-skel-card i { display: block; width: 100%; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--gray-100) 0%, var(--canvas) 50%, var(--gray-100) 100%); background-size: 200% 100%; animation: td-shimmer 1.2s ease-in-out infinite; }
+.proof-skel-card i.is-wide { width: 60%; height: 12px; }
+.proof-skel-card i.is-amount { width: 70%; height: 26px; margin: 6px 0 10px; border-radius: 8px; }
+.proof-skel-card i.is-short { width: 55%; justify-self: end; }
+@media (prefers-reduced-motion: reduce) { .proof-skel-card i { animation: none; } }
+.proof-view { height: min(620px, 72vh); min-height: 0; }
+.proof-view .proof-image { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; }
+.proof-view .proof-image img { max-height: 100%; }
+@media (max-width: 767px) { .proof-view { height: min(520px, 66vh); } }
+
+/* Participant details form: one six-column grid, contact details first, trip details after a rule. */
+.pd-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 16px; }
+.pd-span-2 { grid-column: span 2; } .pd-span-3 { grid-column: span 3; } .pd-span-4 { grid-column: span 4; } .pd-span-6 { grid-column: 1 / -1; }
+.pd-rule { height: 1px; margin: 2px 0; background: var(--divider); }
+.pd-textarea { min-height: 76px; padding: 10px 12px; line-height: 1.5; resize: vertical; font-family: inherit; }
+.pd-hint { font-size: 12px; color: var(--text-muted); }
+.pd-actions { display: flex; justify-content: flex-end; }
+@media (max-width: 767px) { .pd-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pd-span-2, .pd-span-3 { grid-column: span 1; } .pd-span-4 { grid-column: 1 / -1; } .pd-actions .td-button { width: 100%; } }
+/* Participant cell: name with age on the right, address underneath; contact column with WhatsApp and emergency numbers. */
+.pt-who { display: grid; gap: 2px; min-width: 150px; }
+.pt-who-line { display: flex; align-items: center; gap: 8px; }
+.pt-who-line strong { white-space: nowrap; }
+.pt-age { flex-shrink: 0; padding: 1px 7px; border-radius: var(--radius-pill); background: var(--gray-100); font-size: 11px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+.pt-who small { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+.pt-contact { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pt-contact .pt-phone { font-weight: 500; color: var(--text); }
+.pt-contact small { display: block; margin-top: 2px; color: var(--text-muted); }
+.pt-none { color: var(--text-subtle); }
+.pt-med { display: inline-grid; place-items: center; flex-shrink: 0; width: 18px; height: 18px; vertical-align: -3px; border-radius: 50%; background: var(--danger-50); color: var(--danger-600); cursor: help; }
+.paid-proof .money-skeleton { width: 64px; }
+@media (max-width: 767px) {
+  .ov .pt-table tbody tr, .pt-table tbody tr { grid-template-areas: "name name state" "pkg pkg pkg" "contact contact contact" "bill paid out" "act act act"; }
+  .pt-table .pt-contact { grid-area: contact; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .pt-table .pt-contact::before { flex-basis: 100%; }
+  .pt-table .pt-contact small { margin: 0; font-size: 12px; font-weight: 400; }
+  .pt-who small { max-width: none; white-space: normal; }
+}
+@media (min-width: 768px) {
+  .pt-table .pt-pkg small { white-space: normal; }
+}
+@media (min-width: 768px) and (max-width: 1360px) {
+  .ov .td-table.pt-table th, .ov .td-table.pt-table td { padding-left: 7px; padding-right: 7px; }
+  .ov .td-table.pt-table th:first-child, .ov .td-table.pt-table td.row-number { display: none; }
+  .pt-who small { max-width: 160px; }
+  .pt-table .pt-pkg small { max-width: 120px; }
+}
+@media (min-width: 1361px) and (max-width: 1500px) {
+  .ov .td-table.pt-table th, .ov .td-table.pt-table td { padding-left: 10px; padding-right: 10px; }
+  .ov .td-table.pt-table th:first-child, .ov .td-table.pt-table td.row-number { display: none; }
+}
+@media (min-width: 768px) and (max-width: 1360px) { .pt-who small { max-width: 130px; } }
+@media (min-width: 768px) and (max-width: 1360px) {
+  .ov .td-table.pt-table th, .ov .td-table.pt-table td { padding-left: 6px; padding-right: 6px; }
+  .pt-table .row-actions { gap: 4px; }
+  .pt-table .row-review, .pt-table .row-record { padding: 0 10px; }
+}
+@media (min-width: 768px) and (max-width: 1360px) { .pt-table .pt-pkg small { max-width: 96px; } .pt-who small { max-width: 120px; } }
+.pt-over { color: var(--info-700); }
+@media (min-width: 768px) and (max-width: 1360px) { .pt-who-line { gap: 5px; } .pt-age { padding: 1px 6px; } .pt-contact .pt-phone { font-size: 13px; } .pt-contact small { font-size: 11px; } }
+/* Medical note popover from the heart badge. */
+button.pt-med { border: 0; padding: 0; cursor: pointer; transition: background var(--duration-fast) var(--ease-out); }
+button.pt-med:hover, button.pt-med[aria-expanded="true"] { background: var(--danger-200); }
+.med-pop { position: fixed; z-index: 60; display: grid; gap: 4px; width: max-content; max-width: 240px; padding: 10px 12px; border: 1px solid var(--danger-200); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 24px rgb(16 24 40 / .14); font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--text); white-space: normal; transform: translateX(-50%); animation: med-pop-in .12s ease-out; pointer-events: none; }
+.med-pop.is-above { transform: translate(-50%, -100%); }
+.med-pop strong { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--danger-700); }
+@keyframes med-pop-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .med-pop { animation: none; } }
+/* Record payment: same layout as the review queue, with a placeholder when there is no proof. */
+.pr-noproof { display: grid; justify-items: center; gap: 8px; max-width: 260px; padding: 24px; text-align: center; color: var(--text-muted); }
+.pr-noproof svg { color: var(--gray-400); }
+.pr-noproof h3 { font-size: 15px; font-weight: 600; color: var(--text); }
+.pr-noproof p { font-size: 13px; line-height: 1.5; }
+.pr-record { display: grid; gap: 10px; }
+.pr-methods { width: 100%; }
+.pr-methods button { flex: 1; }
+.pr-note { font-size: 12px; color: var(--info-700); }
+.pr-record ~ .pr-actions { grid-template-columns: 1fr; }
+.pr-methods button { white-space: nowrap; padding: 0 10px; }
+/* Reminder rows: bill, paid and the balance or overpayment the message is about. */
+.wa-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; }
+.wa-money { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 14px; margin: 0; }
+.wa-money > div { display: grid; gap: 2px; min-width: 0; }
+.wa-money dt { font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--text-muted); }
+.wa-money dd { margin: 0; font-size: 14px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wa-money .wa-badge { display: inline-block; padding: 1px 8px; }
+.wa-money .wa-note { grid-column: 1 / -1; }
+@media (max-width: 767px) { .wa-money { grid-column: 1 / -1; grid-row: 2; } }
+@media (min-width: 768px) { .wa-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) 280px; } }
+.wa-tip { font-size: 12px; color: var(--text-muted); }
+/* Low stock reminders: photo beside the name and what is left. */
+.inv-page .stock-reminder { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 12px; }
+.inv-page .stock-reminder-photo { width: 56px; height: 56px; border-radius: var(--radius-md); object-fit: cover; background: var(--surface-muted); }
+.inv-page .stock-reminder-photo.is-empty { display: grid; place-items: center; border: 1px dashed var(--border-strong); color: var(--text-subtle); }
+.inv-page .stock-reminder-text { display: grid; gap: 2px; min-width: 0; }
+.inv-page .stock-reminder-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inv-page .stock-reminder-text > span { display: block; margin: 0; font-size: 12px; color: var(--danger-600); font-weight: 500; }
+.inv-page .stock-reminder-text small { margin-top: 4px; }
+.inv-page .stock-reminder:hover { border-color: var(--border-strong); }
+/* Inside the Overview agenda card the reminder sits above the upcoming list as a compact notice. */
+.ov-agenda .wa-banner { margin-bottom: 12px; padding: 12px 14px; gap: 12px; border: 1px solid #b7e4c7; border-radius: var(--radius-lg); box-shadow: none; }
+.ov-agenda .wa-banner strong { font-size: 13px; }
+.ov-agenda .wa-banner p { font-size: 12px; }
